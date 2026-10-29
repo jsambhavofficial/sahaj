@@ -46,7 +46,7 @@ export default function SeniorCareTeamPage() {
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
             <Users className="w-6 h-6 text-teal-600" />
-            Meri Care Team (Your Samarth Support)
+            Meri Care Team (Your Sahaj Support)
           </h2>
           <p className="text-sm sm:text-base text-slate-600 font-medium mt-1">
             Aapke shehar ki samarpit dekhbhal team ke contact details.
@@ -97,7 +97,7 @@ export default function SeniorCareTeamPage() {
                     Aapka Assigned Coordinator
                   </span>
                   <h3 className="text-2xl sm:text-3xl font-extrabold mt-0.5">
-                    {careTeam.coordinator_name || "Samarth Care Coordinator"}
+                    {careTeam.coordinator_name || "Sahaj Care Coordinator"}
                   </h3>
                   <p className="text-teal-200 text-sm font-medium mt-0.5 flex items-center gap-1.5">
                     <MapPin className="w-4 h-4" />
@@ -136,7 +136,7 @@ export default function SeniorCareTeamPage() {
           {/* Quick FAQ / Information for Seniors */}
           <div className="bg-white border-2 border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-4">
             <h3 className="text-xl font-bold text-slate-900">
-              Samarth Se Judi Zaroori Batein
+              Sahaj Se Judi Zaroori Batein
             </h3>
 
             <div className="space-y-3">
@@ -156,7 +156,7 @@ export default function SeniorCareTeamPage() {
                   Medical Emergency Mein Kya Karein?
                 </h4>
                 <p className="text-sm text-slate-700 mt-1 pl-7">
-                  Kripya tatkaal rashtriya helpline <strong>112</strong> par call karein aur apne parivar ya padosi ko soochit karein. Samarth portal medical diagnosis ya emergency service ka vikalp nahi hai.
+                  Kripya tatkaal rashtriya helpline <strong>112</strong> par call karein aur apne parivar ya padosi ko soochit karein. Sahaj portal medical diagnosis ya emergency service ka vikalp nahi hai.
                 </p>
               </div>
             </div>

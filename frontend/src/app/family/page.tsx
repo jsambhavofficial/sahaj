@@ -133,7 +133,7 @@ export default function FamilyDashboardPage() {
             href="/family/contact"
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-rose-600 text-white text-xs font-semibold hover:bg-rose-700 transition"
           >
-            <PhoneCall className="w-4 h-4" /> Contact Samarth Care Team
+            <PhoneCall className="w-4 h-4" /> Contact Sahaj Care Team
           </Link>
           <Link
             href="/family/profile"
@@ -462,7 +462,7 @@ export default function FamilyDashboardPage() {
               <div>
                 <span className="text-[11px] uppercase tracking-wider font-bold text-slate-400">Chapter Office</span>
                 <p className="text-sm font-bold text-slate-800 mt-0.5">
-                  Samarth Elder-Care ({careSummary?.care_team_contact?.city_name || "Regional Office"})
+                  Sahaj Elder-Care ({careSummary?.care_team_contact?.city_name || "Regional Office"})
                 </p>
               </div>
 

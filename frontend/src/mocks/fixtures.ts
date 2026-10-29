@@ -1025,3 +1025,214 @@ export function computeDashboardMetrics(
   };
 }
 
+// =============================================================================
+// API Contract (v1) Synthetic Mock Fixtures
+// =============================================================================
+
+export const MOCK_PRIORITY_LIST_RESPONSE = {
+  date: "2026-10-11",
+  revision: 3,
+  reason: "post_ai_call",
+  generated_at: "2026-10-11T16:28:00+05:30",
+  items: [
+    {
+      rank: 1,
+      previous_rank: 4,
+      senior: {
+        senior_id: "S0042",
+        display_name: "Shanti Khanna",
+        age: 71,
+        city: "Bengaluru",
+        preferred_language: "hinglish" as const,
+      },
+      risk_score: 78,
+      risk_level: "HIGH" as const,
+      reasons: [
+        "Steps averaged 54% of her baseline for 3 days",
+        "Missed 2 of 3 BP tablets this week",
+      ],
+      suggested_action:
+        "Call today and ask about dizziness; consider a visit if she is unsteady.",
+      alert_id: "ALT_00123",
+      ai_call_done: true,
+    },
+    {
+      rank: 2,
+      previous_rank: 1,
+      senior: {
+        senior_id: "S0001",
+        display_name: "Suresh Sharma",
+        age: 76,
+        city: "Bengaluru",
+        preferred_language: "hindi" as const,
+      },
+      risk_score: 84,
+      risk_level: "URGENT_REVIEW" as const,
+      reasons: [
+        "Blood pressure diastolic 96 mmHg (+18 mmHg vs baseline)",
+        "Complaints of fatigue and lightheadedness in morning check-in",
+      ],
+      suggested_action:
+        "Urgent phone triage; verify BP cuff reading and schedule home visit if elevated.",
+      alert_id: "ALT_00001",
+      ai_call_done: false,
+    },
+    {
+      rank: 3,
+      previous_rank: 3,
+      senior: {
+        senior_id: "S0002",
+        display_name: "Kamla Devi",
+        age: 82,
+        city: "Bengaluru",
+        preferred_language: "hindi" as const,
+      },
+      risk_score: 64,
+      risk_level: "MODERATE" as const,
+      reasons: [
+        "No steps recorded yesterday; sleep duration 4.2 hours",
+        "1 missed metformin dose on Friday evening",
+      ],
+      suggested_action: "Routine wellbeing inquiry call regarding knee discomfort.",
+      alert_id: null,
+      ai_call_done: true,
+    },
+    {
+      rank: 4,
+      previous_rank: null,
+      senior: {
+        senior_id: "S0005",
+        display_name: "Anasuya Venkataraman",
+        age: 79,
+        city: "Bengaluru",
+        preferred_language: "english" as const,
+      },
+      risk_score: 42,
+      risk_level: "MODERATE" as const,
+      reasons: ["Slight deviation in meal regularity reported by domestic helper."],
+      suggested_action: "Send gentle medication and hydration reminder.",
+      alert_id: null,
+      ai_call_done: true,
+    },
+  ],
+};
+
+export const MOCK_OPS_OVERVIEW = {
+  open_alerts: 14,
+  alerts_in_range: 52,
+  median_minutes_to_ack: 18.5,
+  median_minutes_to_resolve: 85.0,
+  useful_share: 0.92,
+  ai_call_completion_rate: 0.88,
+  seniors_covered: 245,
+  seniors_total: 250,
+};
+
+export const MOCK_OPS_CITIES = [
+  {
+    city: "Bengaluru",
+    seniors: 110,
+    coordinators: 55,
+    open_alerts: 7,
+    avg_risk: 42.4,
+    high_risk_count: 12,
+  },
+  {
+    city: "Delhi",
+    seniors: 80,
+    coordinators: 40,
+    open_alerts: 5,
+    avg_risk: 39.1,
+    high_risk_count: 8,
+  },
+  {
+    city: "Chandigarh",
+    seniors: 60,
+    coordinators: 30,
+    open_alerts: 2,
+    avg_risk: 31.8,
+    high_risk_count: 4,
+  },
+];
+
+export const MOCK_OPS_COORDINATORS = [
+  {
+    coordinator_id: "COORD_001",
+    display_name: "Care Coordinator 001 (Pooja Rao)",
+    city: "Bengaluru",
+    caseload: 22,
+    open_alerts: 2,
+    alerts_handled: 18,
+    calls: 44,
+    messages_sent: 102,
+  },
+  {
+    coordinator_id: "COORD_002",
+    display_name: "Care Coordinator 002 (Amit Verma)",
+    city: "Bengaluru",
+    caseload: 20,
+    open_alerts: 1,
+    alerts_handled: 14,
+    calls: 38,
+    messages_sent: 89,
+  },
+  {
+    coordinator_id: "COORD_003",
+    display_name: "Care Coordinator 003 (Sunita Nair)",
+    city: "Delhi",
+    caseload: 25,
+    open_alerts: 3,
+    alerts_handled: 24,
+    calls: 56,
+    messages_sent: 115,
+  },
+];
+
+export const MOCK_SENIOR_HOME_DATA = {
+  greeting_name: "Shanti ji",
+  language: "hinglish" as const,
+  date: "2026-10-11",
+  medications_today: [
+    {
+      medication_id: "MED_S0001_01",
+      drug_name: "Amlodipine",
+      dosage: "5 mg",
+      scheduled_at: "2026-10-11T08:00:00+05:30",
+      status: "taken" as const,
+    },
+    {
+      medication_id: "MED_S0001_02",
+      drug_name: "Metformin",
+      dosage: "500 mg",
+      scheduled_at: "2026-10-11T13:00:00+05:30",
+      status: "taken" as const,
+    },
+    {
+      medication_id: "MED_S0001_03",
+      drug_name: "Atorvastatin",
+      dosage: "10 mg",
+      scheduled_at: "2026-10-11T20:00:00+05:30",
+      status: "pending" as const,
+    },
+  ],
+  last_message: {
+    id: "MSG_001",
+    senior_id: "S0042",
+    sender: {
+      user_id: "COORD_001",
+      role: "coordinator" as const,
+      display_name: "Care Coordinator Pooja",
+    },
+    kind: "text" as const,
+    body: "Namaste Shanti ji! How is your knee feeling after the morning walk? Please take some rest.",
+    created_at: "2026-10-11T11:15:00+05:30",
+    delivered_at: "2026-10-11T11:15:05+05:30",
+    read_at: "2026-10-11T11:20:00+05:30",
+  },
+  next_checkin: {
+    at: "2026-10-11T16:00:00+05:30",
+    kind: "ai_call" as const,
+  },
+};
+
+

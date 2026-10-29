@@ -14,7 +14,7 @@ import {
   SeniorSummary,
   SeniorProfile,
 } from "../types/domain";
-import { AlertFilterParams, SeniorFilterParams } from "../types/api";
+import { AlertFilterParams, SeniorFilterParams, ContractAlertObject } from "../types/api";
 import { getDataService } from "../services";
 import { IDataService } from "../services/dataService";
 
@@ -35,8 +35,8 @@ interface AppContextValue {
   addToast: (message: string, type?: "success" | "error" | "info") => void;
   removeToast: (id: string) => void;
   // State-mutating actions
-  acknowledgeAlert: (alertId: string, notes?: string) => Promise<Alert>;
-  resolveAlert: (alertId: string, reason: string) => Promise<Alert>;
+  acknowledgeAlert: (alertId: string, notes?: string) => Promise<Alert | ContractAlertObject>;
+  resolveAlert: (alertId: string, reason: string) => Promise<Alert | ContractAlertObject>;
   lastUpdated: number;
 }
 
@@ -83,7 +83,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [refreshMetrics]);
 
   const acknowledgeAlert = useCallback(
-    async (alertId: string, notes?: string): Promise<Alert> => {
+    async (alertId: string, notes?: string): Promise<Alert | ContractAlertObject> => {
       try {
         const updated = await service.acknowledgeAlert(
           alertId,
@@ -106,7 +106,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const resolveAlert = useCallback(
-    async (alertId: string, reason: string): Promise<Alert> => {
+    async (alertId: string, reason: string): Promise<Alert | ContractAlertObject> => {
       try {
         const updated = await service.resolveAlert(
           alertId,

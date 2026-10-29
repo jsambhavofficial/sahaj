@@ -166,7 +166,7 @@ export default function SeniorCheckInPage() {
             {submittedData.help_requested && (
               <div className="flex items-center gap-2 text-sm font-bold text-amber-800 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
                 <PhoneCall className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                <span>Samarth Care Coordinator jald aapse phone par sampark karenge.</span>
+                <span>Sahaj Care Coordinator jald aapse phone par sampark karenge.</span>
               </div>
             )}
           </div>
@@ -440,7 +440,7 @@ export default function SeniorCheckInPage() {
         <div className="bg-white border-2 border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
           <div>
             <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
-              Kadam 4: Kya aap Samarth team se phone par baat karna chahte hain?
+              Kadam 4: Kya aap Sahaj team se phone par baat karna chahte hain?
             </h3>
             <p className="text-sm sm:text-base text-slate-600 mt-1">
               Agar aapko koi madad chahiye, toh yahan chun sakte hain:

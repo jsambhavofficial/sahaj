@@ -8,19 +8,39 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
-import { UserPublicProfile } from "../types/api";
+import { UserPublicProfile, ContractUser, StaffProfileInfo } from "../types/api";
 import { defaultApiClient } from "../services/apiClient";
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: string;
+  full_name?: string;
+  display_name?: string;
+  is_active?: boolean;
+  is_verified?: boolean;
+  organization_id?: string;
+  staff_profile?: StaffProfileInfo | null;
+  city?: string;
+  team_id?: string;
+  external_ref?: string;
+}
+
 interface AuthContextValue {
-  user: UserPublicProfile | null;
+  user: AuthUser | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password?: string) => Promise<UserPublicProfile>;
+  login: (email: string, password?: string) => Promise<AuthUser>;
+  pairSenior: (pairingCode: string) => Promise<AuthUser>;
+  loginSeniorWithDevice: (seniorId: string, deviceToken: string) => Promise<AuthUser>;
+  generateSeniorPairingCode: (seniorId: string) => Promise<{ pairing_code: string; expires_in: number }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   role: string | null;
   isAdmin: boolean;
   isCityManager: boolean;
+  isOps: boolean;
+  isCoordinator: boolean;
   isCaretaker: boolean;
   isFamily: boolean;
   isSenior: boolean;
@@ -30,7 +50,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserPublicProfile | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -56,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (storedToken) {
         setToken(storedToken);
         try {
-          const profile = await defaultApiClient.get<UserPublicProfile>("/api/v1/auth/me");
+          const profile = await defaultApiClient.get<AuthUser>("/auth/me");
           setUser(profile);
           localStorage.setItem("samarth_auth_user", JSON.stringify(profile));
         } catch (err) {
@@ -64,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!(err instanceof Error && err.message?.includes("fetch"))) {
             console.warn("Stored authentication token invalid or expired. Clearing session.");
             localStorage.removeItem("samarth_auth_token");
+            localStorage.removeItem("samarth_refresh_token");
             localStorage.removeItem("samarth_auth_user");
             setToken(null);
             setUser(null);
@@ -77,14 +98,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(
-    async (email: string, password: string = "Password@123!"): Promise<UserPublicProfile> => {
+    async (email: string, password: string = "Password@123!"): Promise<AuthUser> => {
       setLoading(true);
       try {
         const res = await defaultApiClient.post<{
           access_token: string;
-          token_type: string;
-          user: UserPublicProfile;
-        }>("/api/v1/auth/login", {
+          refresh_token?: string;
+          token_type?: string;
+          user: AuthUser;
+        }>("/auth/login", {
           email,
           password,
         });
@@ -93,6 +115,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const authUser = res.user;
 
         localStorage.setItem("samarth_auth_token", authToken);
+        if (res.refresh_token) {
+          localStorage.setItem("samarth_refresh_token", res.refresh_token);
+        }
         localStorage.setItem("samarth_auth_user", JSON.stringify(authUser));
         setToken(authToken);
         setUser(authUser);
@@ -104,28 +129,120 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const pairSenior = useCallback(
+    async (pairingCode: string): Promise<AuthUser> => {
+      setLoading(true);
+      try {
+        const res = await defaultApiClient.post<{
+          access_token: string;
+          refresh_token?: string;
+          token_type?: string;
+          senior_id: string;
+          device_token: string;
+          user?: AuthUser;
+        }>("/auth/senior/pair", {
+          pairing_code: pairingCode,
+        });
+
+        const authToken = res.access_token;
+        const seniorUser: AuthUser = res.user || {
+          id: res.senior_id,
+          role: "senior",
+          display_name: `Senior ${res.senior_id}`,
+          email: `${res.senior_id.toLowerCase()}@senior.samarth.local`,
+        };
+
+        localStorage.setItem("samarth_auth_token", authToken);
+        if (res.refresh_token) {
+          localStorage.setItem("samarth_refresh_token", res.refresh_token);
+        }
+        localStorage.setItem("samarth_device_token", res.device_token);
+        localStorage.setItem("samarth_senior_id", res.senior_id);
+        localStorage.setItem("samarth_auth_user", JSON.stringify(seniorUser));
+        setToken(authToken);
+        setUser(seniorUser);
+        return seniorUser;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  const loginSeniorWithDevice = useCallback(
+    async (seniorId: string, deviceToken: string): Promise<AuthUser> => {
+      setLoading(true);
+      try {
+        const res = await defaultApiClient.post<{
+          access_token: string;
+          refresh_token?: string;
+          user?: AuthUser;
+        }>("/auth/senior/login", {
+          senior_id: seniorId,
+          device_token: deviceToken,
+        });
+
+        const authToken = res.access_token;
+        const seniorUser: AuthUser = res.user || {
+          id: seniorId,
+          role: "senior",
+          display_name: `Senior ${seniorId}`,
+          email: `${seniorId.toLowerCase()}@senior.samarth.local`,
+        };
+
+        localStorage.setItem("samarth_auth_token", authToken);
+        if (res.refresh_token) {
+          localStorage.setItem("samarth_refresh_token", res.refresh_token);
+        }
+        localStorage.setItem("samarth_auth_user", JSON.stringify(seniorUser));
+        setToken(authToken);
+        setUser(seniorUser);
+        return seniorUser;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  const generateSeniorPairingCode = useCallback(
+    async (seniorId: string): Promise<{ pairing_code: string; expires_in: number }> => {
+      return defaultApiClient.post<{ pairing_code: string; expires_in: number }>(
+        "/auth/senior/pairing-code",
+        { senior_id: seniorId }
+      );
+    },
+    []
+  );
+
   const logout = useCallback(async () => {
     try {
       if (token) {
-        await defaultApiClient.post("/api/v1/auth/logout");
+        await defaultApiClient.post("/auth/logout");
       }
     } catch {
       // Best-effort logout notification
     } finally {
       localStorage.removeItem("samarth_auth_token");
+      localStorage.removeItem("samarth_refresh_token");
       localStorage.removeItem("samarth_auth_user");
       setToken(null);
       setUser(null);
     }
   }, [token]);
 
-  const role = user?.role || null;
-  const isAdmin = role === "ORGANIZATION_ADMIN";
-  const isCityManager = role === "CITY_MANAGER";
-  const isCaretaker = role === "CARETAKER";
-  const isFamily = role === "FAMILY";
-  const isSenior = role === "SENIOR";
-  const assignedCityId = user?.staff_profile?.city_id || null;
+  const rawRole = (user?.role || "").toLowerCase();
+  const isAdmin = rawRole === "admin" || rawRole === "organization_admin";
+  const isCityManager = rawRole === "ops" || rawRole === "city_manager";
+  const isOps = rawRole === "ops" || rawRole === "city_manager";
+  const isCoordinator = rawRole === "coordinator" || rawRole === "caretaker";
+  const isCaretaker = rawRole === "coordinator" || rawRole === "caretaker";
+  const isFamily = rawRole === "family";
+  const isSenior = rawRole === "senior";
+  const assignedCityId =
+    (user as any)?.city ||
+    (user as any)?.staff_profile?.city_id ||
+    null;
 
   return (
     <AuthContext.Provider
@@ -134,11 +251,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         token,
         loading,
         login,
+        pairSenior,
+        loginSeniorWithDevice,
+        generateSeniorPairingCode,
         logout,
         isAuthenticated: !!user,
-        role,
+        role: user?.role || null,
         isAdmin,
         isCityManager,
+        isOps,
+        isCoordinator,
         isCaretaker,
         isFamily,
         isSenior,
@@ -156,4 +278,8 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
+}
+
+export function useOptionalAuth() {
+  return useContext(AuthContext);
 }

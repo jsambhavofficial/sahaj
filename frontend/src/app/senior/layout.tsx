@@ -1,15 +1,17 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/navigation";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { Heart, ShieldCheck, AlertCircle, Loader2, Phone, Home, ClipboardList, Calendar, HelpCircle, Users, UserCog } from "lucide-react";
+import { Heart, ShieldCheck, AlertCircle, Loader2, Phone, Home, ClipboardList, Calendar, HelpCircle, Users, UserCog, Mic, Sparkles } from "lucide-react";
+import SeniorVoiceCompanionModal from "@/components/voice/SeniorVoiceCompanionModal";
 
 export default function SeniorLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated, loading, isSenior, isAdmin } = useAuth();
+  const [isVoiceOpen, setIsVoiceOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -82,7 +84,7 @@ export default function SeniorLayout({ children }: { children: React.ReactNode }
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                  Samarth Saathi Portal
+                  Sahaj Saathi Portal
                 </h1>
                 <span className="inline-flex items-center gap-1 text-xs font-bold text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-full border border-teal-300">
                   <ShieldCheck className="w-3.5 h-3.5" /> Surakshit
@@ -94,14 +96,23 @@ export default function SeniorLayout({ children }: { children: React.ReactNode }
             </div>
           </div>
 
-          {/* Quick Helpline Button */}
-          <div className="flex items-center gap-3">
+          {/* Quick Helpline & Voice Companion Buttons */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setIsVoiceOpen(true)}
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-extrabold px-4 py-2.5 rounded-xl text-sm sm:text-base shadow-md transition-all active:scale-95 min-h-[48px]"
+            >
+              <Mic className="w-5 h-5 text-slate-950" />
+              <span>AI Saathi (Voice)</span>
+            </button>
+
             <a
               href="tel:1800-120-8800"
-              className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-base shadow transition-colors min-h-[48px]"
+              className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm sm:text-base shadow transition-colors min-h-[48px]"
             >
-              <Phone className="w-5 h-5 fill-white" />
-              <span>Samarth Helpline: 1800-120-8800</span>
+              <Phone className="w-4 h-4 fill-white" />
+              <span className="hidden sm:inline">Sahaj Helpline:</span> 1800-120-8800
             </a>
           </div>
         </div>
@@ -133,6 +144,15 @@ export default function SeniorLayout({ children }: { children: React.ReactNode }
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         {children}
       </main>
+
+      {/* Global Senior Voice Companion Modal */}
+      <SeniorVoiceCompanionModal
+        isOpen={isVoiceOpen}
+        onClose={() => setIsVoiceOpen(false)}
+        seniorName={user?.full_name || "Aadarneey Senior"}
+        seniorId={user?.id || "SENIOR_PORTAL"}
+        userEmail={user?.email || ""}
+      />
     </div>
   );
 }

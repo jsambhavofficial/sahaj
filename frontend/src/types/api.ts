@@ -13,6 +13,7 @@ export interface ApiHealthResponse {
 
 export interface ApiSeniorProfileSummary {
   senior_id: string;
+  name?: string | null;
   age: number;
   preferred_language: string;
   city_id: string;
@@ -737,6 +738,484 @@ export interface SeniorProfileUpdateRequest {
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
 }
+
+// =============================================================================
+// SamarthCare AI — API Contract (v1) Typed Definitions
+// =============================================================================
+
+export type ContractRole = "coordinator" | "senior" | "ops" | "admin" | "family";
+export type ContractRiskLevel =
+  | "LOW"
+  | "MODERATE"
+  | "HIGH"
+  | "URGENT_REVIEW"
+  | "urgent"
+  | "high"
+  | "rising"
+  | "stable"
+  | string;
+export type ContractAlertStatus = "OPEN" | "ACKNOWLEDGED" | "ESCALATED" | "RESOLVED";
+export type ContractAlertSeverity = "MODERATE" | "HIGH" | "URGENT_REVIEW";
+export type ContractFeedbackOutcome = "called" | "visited" | "doctor" | "no_action";
+export type ContractLanguage = "hindi" | "hinglish" | "english";
+export type ContractConsentLevel = "full" | "summary_and_urgent" | "urgent_only";
+export type ContractLivingArrangement = "alone" | "with_spouse" | "with_domestic_help_or_family";
+export type ContractCallKind = "ai_agent" | "phone_bridge";
+export type ContractCallStatus =
+  | "queued"
+  | "in_progress"
+  | "completed"
+  | "abandoned"
+  | "failed"
+  | "declined"
+  | "no_answer"
+  | "busy";
+export type ContractTranscriptStatus = "pending" | "done" | "failed" | "not_applicable";
+export type ContractSpeaker = "agent" | "senior" | "coordinator";
+export type ContractMedicationStatus = "taken" | "missed" | "unknown" | "pending";
+export type ContractVitalMeasurementType =
+  | "blood_pressure_systolic"
+  | "blood_pressure_diastolic"
+  | "blood_glucose"
+  | "spo2"
+  | "weight"
+  | "heart_rate"
+  | "temperature";
+export type ContractNotificationKind =
+  | "medication_reminder"
+  | "checkin_prompt"
+  | "alert_new"
+  | "alert_escalated"
+  | "priority_list_updated"
+  | "message_received"
+  | "call_summary_ready";
+export type ContractPlatform = "android" | "ios" | "web";
+
+export interface ContractError {
+  error: {
+    code: string;
+    message: string;
+    details?: Array<{ field?: string; message?: string }> | unknown;
+  };
+}
+
+export interface ContractUser {
+  id: string;
+  role: ContractRole | string;
+  display_name: string;
+  email: string;
+  external_ref?: string;
+  city?: string;
+  team_id?: string;
+}
+
+export interface ContractAuthLoginResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+  user: ContractUser;
+}
+
+export interface ContractSeniorPairingCodeResponse {
+  pairing_code: string;
+  expires_in: number;
+}
+
+export interface ContractSeniorPairResponse extends ContractAuthLoginResponse {
+  senior_id: string;
+  device_token: string;
+}
+
+export interface ContractDeviceResponse {
+  id: string;
+  platform: ContractPlatform | string;
+  app_version?: string;
+  created_at: string;
+}
+
+export interface ContractPaginatedList<T> {
+  items: T[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+// Section 3: Coordinator App
+export interface PriorityListSenior {
+  senior_id: string;
+  display_name: string;
+  age: number;
+  city: string;
+  preferred_language: ContractLanguage | string;
+}
+
+export interface PriorityListItem {
+  rank: number;
+  previous_rank?: number | null;
+  senior: PriorityListSenior;
+  risk_score: number;
+  risk_level: ContractRiskLevel;
+  reasons: string[];
+  suggested_action: string;
+  alert_id?: string | null;
+  ai_call_done: boolean;
+}
+
+export interface PriorityListResponse {
+  date: string;
+  revision: number;
+  reason: string;
+  generated_at: string;
+  items: PriorityListItem[];
+}
+
+export interface CoordinatorCaseloadItem {
+  senior_id: string;
+  display_name: string;
+  age: number;
+  city: string;
+  preferred_language: ContractLanguage | string;
+  living_arrangement: ContractLivingArrangement | string;
+  risk_score: number | null;
+  risk_level: ContractRiskLevel | null;
+  open_alert_id?: string | null;
+  last_contact_at?: string | null;
+}
+
+export interface ContractSeniorDetail {
+  senior_id: string;
+  display_name: string;
+  age: number;
+  gender?: string;
+  city: string;
+  living_arrangement: ContractLivingArrangement | string;
+  preferred_language: ContractLanguage | string;
+  communication_style?: string;
+  family_consent_level?: ContractConsentLevel | string;
+  conditions?: Array<{ category: string; condition: string }>;
+  health_profile?: {
+    cognitive_status?: string;
+    fall_risk_level?: string;
+    mobility_aid?: string;
+    hobbies?: string[];
+    [key: string]: any;
+  };
+  baseline?: Record<string, any>;
+  contact?: { phone?: string };
+}
+
+export interface ContractRiskHistoryItem {
+  date: string;
+  risk_score: number;
+  risk_level: ContractRiskLevel;
+  top_factors: Array<{
+    rule_id: string;
+    category: string;
+    evidence: string;
+    window: string;
+    points_contributed: number;
+    is_safety_tripwire: boolean;
+  }>;
+  recommended_action: string;
+  scoring_version?: string;
+}
+
+export interface ContractVitalItem {
+  measurement_id: string;
+  measured_at: string;
+  measurement_type: ContractVitalMeasurementType | string;
+  value: number;
+  unit: string;
+  context?: string;
+  source?: string;
+  quality_status?: string;
+}
+
+export interface ContractMedicationScheduleItem {
+  medication_id: string;
+  drug_name: string;
+  dosage: string;
+  indication: string;
+  times_per_day: number;
+  scheduled_times: string[];
+  criticality: string;
+  is_active: boolean;
+}
+
+export interface ContractMedicationHistoryEvent {
+  scheduled_at: string;
+  status: ContractMedicationStatus;
+  actual_at?: string | null;
+  record_source?: string;
+}
+
+export interface ContractMedicationsResponse {
+  schedules: ContractMedicationScheduleItem[];
+  adherence: {
+    last_7d_pct: number;
+    last_30d_pct: number;
+    missed_critical_7d: number;
+  };
+  recent_events: ContractMedicationHistoryEvent[];
+}
+
+export interface ContractActivityItem {
+  date: string;
+  steps: number;
+  active_minutes: number;
+  sleep_hours: number;
+  appetite_level: number;
+  mood_level: number;
+  social_contact_count: number;
+  data_available: boolean;
+}
+
+export interface ContractCallTurn {
+  turn_index: number;
+  speaker: ContractSpeaker;
+  text: string;
+  offset_ms: number;
+}
+
+export interface ContractCallCue {
+  cue_type: string;
+  cue_value: string;
+  temporal_context?: string;
+  negated?: boolean;
+  uncertain?: boolean;
+}
+
+export interface ContractCallObject {
+  id: string;
+  senior_id: string;
+  kind: ContractCallKind;
+  status: ContractCallStatus;
+  transcript_status: ContractTranscriptStatus;
+  started_at?: string | null;
+  ended_at?: string | null;
+  duration_sec?: number | null;
+  recording_stored: boolean;
+  recording_expires_at?: string | null;
+  summary?: string | null;
+  urgency_flag: boolean;
+  turns: ContractCallTurn[];
+  cues: ContractCallCue[];
+}
+
+export interface ContractCueRecord {
+  cue_type: string;
+  cue_value: string;
+  temporal_context?: string;
+  negated?: boolean;
+  uncertain?: boolean;
+  source_type?: string;
+  at: string;
+}
+
+export interface ContractMemoryItem {
+  id: string;
+  kind: string;
+  content: string;
+  status: string;
+  first_seen_at: string;
+  last_seen_at: string;
+  follow_up_after?: string | null;
+}
+
+export interface ContractFamilyInteractionItem {
+  interaction_id: string;
+  at: string;
+  channel: string;
+  category: string;
+  family_message: string;
+  coordinator_reply_en?: string | null;
+  counselor_summary?: string | null;
+  suggested_action?: string | null;
+  escalation_needed: boolean;
+}
+
+export interface ContractAlertEvent {
+  at: string;
+  from_status: ContractAlertStatus;
+  to_status: ContractAlertStatus;
+  actor: string;
+  note?: string | null;
+}
+
+export interface ContractAlertObject {
+  alert_id: string;
+  senior_id: string;
+  status: ContractAlertStatus;
+  severity: ContractAlertSeverity;
+  created_at: string;
+  last_updated_at: string;
+  triggering_signals: string[];
+  recommended_next_step: string;
+  resolution_reason?: string | null;
+  assigned_to?: string | null;
+  events: ContractAlertEvent[];
+}
+
+export interface ContractAlertFeedbackRequest {
+  useful: boolean;
+  outcome: ContractFeedbackOutcome;
+  comment?: string;
+}
+
+export interface ContractMessageSender {
+  user_id: string;
+  role: ContractRole | string;
+  display_name: string;
+}
+
+export interface ContractMessageItem {
+  id: string;
+  senior_id: string;
+  sender: ContractMessageSender;
+  kind: "text" | "voice_note";
+  body: string;
+  audio_url?: string;
+  transcript?: string;
+  summary?: string;
+  language?: ContractLanguage | string;
+  created_at: string;
+  delivered_at?: string;
+  read_at?: string | null;
+}
+
+export interface ContractNotificationItem {
+  id: string;
+  kind: ContractNotificationKind | string;
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+  scheduled_for?: string;
+  sent_at?: string;
+  read_at?: string | null;
+}
+
+// Section 4: Senior App
+export interface SeniorMedicationToday {
+  medication_id: string;
+  drug_name: string;
+  dosage: string;
+  scheduled_at: string;
+  status: ContractMedicationStatus;
+}
+
+export interface SeniorHomeResponse {
+  greeting_name: string;
+  language: ContractLanguage | string;
+  date: string;
+  medications_today: SeniorMedicationToday[];
+  last_message?: ContractMessageItem | null;
+  next_checkin?: {
+    at: string;
+    kind: "ai_call" | "visit" | "phone_call" | string;
+  } | null;
+}
+
+// Section 5: Ops Web Dashboard
+export interface OpsOverviewResponse {
+  open_alerts: number;
+  alerts_in_range: number;
+  median_minutes_to_ack: number | null;
+  median_minutes_to_resolve: number | null;
+  useful_share: number | null;
+  ai_call_completion_rate: number;
+  seniors_covered: number;
+  seniors_total: number;
+}
+
+export interface OpsAlertVolumeItem {
+  day: string;
+  city: string;
+  severity: ContractAlertSeverity;
+  status: ContractAlertStatus;
+  alerts: number;
+}
+
+export interface OpsResponseTimesItem {
+  alert_id: string;
+  city: string;
+  coordinator_id: string;
+  severity: ContractAlertSeverity;
+  created_at: string;
+  minutes_to_ack: number | null;
+  minutes_to_resolve: number | null;
+}
+
+export interface OpsAlertOutcomesItem {
+  city: string;
+  resolution_reason: string;
+  useful: boolean | null;
+  outcome: ContractFeedbackOutcome | null;
+  alerts: number;
+}
+
+export interface OpsAlertPrecisionItem {
+  city: string;
+  week_start: string;
+  rated_alerts: number;
+  useful_alerts: number;
+  precision: number | null;
+}
+
+export interface OpsCoordinatorItem {
+  coordinator_id: string;
+  display_name: string;
+  city: string;
+  caseload: number;
+  open_alerts: number;
+  alerts_handled: number;
+  calls: number;
+  messages_sent: number;
+}
+
+export interface OpsCityItem {
+  city: string;
+  seniors: number;
+  coordinators: number;
+  open_alerts: number;
+  avg_risk: number;
+  high_risk_count: number;
+}
+
+export interface OpsDailyReportItem {
+  coordinator: {
+    coordinator_id: string;
+    display_name: string;
+    city: string;
+  };
+  items: PriorityListItem[];
+}
+
+export interface AdminJobRunResponse {
+  job: string;
+  date?: string;
+  status: string;
+  job_name?: string;
+  triggered_at?: string;
+  task_id?: string;
+}
+
+// Section 6: Family
+export interface FamilyWeeklySummaryResponse {
+  senior_id: string;
+  week_start: string;
+  language: ContractLanguage | string;
+  body_text: string;
+  generated_by: string;
+}
+
+// Section 7: System
+export interface SystemHealthResponse {
+  status: string;
+  environment?: string;
+  database?: string;
+}
+
 
 
 

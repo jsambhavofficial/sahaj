@@ -78,7 +78,7 @@ export default function SeniorHelpPage() {
       };
 
       await defaultApiClient.post("/api/v1/senior/help-requests", payload);
-      setSuccessMsg("Aapki request Samarth team tak pahunch gayi hai. Care coordinator jald call karenge.");
+      setSuccessMsg("Aapki request Sahaj team tak pahunch gayi hai. Care coordinator jald call karenge.");
       setMessage("Namaste, kripya mujhe call karein.");
       fetchHelpRequests();
     } catch (err: any) {

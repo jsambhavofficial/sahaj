@@ -158,7 +158,7 @@ describe("Phase 7 Senior Citizen Portal & Check-in Frontend", () => {
     fireEvent.click(screen.getByText("Aage Badhein (Next)"));
 
     // Step 4: Callback toggle
-    expect(screen.getByText("Kadam 4: Kya aap Samarth team se phone par baat karna chahte hain?")).toBeInTheDocument();
+    expect(screen.getByText("Kadam 4: Kya aap Sahaj team se phone par baat karna chahte hain?")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Aage Badhein (Review)"));
 
     // Step 5: Review & Submit
