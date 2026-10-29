@@ -1,0 +1,78 @@
+schema_version: "1.0.0"
+
+# Cohort & Timeline
+cohort_size: 200
+observation_start_date: "2026-01-01"
+observation_days: 90
+random_seed: 42
+
+# Output paths
+output_directory: "data"
+
+# Geographic & Operational Settings
+city_count: 8
+cities:
+  - "CITY_DELHI"
+  - "CITY_GURUGRAM"
+  - "CITY_NOIDA"
+  - "CITY_LUCKNOW"
+  - "CITY_JAIPUR"
+  - "CITY_PUNE"
+  - "CITY_BENGALURU"
+  - "CITY_CHANDIGARH"
+
+coordinator_count: 10
+
+# Language Preferences (must sum to 1.0)
+language_distribution:
+  hindi: 0.45
+  hinglish: 0.35
+  english: 0.20
+
+# Scenario Allocation Proportions (must sum to 1.0)
+scenario_proportions:
+  stable: 0.50
+  intermittent: 0.20
+  gradual_decline: 0.20
+  acute: 0.10
+
+# Sub-scenario distribution details
+sub_scenarios:
+  stable:
+    - "SCEN_STABLE_ACTIVE"
+    - "SCEN_STABLE_SEDENTARY"
+    - "SCEN_STABLE_MILD_FLUCTUATION"
+  intermittent:
+    - "SCEN_INTERMITTENT_SLEEP_DISRUPTION"
+    - "SCEN_INTERMITTENT_MILD_PAIN_FLARE"
+    - "SCEN_ISOLATED_MEDICATION_OMISSION"
+  gradual_decline:
+    - "SCEN_GRADUAL_MOBILITY_DECLINE"
+    - "SCEN_GRADUAL_COGNITIVE_FRAILTY"
+    - "SCEN_GRADUAL_APPETITE_WEIGHT_LOSS"
+    - "SCEN_GRADUAL_RESPIRATORY_DECONDITIONING"
+    - "SCEN_GRADUAL_DECLINE_WITH_RECOVERY"
+    - "SCEN_GRADUAL_DECLINE_DIFFICULT_MASKED"
+  acute:
+    - "SCEN_ACUTE_FALL_INCIDENT"
+    - "SCEN_ACUTE_HYPERTENSIVE_CRISIS"
+    - "SCEN_ACUTE_DIZZINESS_ORTHOSTATIC"
+
+# Missingness Settings (probabilities of missing observations / device gaps)
+missingness_settings:
+  vitals_device_failure_rate: 0.04
+  glucose_measurement_rate: 0.42
+  bp_measurement_rate: 0.68
+  spo2_measurement_rate: 0.60
+  weight_measurement_rate: 0.22
+  checkin_miss_rate_baseline: 0.08
+  activity_sensor_failure_rate: 0.05
+  family_observation_probability: 0.35
+
+# Measurement Frequency Settings
+measurement_frequency_settings:
+  bp_daily_frequency: [1, 2]
+  glucose_daily_frequency: [1, 2]
+  spo2_daily_frequency: [1, 2]
+  weight_weekly_frequency: [1, 2]
+

@@ -1,0 +1,30 @@
+{
+  "validation_timestamp": "2026-10-29 08:20:14",
+  "validation_status": "PASSED",
+  "total_rows": 18000,
+  "expected_rows": 18000,
+  "unique_seniors": 200,
+  "unique_dates": 90,
+  "duplicate_senior_date_pairs": 0,
+  "json_parsing_errors": 0,
+  "target_leakage_detected": [],
+  "lossless_reconciliation": {
+    "source_vitals_count": 55581,
+    "master_vitals_count": 55581,
+    "unmapped_vitals_count": 0,
+    "source_medication_events_count": 52110,
+    "master_medication_events_count": 52110,
+    "unmapped_medication_events_count": 0,
+    "source_checkins_count": 12828,
+    "master_checkins_count": 12828,
+    "unmapped_checkins_count": 0,
+    "source_nlp_annotations_count": 15933,
+    "master_nlp_annotations_count": 15933,
+    "unmapped_annotations_count": 0,
+    "source_family_observations_count": 2167,
+    "master_family_observations_count": 2167,
+    "unmapped_family_count": 0
+  },
+  "unmapped_exceptions": [],
+  "summary": "Master dataset successfully consolidated 18,000 senior-day records. All 55,581 vitals, 52,110 medication events, 12,828 check-ins, and 15,933 NLP annotations losslessly reconciled into deterministic JSON columns with zero target leakage."
+}
