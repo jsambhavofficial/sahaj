@@ -1,435 +1,542 @@
-medication_id,senior_id,scheduled_start_date,scheduled_end_date,scheduled_times_per_day,active_status
-MED_S0001_01,S0001,2025-12-06,2026-06-09,1,True
-MED_S0001_02,S0001,2025-11-16,2026-06-27,1,True
-MED_S0002_01,S0002,2025-12-22,2026-05-12,1,True
-MED_S0002_02,S0002,2025-11-19,2026-06-25,1,True
-MED_S0003_01,S0003,2025-12-22,2026-06-10,2,True
-MED_S0003_02,S0003,2025-11-13,2026-06-26,2,True
-MED_S0003_03,S0003,2025-12-01,2026-05-24,1,True
-MED_S0004_01,S0004,2025-11-19,2026-05-11,2,True
-MED_S0004_02,S0004,2025-11-25,2026-05-18,2,True
-MED_S0005_01,S0005,2025-12-15,2026-06-06,2,True
-MED_S0006_01,S0006,2025-11-18,2026-05-05,2,True
-MED_S0007_01,S0007,2025-11-03,2026-05-18,2,True
-MED_S0008_01,S0008,2025-11-06,2026-06-11,1,True
-MED_S0008_02,S0008,2025-11-17,2026-05-07,2,True
-MED_S0008_03,S0008,2025-11-30,2026-05-01,2,True
-MED_S0009_01,S0009,2025-11-25,2026-05-03,1,True
-MED_S0010_01,S0010,2025-11-29,2026-05-22,2,True
-MED_S0010_02,S0010,2025-12-02,2026-06-10,2,True
-MED_S0011_01,S0011,2025-11-06,2026-06-17,2,True
-MED_S0012_01,S0012,2025-11-28,2026-05-12,2,True
-MED_S0013_01,S0013,2025-12-01,2026-06-19,1,True
-MED_S0013_02,S0013,2025-12-13,2026-05-28,1,True
-MED_S0014_01,S0014,2025-11-17,2026-06-06,1,True
-MED_S0014_02,S0014,2025-11-25,2026-05-03,2,True
-MED_S0015_01,S0015,2025-11-05,2026-06-03,1,True
-MED_S0015_02,S0015,2025-12-09,2026-05-30,2,True
-MED_S0015_03,S0015,2025-12-02,2026-05-27,1,True
-MED_S0015_04,S0015,2025-11-22,2026-05-14,1,True
-MED_S0016_01,S0016,2025-11-22,2026-06-04,1,True
-MED_S0016_02,S0016,2025-12-05,2026-05-14,2,True
-MED_S0016_03,S0016,2025-11-12,2026-05-29,1,True
-MED_S0016_04,S0016,2025-12-16,2026-06-02,1,True
-MED_S0017_01,S0017,2025-11-03,2026-06-11,1,True
-MED_S0018_01,S0018,2025-11-14,2026-06-26,2,True
-MED_S0018_02,S0018,2025-11-05,2026-05-10,1,True
-MED_S0018_03,S0018,2025-11-17,2026-05-05,1,True
-MED_S0019_01,S0019,2025-11-22,2026-05-28,2,True
-MED_S0019_02,S0019,2025-12-03,2026-05-19,1,True
-MED_S0020_01,S0020,2025-11-16,2026-05-08,1,True
-MED_S0021_01,S0021,2025-12-14,2026-05-05,1,True
-MED_S0021_02,S0021,2025-11-19,2026-06-24,1,True
-MED_S0022_01,S0022,2025-11-18,2026-06-24,1,True
-MED_S0022_02,S0022,2025-12-09,2026-06-06,2,True
-MED_S0023_01,S0023,2025-12-09,2026-06-09,1,True
-MED_S0024_01,S0024,2025-11-11,2026-06-17,1,True
-MED_S0024_02,S0024,2025-12-05,2026-05-23,2,True
-MED_S0024_03,S0024,2025-12-21,2026-06-08,1,True
-MED_S0025_01,S0025,2025-12-16,2026-05-24,1,True
-MED_S0025_02,S0025,2025-11-16,2026-06-03,1,True
-MED_S0026_01,S0026,2025-12-13,2026-05-09,1,True
-MED_S0026_02,S0026,2025-11-04,2026-05-20,1,True
-MED_S0026_03,S0026,2025-12-15,2026-05-31,1,True
-MED_S0027_01,S0027,2025-11-06,2026-05-06,1,True
-MED_S0027_02,S0027,2025-11-19,2026-06-11,1,True
-MED_S0028_01,S0028,2025-11-04,2026-05-07,1,True
-MED_S0028_02,S0028,2025-11-10,2026-06-25,1,True
-MED_S0028_03,S0028,2025-11-18,2026-06-14,1,True
-MED_S0028_04,S0028,2025-11-18,2026-06-19,1,True
-MED_S0029_01,S0029,2025-12-03,2026-05-13,1,True
-MED_S0030_01,S0030,2025-11-26,2026-06-12,1,True
-MED_S0030_02,S0030,2025-12-10,2026-06-10,1,True
-MED_S0030_03,S0030,2025-12-07,2026-06-12,1,True
-MED_S0030_04,S0030,2025-11-25,2026-05-14,1,True
-MED_S0031_01,S0031,2025-11-08,2026-06-11,1,True
-MED_S0032_01,S0032,2025-12-18,2026-06-17,1,True
-MED_S0032_02,S0032,2025-11-18,2026-06-03,2,True
-MED_S0033_01,S0033,2025-11-29,2026-05-15,1,True
-MED_S0034_01,S0034,2025-11-26,2026-06-08,1,True
-MED_S0035_01,S0035,2025-12-21,2026-05-01,1,True
-MED_S0035_02,S0035,2025-11-06,2026-05-16,2,True
-MED_S0035_03,S0035,2025-12-07,2026-06-16,1,True
-MED_S0036_01,S0036,2025-11-26,2026-05-22,2,True
-MED_S0037_01,S0037,2025-11-07,2026-06-11,1,True
-MED_S0037_02,S0037,2025-12-02,2026-06-11,1,True
-MED_S0037_03,S0037,2025-12-14,2026-05-31,2,True
-MED_S0038_01,S0038,2025-11-23,2026-05-15,1,True
-MED_S0038_02,S0038,2025-12-02,2026-06-03,1,True
-MED_S0039_01,S0039,2025-12-05,2026-06-28,2,True
-MED_S0040_01,S0040,2025-12-02,2026-05-20,1,True
-MED_S0040_02,S0040,2025-11-20,2026-05-08,1,True
-MED_S0041_01,S0041,2025-11-17,2026-05-24,1,True
-MED_S0042_01,S0042,2025-11-19,2026-06-12,1,True
-MED_S0043_01,S0043,2025-11-29,2026-06-22,1,True
-MED_S0043_02,S0043,2025-12-04,2026-06-05,2,True
-MED_S0043_03,S0043,2025-12-17,2026-05-17,1,True
-MED_S0044_01,S0044,2025-12-15,2026-05-13,1,True
-MED_S0045_01,S0045,2025-11-09,2026-05-15,2,True
-MED_S0045_02,S0045,2025-11-26,2026-05-16,1,True
-MED_S0045_03,S0045,2025-11-07,2026-05-07,1,True
-MED_S0046_01,S0046,2025-12-09,2026-06-02,1,True
-MED_S0046_02,S0046,2025-11-30,2026-06-28,1,True
-MED_S0047_01,S0047,2025-12-19,2026-06-20,1,True
-MED_S0048_01,S0048,2025-11-21,2026-06-04,1,True
-MED_S0048_02,S0048,2025-11-24,2026-06-11,1,True
-MED_S0049_01,S0049,2025-12-07,2026-05-22,1,True
-MED_S0049_02,S0049,2025-12-08,2026-06-23,2,True
-MED_S0049_03,S0049,2025-11-03,2026-06-06,1,True
-MED_S0050_01,S0050,2025-11-28,2026-05-24,2,True
-MED_S0050_02,S0050,2025-12-01,2026-06-20,2,True
-MED_S0051_01,S0051,2025-11-28,2026-06-27,1,True
-MED_S0051_02,S0051,2025-12-13,2026-05-19,2,True
-MED_S0052_01,S0052,2025-11-25,2026-05-21,2,True
-MED_S0052_02,S0052,2025-12-16,2026-06-29,2,True
-MED_S0053_01,S0053,2025-11-30,2026-06-27,1,True
-MED_S0054_01,S0054,2025-11-29,2026-06-10,2,True
-MED_S0054_02,S0054,2025-11-19,2026-05-20,1,True
-MED_S0055_01,S0055,2025-12-10,2026-05-18,2,True
-MED_S0056_01,S0056,2025-12-12,2026-06-11,1,True
-MED_S0056_02,S0056,2025-11-09,2026-05-03,1,True
-MED_S0056_03,S0056,2025-11-06,2026-06-10,1,True
-MED_S0057_01,S0057,2025-11-21,2026-06-15,2,True
-MED_S0057_02,S0057,2025-12-19,2026-06-25,2,True
-MED_S0057_03,S0057,2025-12-17,2026-05-16,2,True
-MED_S0058_01,S0058,2025-12-09,2026-05-20,2,True
-MED_S0058_02,S0058,2025-12-18,2026-05-16,1,True
-MED_S0059_01,S0059,2025-11-05,2026-06-04,1,True
-MED_S0059_02,S0059,2025-12-08,2026-05-26,2,True
-MED_S0059_03,S0059,2025-11-27,2026-05-01,1,True
-MED_S0060_01,S0060,2025-11-10,2026-06-26,1,True
-MED_S0060_02,S0060,2025-11-23,2026-05-01,2,True
-MED_S0061_01,S0061,2025-12-21,2026-06-01,1,True
-MED_S0061_02,S0061,2025-11-16,2026-05-13,1,True
-MED_S0061_03,S0061,2025-12-17,2026-06-03,1,True
-MED_S0062_01,S0062,2025-12-15,2026-05-12,1,True
-MED_S0062_02,S0062,2025-11-30,2026-06-24,2,True
-MED_S0063_01,S0063,2025-11-09,2026-06-01,1,True
-MED_S0064_01,S0064,2025-11-25,2026-05-27,1,True
-MED_S0065_01,S0065,2025-11-15,2026-06-08,1,True
-MED_S0065_02,S0065,2025-12-09,2026-05-06,1,True
-MED_S0066_01,S0066,2025-12-03,2026-05-20,1,True
-MED_S0067_01,S0067,2025-11-26,2026-06-22,1,True
-MED_S0067_02,S0067,2025-11-15,2026-06-24,2,True
-MED_S0068_01,S0068,2025-12-17,2026-05-07,2,True
-MED_S0069_01,S0069,2025-11-21,2026-05-10,2,True
-MED_S0069_02,S0069,2025-12-20,2026-06-18,2,True
-MED_S0069_03,S0069,2025-11-22,2026-05-23,1,True
-MED_S0070_01,S0070,2025-11-22,2026-05-17,1,True
-MED_S0070_02,S0070,2025-11-16,2026-06-02,2,True
-MED_S0071_01,S0071,2025-11-07,2026-06-19,1,True
-MED_S0071_02,S0071,2025-11-28,2026-05-03,2,True
-MED_S0071_03,S0071,2025-12-01,2026-05-26,2,True
-MED_S0072_01,S0072,2025-11-03,2026-05-02,1,True
-MED_S0073_01,S0073,2025-11-06,2026-05-08,2,True
-MED_S0073_02,S0073,2025-11-19,2026-06-18,2,True
-MED_S0074_01,S0074,2025-11-20,2026-05-15,2,True
-MED_S0075_01,S0075,2025-12-17,2026-06-15,1,True
-MED_S0075_02,S0075,2025-12-04,2026-05-23,2,True
-MED_S0076_01,S0076,2025-11-09,2026-06-27,1,True
-MED_S0076_02,S0076,2025-11-27,2026-05-21,1,True
-MED_S0077_01,S0077,2025-12-20,2026-06-14,1,True
-MED_S0077_02,S0077,2025-12-05,2026-05-11,2,True
-MED_S0077_03,S0077,2025-11-18,2026-06-16,2,True
-MED_S0078_01,S0078,2025-12-11,2026-06-08,1,True
-MED_S0079_01,S0079,2025-11-30,2026-06-07,2,True
-MED_S0080_01,S0080,2025-12-05,2026-05-01,1,True
-MED_S0080_02,S0080,2025-12-12,2026-05-17,1,True
-MED_S0080_03,S0080,2025-12-11,2026-05-17,1,True
-MED_S0081_01,S0081,2025-11-10,2026-06-09,2,True
-MED_S0081_02,S0081,2025-12-20,2026-05-11,1,True
-MED_S0081_03,S0081,2025-12-16,2026-05-17,2,True
-MED_S0082_01,S0082,2025-11-15,2026-05-02,2,True
-MED_S0082_02,S0082,2025-11-27,2026-05-17,1,True
-MED_S0082_03,S0082,2025-12-10,2026-05-05,1,True
-MED_S0083_01,S0083,2025-12-04,2026-06-25,2,True
-MED_S0083_02,S0083,2025-11-11,2026-05-25,1,True
-MED_S0084_01,S0084,2025-11-20,2026-06-14,1,True
-MED_S0084_02,S0084,2025-11-21,2026-05-06,1,True
-MED_S0084_03,S0084,2025-11-05,2026-05-16,1,True
-MED_S0084_04,S0084,2025-12-16,2026-05-21,1,True
-MED_S0085_01,S0085,2025-11-25,2026-05-26,1,True
-MED_S0085_02,S0085,2025-11-09,2026-05-13,1,True
-MED_S0086_01,S0086,2025-11-25,2026-05-24,2,True
-MED_S0086_02,S0086,2025-12-17,2026-06-04,1,True
-MED_S0086_03,S0086,2025-12-13,2026-06-20,1,True
-MED_S0087_01,S0087,2025-12-15,2026-06-13,1,True
-MED_S0088_01,S0088,2025-11-12,2026-06-06,1,True
-MED_S0088_02,S0088,2025-11-28,2026-05-09,1,True
-MED_S0089_01,S0089,2025-12-09,2026-06-10,1,True
-MED_S0089_02,S0089,2025-11-05,2026-05-12,1,True
-MED_S0090_01,S0090,2025-11-14,2026-05-21,2,True
-MED_S0090_02,S0090,2025-11-13,2026-05-16,1,True
-MED_S0090_03,S0090,2025-12-19,2026-05-05,1,True
-MED_S0090_04,S0090,2025-11-07,2026-05-03,2,True
-MED_S0091_01,S0091,2025-12-09,2026-05-10,2,True
-MED_S0091_02,S0091,2025-11-24,2026-06-27,1,True
-MED_S0092_01,S0092,2025-11-25,2026-05-16,2,True
-MED_S0092_02,S0092,2025-11-27,2026-06-06,1,True
-MED_S0092_03,S0092,2025-11-17,2026-05-14,1,True
-MED_S0093_01,S0093,2025-11-26,2026-06-08,2,True
-MED_S0093_02,S0093,2025-11-06,2026-06-04,1,True
-MED_S0093_03,S0093,2025-12-12,2026-05-30,1,True
-MED_S0094_01,S0094,2025-12-17,2026-05-05,1,True
-MED_S0094_02,S0094,2025-11-15,2026-06-06,1,True
-MED_S0094_03,S0094,2025-11-27,2026-05-19,2,True
-MED_S0094_04,S0094,2025-12-22,2026-05-25,1,True
-MED_S0095_01,S0095,2025-12-03,2026-06-03,2,True
-MED_S0095_02,S0095,2025-12-21,2026-06-02,1,True
-MED_S0095_03,S0095,2025-12-14,2026-05-11,2,True
-MED_S0096_01,S0096,2025-11-22,2026-06-16,2,True
-MED_S0097_01,S0097,2025-12-19,2026-05-17,2,True
-MED_S0097_02,S0097,2025-11-10,2026-06-26,1,True
-MED_S0098_01,S0098,2025-11-05,2026-05-21,1,True
-MED_S0099_01,S0099,2025-11-27,2026-05-04,1,True
-MED_S0099_02,S0099,2025-11-12,2026-06-10,1,True
-MED_S0099_03,S0099,2025-12-08,2026-05-18,1,True
-MED_S0100_01,S0100,2025-11-05,2026-06-13,1,True
-MED_S0100_02,S0100,2025-12-15,2026-06-10,1,True
-MED_S0101_01,S0101,2025-11-22,2026-06-12,2,True
-MED_S0101_02,S0101,2025-11-20,2026-06-10,2,True
-MED_S0102_01,S0102,2025-11-18,2026-06-24,1,True
-MED_S0103_01,S0103,2025-12-16,2026-05-09,1,True
-MED_S0103_02,S0103,2025-11-21,2026-05-08,1,True
-MED_S0104_01,S0104,2025-12-08,2026-05-25,2,True
-MED_S0104_02,S0104,2025-12-06,2026-06-24,2,True
-MED_S0105_01,S0105,2025-11-28,2026-05-11,1,True
-MED_S0105_02,S0105,2025-12-10,2026-06-04,1,True
-MED_S0106_01,S0106,2025-12-11,2026-05-25,1,True
-MED_S0107_01,S0107,2025-11-29,2026-05-26,1,True
-MED_S0107_02,S0107,2025-12-15,2026-05-25,1,True
-MED_S0108_01,S0108,2025-11-07,2026-06-01,1,True
-MED_S0109_01,S0109,2025-12-11,2026-05-23,1,True
-MED_S0110_01,S0110,2025-11-03,2026-06-21,1,True
-MED_S0110_02,S0110,2025-12-16,2026-06-28,1,True
-MED_S0110_03,S0110,2025-12-22,2026-06-03,2,True
-MED_S0111_01,S0111,2025-11-19,2026-05-15,1,True
-MED_S0111_02,S0111,2025-11-24,2026-05-07,2,True
-MED_S0112_01,S0112,2025-11-05,2026-05-30,2,True
-MED_S0113_01,S0113,2025-12-14,2026-06-10,1,True
-MED_S0113_02,S0113,2025-11-11,2026-05-13,1,True
-MED_S0114_01,S0114,2025-11-06,2026-05-02,1,True
-MED_S0114_02,S0114,2025-12-12,2026-05-23,1,True
-MED_S0115_01,S0115,2025-11-19,2026-06-15,1,True
-MED_S0115_02,S0115,2025-11-05,2026-05-22,2,True
-MED_S0116_01,S0116,2025-11-25,2026-05-22,1,True
-MED_S0116_02,S0116,2025-12-12,2026-06-15,1,True
-MED_S0116_03,S0116,2025-12-12,2026-05-11,2,True
-MED_S0116_04,S0116,2025-12-14,2026-05-01,1,True
-MED_S0117_01,S0117,2025-12-20,2026-05-28,1,True
-MED_S0117_02,S0117,2025-12-09,2026-05-30,1,True
-MED_S0118_01,S0118,2025-12-07,2026-06-20,2,True
-MED_S0118_02,S0118,2025-12-22,2026-06-26,2,True
-MED_S0118_03,S0118,2025-11-30,2026-06-13,1,True
-MED_S0119_01,S0119,2025-12-02,2026-05-02,2,True
-MED_S0120_01,S0120,2025-12-06,2026-06-10,1,True
-MED_S0120_02,S0120,2025-11-23,2026-05-29,2,True
-MED_S0121_01,S0121,2025-11-06,2026-06-25,1,True
-MED_S0121_02,S0121,2025-12-07,2026-05-04,1,True
-MED_S0121_03,S0121,2025-11-29,2026-05-14,1,True
-MED_S0122_01,S0122,2025-11-28,2026-05-31,1,True
-MED_S0122_02,S0122,2025-12-08,2026-05-07,1,True
-MED_S0123_01,S0123,2025-12-09,2026-06-27,2,True
-MED_S0124_01,S0124,2025-11-15,2026-05-20,2,True
-MED_S0124_02,S0124,2025-12-02,2026-05-22,1,True
-MED_S0125_01,S0125,2025-12-15,2026-05-05,2,True
-MED_S0125_02,S0125,2025-12-21,2026-05-26,2,True
-MED_S0125_03,S0125,2025-11-11,2026-05-14,1,True
-MED_S0126_01,S0126,2025-11-19,2026-05-21,1,True
-MED_S0126_02,S0126,2025-11-24,2026-06-06,2,True
-MED_S0127_01,S0127,2025-11-14,2026-06-28,1,True
-MED_S0127_02,S0127,2025-11-13,2026-06-23,2,True
-MED_S0127_03,S0127,2025-12-06,2026-06-09,2,True
-MED_S0127_04,S0127,2025-11-18,2026-05-24,1,True
-MED_S0128_01,S0128,2025-12-22,2026-05-24,1,True
-MED_S0128_02,S0128,2025-11-13,2026-06-02,1,True
-MED_S0129_01,S0129,2025-11-12,2026-05-02,2,True
-MED_S0129_02,S0129,2025-11-04,2026-05-26,1,True
-MED_S0129_03,S0129,2025-11-16,2026-05-27,1,True
-MED_S0129_04,S0129,2025-12-22,2026-05-04,1,True
-MED_S0130_01,S0130,2025-11-18,2026-06-22,1,True
-MED_S0130_02,S0130,2025-12-20,2026-06-04,1,True
-MED_S0131_01,S0131,2025-12-03,2026-06-28,1,True
-MED_S0131_02,S0131,2025-11-14,2026-06-13,1,True
-MED_S0132_01,S0132,2025-12-10,2026-06-02,2,True
-MED_S0133_01,S0133,2025-12-09,2026-06-27,1,True
-MED_S0134_01,S0134,2025-11-19,2026-05-16,2,True
-MED_S0134_02,S0134,2025-11-07,2026-05-11,1,True
-MED_S0135_01,S0135,2025-12-19,2026-05-20,1,True
-MED_S0136_01,S0136,2025-11-24,2026-05-13,2,True
-MED_S0136_02,S0136,2025-11-13,2026-06-14,1,True
-MED_S0137_01,S0137,2025-12-18,2026-06-09,1,True
-MED_S0137_02,S0137,2025-12-12,2026-05-11,1,True
-MED_S0138_01,S0138,2025-11-05,2026-05-14,2,True
-MED_S0138_02,S0138,2025-12-17,2026-05-01,1,True
-MED_S0139_01,S0139,2025-12-15,2026-05-03,1,True
-MED_S0139_02,S0139,2025-11-30,2026-06-19,1,True
-MED_S0139_03,S0139,2025-12-07,2026-05-12,1,True
-MED_S0140_01,S0140,2025-12-08,2026-06-08,1,True
-MED_S0140_02,S0140,2025-11-24,2026-05-22,1,True
-MED_S0140_03,S0140,2025-12-01,2026-05-25,1,True
-MED_S0141_01,S0141,2025-11-28,2026-06-23,1,True
-MED_S0141_02,S0141,2025-12-05,2026-05-19,2,True
-MED_S0141_03,S0141,2025-12-06,2026-06-19,1,True
-MED_S0142_01,S0142,2025-12-11,2026-06-28,2,True
-MED_S0142_02,S0142,2025-12-18,2026-06-19,1,True
-MED_S0142_03,S0142,2025-12-04,2026-06-05,1,True
-MED_S0142_04,S0142,2025-11-04,2026-05-11,2,True
-MED_S0143_01,S0143,2025-11-13,2026-05-03,1,True
-MED_S0143_02,S0143,2025-12-19,2026-05-16,1,True
-MED_S0143_03,S0143,2025-11-04,2026-05-14,2,True
-MED_S0143_04,S0143,2025-12-01,2026-06-20,1,True
-MED_S0144_01,S0144,2025-11-15,2026-05-08,1,True
-MED_S0145_01,S0145,2025-11-18,2026-06-10,1,True
-MED_S0145_02,S0145,2025-12-17,2026-05-21,1,True
-MED_S0146_01,S0146,2025-11-23,2026-05-07,2,True
-MED_S0146_02,S0146,2025-12-22,2026-05-23,1,True
-MED_S0146_03,S0146,2025-11-04,2026-06-27,2,True
-MED_S0147_01,S0147,2025-12-17,2026-06-01,2,True
-MED_S0147_02,S0147,2025-11-10,2026-06-16,1,True
-MED_S0148_01,S0148,2025-12-14,2026-05-27,1,True
-MED_S0148_02,S0148,2025-12-02,2026-06-27,2,True
-MED_S0149_01,S0149,2025-12-18,2026-06-07,1,True
-MED_S0149_02,S0149,2025-11-12,2026-05-10,1,True
-MED_S0149_03,S0149,2025-12-05,2026-06-25,1,True
-MED_S0150_01,S0150,2025-12-06,2026-05-13,2,True
-MED_S0150_02,S0150,2025-12-21,2026-05-21,2,True
-MED_S0151_01,S0151,2025-11-09,2026-05-14,2,True
-MED_S0151_02,S0151,2025-11-10,2026-05-02,1,True
-MED_S0152_01,S0152,2025-12-20,2026-06-26,1,True
-MED_S0152_02,S0152,2025-11-24,2026-05-24,1,True
-MED_S0152_03,S0152,2025-11-13,2026-05-04,2,True
-MED_S0153_01,S0153,2025-11-07,2026-06-11,2,True
-MED_S0154_01,S0154,2025-12-04,2026-06-04,1,True
-MED_S0154_02,S0154,2025-11-03,2026-06-02,1,True
-MED_S0154_03,S0154,2025-12-10,2026-06-29,1,True
-MED_S0155_01,S0155,2025-12-10,2026-06-10,1,True
-MED_S0155_02,S0155,2025-12-13,2026-06-01,2,True
-MED_S0155_03,S0155,2025-12-11,2026-05-05,1,True
-MED_S0156_01,S0156,2025-11-08,2026-05-19,1,True
-MED_S0156_02,S0156,2025-11-03,2026-06-21,2,True
-MED_S0156_03,S0156,2025-12-17,2026-05-03,1,True
-MED_S0157_01,S0157,2025-12-20,2026-05-10,1,True
-MED_S0157_02,S0157,2025-12-06,2026-06-01,1,True
-MED_S0158_01,S0158,2025-11-30,2026-06-13,1,True
-MED_S0158_02,S0158,2025-11-25,2026-05-27,1,True
-MED_S0159_01,S0159,2025-11-16,2026-05-12,1,True
-MED_S0159_02,S0159,2025-11-06,2026-05-31,1,True
-MED_S0160_01,S0160,2025-11-04,2026-06-08,2,True
-MED_S0160_02,S0160,2025-11-11,2026-05-23,2,True
-MED_S0160_03,S0160,2025-11-27,2026-06-24,1,True
-MED_S0160_04,S0160,2025-11-15,2026-06-10,1,True
-MED_S0161_01,S0161,2025-11-17,2026-05-09,2,True
-MED_S0161_02,S0161,2025-12-02,2026-05-02,2,True
-MED_S0161_03,S0161,2025-11-18,2026-05-06,1,True
-MED_S0161_04,S0161,2025-12-20,2026-05-02,1,True
-MED_S0162_01,S0162,2025-11-05,2026-05-19,2,True
-MED_S0162_02,S0162,2025-11-08,2026-06-29,1,True
-MED_S0163_01,S0163,2025-11-11,2026-06-02,1,True
-MED_S0163_02,S0163,2025-11-11,2026-06-08,2,True
-MED_S0164_01,S0164,2025-12-17,2026-05-23,1,True
-MED_S0164_02,S0164,2025-11-27,2026-05-06,2,True
-MED_S0164_03,S0164,2025-11-25,2026-06-03,1,True
-MED_S0164_04,S0164,2025-11-30,2026-06-14,1,True
-MED_S0165_01,S0165,2025-11-15,2026-06-02,1,True
-MED_S0165_02,S0165,2025-11-16,2026-06-20,1,True
-MED_S0166_01,S0166,2025-12-14,2026-05-05,1,True
-MED_S0166_02,S0166,2025-11-24,2026-06-15,2,True
-MED_S0166_03,S0166,2025-12-13,2026-06-29,2,True
-MED_S0167_01,S0167,2025-12-05,2026-06-19,1,True
-MED_S0167_02,S0167,2025-12-20,2026-05-17,2,True
-MED_S0167_03,S0167,2025-11-24,2026-06-04,2,True
-MED_S0168_01,S0168,2025-11-30,2026-05-29,1,True
-MED_S0169_01,S0169,2025-12-05,2026-06-22,2,True
-MED_S0169_02,S0169,2025-12-07,2026-06-01,1,True
-MED_S0169_03,S0169,2025-12-18,2026-06-26,1,True
-MED_S0170_01,S0170,2025-11-18,2026-05-28,1,True
-MED_S0170_02,S0170,2025-11-13,2026-06-25,1,True
-MED_S0171_01,S0171,2025-11-20,2026-05-19,1,True
-MED_S0171_02,S0171,2025-12-16,2026-06-11,1,True
-MED_S0172_01,S0172,2025-12-19,2026-06-20,2,True
-MED_S0172_02,S0172,2025-11-21,2026-06-03,1,True
-MED_S0173_01,S0173,2025-12-04,2026-06-02,1,True
-MED_S0173_02,S0173,2025-11-27,2026-05-22,2,True
-MED_S0173_03,S0173,2025-11-08,2026-06-26,1,True
-MED_S0174_01,S0174,2025-12-02,2026-05-09,1,True
-MED_S0175_01,S0175,2025-12-17,2026-05-05,1,True
-MED_S0176_01,S0176,2025-11-30,2026-05-26,2,True
-MED_S0176_02,S0176,2025-11-18,2026-05-24,1,True
-MED_S0176_03,S0176,2025-12-07,2026-06-12,2,True
-MED_S0177_01,S0177,2025-12-13,2026-05-18,1,True
-MED_S0177_02,S0177,2025-11-10,2026-05-26,1,True
-MED_S0178_01,S0178,2025-11-21,2026-05-29,2,True
-MED_S0178_02,S0178,2025-11-17,2026-05-26,1,True
-MED_S0178_03,S0178,2025-11-05,2026-05-01,1,True
-MED_S0179_01,S0179,2025-11-04,2026-06-01,2,True
-MED_S0179_02,S0179,2025-11-12,2026-06-16,1,True
-MED_S0179_03,S0179,2025-12-02,2026-06-05,2,True
-MED_S0180_01,S0180,2025-11-04,2026-05-12,1,True
-MED_S0180_02,S0180,2025-12-06,2026-05-06,1,True
-MED_S0180_03,S0180,2025-12-19,2026-06-07,2,True
-MED_S0180_04,S0180,2025-11-19,2026-05-04,1,True
-MED_S0181_01,S0181,2025-12-18,2026-06-06,2,True
-MED_S0181_02,S0181,2025-12-15,2026-05-21,1,True
-MED_S0181_03,S0181,2025-11-08,2026-05-07,2,True
-MED_S0182_01,S0182,2025-11-29,2026-05-01,1,True
-MED_S0182_02,S0182,2025-11-27,2026-06-06,1,True
-MED_S0183_01,S0183,2025-11-05,2026-06-08,1,True
-MED_S0183_02,S0183,2025-12-03,2026-06-15,1,True
-MED_S0184_01,S0184,2025-12-10,2026-05-27,2,True
-MED_S0184_02,S0184,2025-11-14,2026-06-07,1,True
-MED_S0185_01,S0185,2025-11-23,2026-05-02,1,True
-MED_S0185_02,S0185,2025-11-10,2026-05-15,1,True
-MED_S0185_03,S0185,2025-12-17,2026-06-12,2,True
-MED_S0185_04,S0185,2025-11-28,2026-05-24,1,True
-MED_S0186_01,S0186,2025-11-06,2026-05-07,1,True
-MED_S0186_02,S0186,2025-12-01,2026-06-12,1,True
-MED_S0186_03,S0186,2025-11-08,2026-05-08,1,True
-MED_S0187_01,S0187,2025-11-24,2026-05-14,1,True
-MED_S0188_01,S0188,2025-11-15,2026-05-17,1,True
-MED_S0189_01,S0189,2025-11-09,2026-05-05,2,True
-MED_S0189_02,S0189,2025-12-21,2026-05-31,2,True
-MED_S0190_01,S0190,2025-11-30,2026-05-26,2,True
-MED_S0190_02,S0190,2025-12-19,2026-05-30,1,True
-MED_S0191_01,S0191,2025-11-10,2026-06-14,2,True
-MED_S0191_02,S0191,2025-12-01,2026-05-26,1,True
-MED_S0192_01,S0192,2025-12-04,2026-06-28,1,True
-MED_S0192_02,S0192,2025-12-12,2026-05-31,1,True
-MED_S0193_01,S0193,2025-12-10,2026-05-11,1,True
-MED_S0193_02,S0193,2025-12-19,2026-06-10,1,True
-MED_S0193_03,S0193,2025-11-20,2026-05-22,2,True
-MED_S0194_01,S0194,2025-12-12,2026-06-23,1,True
-MED_S0194_02,S0194,2025-11-15,2026-05-01,1,True
-MED_S0195_01,S0195,2025-11-22,2026-05-10,1,True
-MED_S0195_02,S0195,2025-12-18,2026-05-26,1,True
-MED_S0196_01,S0196,2025-11-13,2026-06-16,1,True
-MED_S0196_02,S0196,2025-11-10,2026-06-05,1,True
-MED_S0196_03,S0196,2025-12-16,2026-05-18,2,True
-MED_S0197_01,S0197,2025-12-06,2026-05-27,2,True
-MED_S0197_02,S0197,2025-12-05,2026-05-30,1,True
-MED_S0198_01,S0198,2025-11-07,2026-05-23,1,True
-MED_S0198_02,S0198,2025-11-27,2026-05-23,2,True
-MED_S0198_03,S0198,2025-11-28,2026-05-27,2,True
-MED_S0199_01,S0199,2025-11-22,2026-06-20,2,True
-MED_S0199_02,S0199,2025-11-20,2026-06-15,1,True
-MED_S0200_01,S0200,2025-12-21,2026-06-19,1,True
+medication_id,senior_id,drug_name,dose,indication,linked_condition,criticality,times_per_day,scheduled_times,start_date,end_date,active,prescribed_by,is_sos
+MED_S0001_01,S0001,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-11-24,,True,treating physician,False
+MED_S0001_02,S0001,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2025-11-28,,True,treating physician,False
+MED_S0003_01,S0003,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2025-05-29,,True,treating physician,False
+MED_S0005_01,S0005,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-08-31,,True,treating physician,False
+MED_S0005_02,S0005,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2025-07-01,,True,treating physician,False
+MED_S0005_03,S0005,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-10-28,,True,treating physician,False
+MED_S0005_04,S0005,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2026-04-03,,True,treating physician,False
+MED_S0005_05,S0005,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2022-09-10,,True,treating physician,False
+MED_S0005_06,S0005,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0006_01,S0006,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-11-24,,True,treating physician,False
+MED_S0006_02,S0006,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2022-11-18,,True,treating physician,False
+MED_S0006_03,S0006,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-05-29,,True,treating physician,False
+MED_S0006_04,S0006,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2022-10-06,,True,treating physician,False
+MED_S0007_01,S0007,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-01-08,,True,treating physician,False
+MED_S0007_02,S0007,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2024-11-11,,True,treating physician,False
+MED_S0007_03,S0007,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0008_01,S0008,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-12-08,,True,treating physician,False
+MED_S0011_01,S0011,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2023-06-09,,True,treating physician,False
+MED_S0011_02,S0011,Thyroxine,50 mcg,thyroid,hypothyroidism,medium,1,06:30,2025-08-03,,True,treating physician,False
+MED_S0012_01,S0012,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2022-06-25,,True,treating physician,False
+MED_S0013_01,S0013,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-05-31,,True,treating physician,False
+MED_S0013_02,S0013,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-09-08,,True,treating physician,False
+MED_S0014_01,S0014,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-04-05,,True,treating physician,False
+MED_S0014_02,S0014,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-07-06,,True,treating physician,False
+MED_S0016_01,S0016,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-12-19,,True,treating physician,False
+MED_S0016_02,S0016,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2025-04-13,,True,treating physician,False
+MED_S0017_01,S0017,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-01-19,,True,treating physician,False
+MED_S0017_02,S0017,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2023-05-11,,True,treating physician,False
+MED_S0021_01,S0021,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2025-10-12,,True,treating physician,False
+MED_S0022_01,S0022,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-07-05,,True,treating physician,False
+MED_S0023_01,S0023,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2022-09-30,,True,treating physician,False
+MED_S0023_02,S0023,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2023-03-20,,True,treating physician,False
+MED_S0023_03,S0023,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0024_01,S0024,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-11-26,,True,treating physician,False
+MED_S0024_02,S0024,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2026-03-28,,True,treating physician,False
+MED_S0024_03,S0024,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2024-07-05,,True,treating physician,False
+MED_S0025_01,S0025,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-03-28,,True,treating physician,False
+MED_S0025_02,S0025,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2024-09-13,,True,treating physician,False
+MED_S0025_03,S0025,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2022-07-21,,True,treating physician,False
+MED_S0025_04,S0025,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2023-12-16,,True,treating physician,False
+MED_S0026_01,S0026,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2024-11-17,,True,treating physician,False
+MED_S0026_02,S0026,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2024-12-16,,True,treating physician,False
+MED_S0026_03,S0026,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0027_01,S0027,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-04-05,,True,treating physician,False
+MED_S0027_02,S0027,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-11-10,,True,treating physician,False
+MED_S0027_03,S0027,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-08-25,,True,treating physician,False
+MED_S0029_01,S0029,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-08-14,,True,treating physician,False
+MED_S0029_02,S0029,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2022-12-10,,True,treating physician,False
+MED_S0029_03,S0029,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-06-11,,True,treating physician,False
+MED_S0029_04,S0029,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2025-11-21,,True,treating physician,False
+MED_S0029_05,S0029,Ecosprin (Aspirin),75 mg,stroke prevention,prior_stroke,high,1,14:00,2026-02-23,,True,treating physician,False
+MED_S0030_01,S0030,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2024-02-04,,True,treating physician,False
+MED_S0031_01,S0031,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-04-05,,True,treating physician,False
+MED_S0031_02,S0031,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0032_01,S0032,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-12-31,,True,treating physician,False
+MED_S0032_02,S0032,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2023-12-09,,True,treating physician,False
+MED_S0032_03,S0032,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2023-01-26,,True,treating physician,False
+MED_S0032_04,S0032,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0033_01,S0033,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2024-03-02,,True,treating physician,False
+MED_S0034_01,S0034,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-05-11,,True,treating physician,False
+MED_S0036_01,S0036,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2022-12-24,,True,treating physician,False
+MED_S0036_02,S0036,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2025-04-09,,True,treating physician,False
+MED_S0037_01,S0037,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-02-23,,True,treating physician,False
+MED_S0037_02,S0037,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2025-04-20,,True,treating physician,False
+MED_S0038_01,S0038,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-12-22,,True,treating physician,False
+MED_S0038_02,S0038,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2023-11-03,,True,treating physician,False
+MED_S0038_03,S0038,Furosemide,20 mg,heart failure,chf,high,1,08:00,2026-01-09,,True,treating physician,False
+MED_S0038_04,S0038,Carvedilol,3.125 mg,heart failure,chf,high,2,08:00|20:00,2023-03-26,,True,treating physician,False
+MED_S0039_01,S0039,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0040_01,S0040,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2026-04-21,,True,treating physician,False
+MED_S0040_02,S0040,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-05-26,,True,treating physician,False
+MED_S0041_01,S0041,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-12-20,,True,treating physician,False
+MED_S0041_02,S0041,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2026-03-05,,True,treating physician,False
+MED_S0041_03,S0041,Thyroxine,50 mcg,thyroid,hypothyroidism,medium,1,06:30,2024-01-21,,True,treating physician,False
+MED_S0041_04,S0041,Donepezil,5 mg,memory,mild_cognitive_impairment,medium,1,21:00,2025-09-15,,True,treating physician,False
+MED_S0042_01,S0042,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-03-02,,True,treating physician,False
+MED_S0042_02,S0042,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0044_01,S0044,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-01-03,,True,treating physician,False
+MED_S0044_02,S0044,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2026-01-04,,True,treating physician,False
+MED_S0044_03,S0044,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0046_01,S0046,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-09-10,,True,treating physician,False
+MED_S0046_02,S0046,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2022-12-11,,True,treating physician,False
+MED_S0047_01,S0047,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-09-18,,True,treating physician,False
+MED_S0048_01,S0048,Thyroxine,50 mcg,thyroid,hypothyroidism,medium,1,06:30,2023-08-06,,True,treating physician,False
+MED_S0049_01,S0049,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2026-04-18,,True,treating physician,False
+MED_S0050_01,S0050,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-08-18,,True,treating physician,False
+MED_S0050_02,S0050,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-11-01,,True,treating physician,False
+MED_S0050_03,S0050,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2024-02-01,,True,treating physician,False
+MED_S0052_01,S0052,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2025-03-06,,True,treating physician,False
+MED_S0054_01,S0054,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2025-12-14,,True,treating physician,False
+MED_S0055_01,S0055,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-05-21,,True,treating physician,False
+MED_S0055_02,S0055,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2023-11-01,,True,treating physician,False
+MED_S0055_03,S0055,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-04-23,,True,treating physician,False
+MED_S0055_04,S0055,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-09-25,,True,treating physician,False
+MED_S0056_01,S0056,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-09-17,,True,treating physician,False
+MED_S0056_02,S0056,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2022-11-18,,True,treating physician,False
+MED_S0056_03,S0056,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2022-10-05,,True,treating physician,False
+MED_S0056_04,S0056,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2024-12-31,,True,treating physician,False
+MED_S0056_05,S0056,Ecosprin (Aspirin),75 mg,stroke prevention,prior_stroke,high,1,14:00,2022-11-11,,True,treating physician,False
+MED_S0057_01,S0057,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-08-08,,True,treating physician,False
+MED_S0057_02,S0057,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2025-02-05,,True,treating physician,False
+MED_S0057_03,S0057,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-03-27,,True,treating physician,False
+MED_S0057_04,S0057,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2022-09-28,,True,treating physician,False
+MED_S0058_01,S0058,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-04-10,,True,treating physician,False
+MED_S0058_02,S0058,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2023-09-13,,True,treating physician,False
+MED_S0058_03,S0058,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-08-29,,True,treating physician,False
+MED_S0058_04,S0058,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2023-04-30,,True,treating physician,False
+MED_S0058_05,S0058,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0059_01,S0059,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-02-14,,True,treating physician,False
+MED_S0060_01,S0060,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2026-04-09,,True,treating physician,False
+MED_S0060_02,S0060,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0061_01,S0061,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-05-08,,True,treating physician,False
+MED_S0061_02,S0061,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2026-03-26,,True,treating physician,False
+MED_S0062_01,S0062,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-03-13,,True,treating physician,False
+MED_S0062_02,S0062,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2025-07-30,,True,treating physician,False
+MED_S0062_03,S0062,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-12-16,,True,treating physician,False
+MED_S0062_04,S0062,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2025-12-22,,True,treating physician,False
+MED_S0062_05,S0062,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2026-04-01,,True,treating physician,False
+MED_S0063_01,S0063,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-04-02,,True,treating physician,False
+MED_S0063_02,S0063,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2026-02-08,,True,treating physician,False
+MED_S0064_01,S0064,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-09-07,,True,treating physician,False
+MED_S0064_02,S0064,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-11-09,,True,treating physician,False
+MED_S0064_03,S0064,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-07-24,,True,treating physician,False
+MED_S0064_04,S0064,Thyroxine,50 mcg,thyroid,hypothyroidism,medium,1,06:30,2024-11-03,,True,treating physician,False
+MED_S0064_05,S0064,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2023-08-21,,True,treating physician,False
+MED_S0065_01,S0065,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-12-28,,True,treating physician,False
+MED_S0065_02,S0065,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-03-02,,True,treating physician,False
+MED_S0065_03,S0065,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-02-23,,True,treating physician,False
+MED_S0065_04,S0065,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2022-11-26,,True,treating physician,False
+MED_S0065_05,S0065,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2023-05-24,,True,treating physician,False
+MED_S0066_01,S0066,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2026-05-03,,True,treating physician,False
+MED_S0066_02,S0066,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-01-07,,True,treating physician,False
+MED_S0066_03,S0066,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-03-24,,True,treating physician,False
+MED_S0066_04,S0066,Donepezil,5 mg,memory,mild_cognitive_impairment,medium,1,21:00,2022-10-11,,True,treating physician,False
+MED_S0067_01,S0067,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-02-19,,True,treating physician,False
+MED_S0068_01,S0068,Ecosprin (Aspirin),75 mg,stroke prevention,prior_stroke,high,1,14:00,2025-12-05,,True,treating physician,False
+MED_S0068_02,S0068,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2025-11-24,,True,treating physician,False
+MED_S0068_03,S0068,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0069_01,S0069,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-02-20,,True,treating physician,False
+MED_S0069_02,S0069,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2022-06-18,,True,treating physician,False
+MED_S0069_03,S0069,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2025-02-20,,True,treating physician,False
+MED_S0069_04,S0069,Ecosprin (Aspirin),75 mg,stroke prevention,prior_stroke,high,1,14:00,2024-10-24,,True,treating physician,False
+MED_S0070_01,S0070,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-08-15,,True,treating physician,False
+MED_S0070_02,S0070,Thyroxine,50 mcg,thyroid,hypothyroidism,medium,1,06:30,2023-03-16,,True,treating physician,False
+MED_S0070_03,S0070,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2023-05-26,,True,treating physician,False
+MED_S0070_04,S0070,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2022-11-25,,True,treating physician,False
+MED_S0070_05,S0070,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0071_01,S0071,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-09-16,,True,treating physician,False
+MED_S0071_02,S0071,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2025-06-11,,True,treating physician,False
+MED_S0072_01,S0072,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2022-11-17,,True,treating physician,False
+MED_S0072_02,S0072,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-09-08,,True,treating physician,False
+MED_S0072_03,S0072,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2022-10-24,,True,treating physician,False
+MED_S0072_04,S0072,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2025-12-10,,True,treating physician,False
+MED_S0072_05,S0072,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2025-11-03,,True,treating physician,False
+MED_S0073_01,S0073,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-08-17,,True,treating physician,False
+MED_S0073_02,S0073,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2025-01-27,,True,treating physician,False
+MED_S0073_03,S0073,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2023-05-04,,True,treating physician,False
+MED_S0073_04,S0073,Ecosprin (Aspirin),75 mg,stroke prevention,prior_stroke,high,1,14:00,2023-02-16,,True,treating physician,False
+MED_S0074_01,S0074,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-06-07,,True,treating physician,False
+MED_S0074_02,S0074,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-01-30,,True,treating physician,False
+MED_S0074_03,S0074,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2024-09-26,,True,treating physician,False
+MED_S0074_04,S0074,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2024-10-31,,True,treating physician,False
+MED_S0074_05,S0074,Furosemide,20 mg,heart failure,chf,high,1,08:00,2023-05-01,,True,treating physician,False
+MED_S0074_06,S0074,Carvedilol,3.125 mg,heart failure,chf,high,2,08:00|20:00,2022-09-03,,True,treating physician,False
+MED_S0075_01,S0075,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0076_01,S0076,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2023-02-20,,True,treating physician,False
+MED_S0078_01,S0078,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-01-22,,True,treating physician,False
+MED_S0078_02,S0078,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-04-09,,True,treating physician,False
+MED_S0078_03,S0078,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2022-07-08,,True,treating physician,False
+MED_S0078_04,S0078,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2026-03-30,,True,treating physician,False
+MED_S0078_05,S0078,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2025-04-26,,True,treating physician,False
+MED_S0078_06,S0078,Donepezil,5 mg,memory,mild_cognitive_impairment,medium,1,21:00,2024-09-16,,True,treating physician,False
+MED_S0078_07,S0078,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0081_01,S0081,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2025-10-23,,True,treating physician,False
+MED_S0081_02,S0081,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2022-09-19,,True,treating physician,False
+MED_S0081_03,S0081,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0082_01,S0082,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-10-12,,True,treating physician,False
+MED_S0082_02,S0082,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-10-07,,True,treating physician,False
+MED_S0082_03,S0082,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2023-06-29,,True,treating physician,False
+MED_S0083_01,S0083,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-07-25,,True,treating physician,False
+MED_S0083_02,S0083,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2025-04-04,,True,treating physician,False
+MED_S0083_03,S0083,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2023-02-05,,True,treating physician,False
+MED_S0083_04,S0083,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2024-12-01,,True,treating physician,False
+MED_S0083_05,S0083,Furosemide,20 mg,heart failure,chf,high,1,08:00,2024-09-08,,True,treating physician,False
+MED_S0083_06,S0083,Carvedilol,3.125 mg,heart failure,chf,high,2,08:00|20:00,2022-10-12,,True,treating physician,False
+MED_S0084_01,S0084,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-12-29,,True,treating physician,False
+MED_S0084_02,S0084,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-04-26,,True,treating physician,False
+MED_S0084_03,S0084,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2022-10-03,,True,treating physician,False
+MED_S0084_04,S0084,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2026-03-08,,True,treating physician,False
+MED_S0084_05,S0084,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2024-04-11,,True,treating physician,False
+MED_S0084_06,S0084,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0085_01,S0085,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2026-01-28,,True,treating physician,False
+MED_S0086_01,S0086,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-10-08,,True,treating physician,False
+MED_S0086_02,S0086,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2026-01-11,,True,treating physician,False
+MED_S0086_03,S0086,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2026-04-06,,True,treating physician,False
+MED_S0086_04,S0086,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-01-10,,True,treating physician,False
+MED_S0086_05,S0086,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2026-04-29,,True,treating physician,False
+MED_S0087_01,S0087,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2025-12-18,,True,treating physician,False
+MED_S0089_01,S0089,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2026-02-19,,True,treating physician,False
+MED_S0089_02,S0089,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2023-05-04,,True,treating physician,False
+MED_S0089_03,S0089,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2026-01-10,,True,treating physician,False
+MED_S0089_04,S0089,Thyroxine,50 mcg,thyroid,hypothyroidism,medium,1,06:30,2025-10-22,,True,treating physician,False
+MED_S0089_05,S0089,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2023-07-31,,True,treating physician,False
+MED_S0090_01,S0090,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-02-12,,True,treating physician,False
+MED_S0090_02,S0090,Donepezil,5 mg,memory,mild_cognitive_impairment,medium,1,21:00,2024-02-27,,True,treating physician,False
+MED_S0092_01,S0092,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-01-20,,True,treating physician,False
+MED_S0092_02,S0092,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2025-06-10,,True,treating physician,False
+MED_S0092_03,S0092,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2024-11-22,,True,treating physician,False
+MED_S0092_04,S0092,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0093_01,S0093,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2026-01-17,,True,treating physician,False
+MED_S0093_02,S0093,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2025-11-15,,True,treating physician,False
+MED_S0093_03,S0093,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-10-14,,True,treating physician,False
+MED_S0093_04,S0093,Ecosprin (Aspirin),75 mg,stroke prevention,prior_stroke,high,1,14:00,2023-11-08,,True,treating physician,False
+MED_S0094_01,S0094,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2024-06-22,,True,treating physician,False
+MED_S0094_02,S0094,Furosemide,20 mg,heart failure,chf,high,1,08:00,2024-07-27,,True,treating physician,False
+MED_S0094_03,S0094,Carvedilol,3.125 mg,heart failure,chf,high,2,08:00|20:00,2025-10-02,,True,treating physician,False
+MED_S0095_01,S0095,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2022-06-24,,True,treating physician,False
+MED_S0095_02,S0095,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2025-08-24,,True,treating physician,False
+MED_S0095_03,S0095,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2024-03-21,,True,treating physician,False
+MED_S0096_01,S0096,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2022-07-17,,True,treating physician,False
+MED_S0096_02,S0096,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2024-04-18,,True,treating physician,False
+MED_S0096_03,S0096,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0098_01,S0098,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-01-09,,True,treating physician,False
+MED_S0098_02,S0098,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-01-20,,True,treating physician,False
+MED_S0098_03,S0098,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2026-02-25,,True,treating physician,False
+MED_S0099_01,S0099,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2025-09-09,,True,treating physician,False
+MED_S0099_02,S0099,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2023-07-06,,True,treating physician,False
+MED_S0101_01,S0101,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-02-07,,True,treating physician,False
+MED_S0101_02,S0101,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2022-07-25,,True,treating physician,False
+MED_S0101_03,S0101,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0103_01,S0103,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2026-01-18,,True,treating physician,False
+MED_S0104_01,S0104,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-02-11,,True,treating physician,False
+MED_S0104_02,S0104,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2025-11-08,,True,treating physician,False
+MED_S0104_03,S0104,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-06-09,,True,treating physician,False
+MED_S0104_04,S0104,Furosemide,20 mg,heart failure,chf,high,1,08:00,2026-04-21,,True,treating physician,False
+MED_S0104_05,S0104,Carvedilol,3.125 mg,heart failure,chf,high,2,08:00|20:00,2024-05-06,,True,treating physician,False
+MED_S0104_06,S0104,Donepezil,5 mg,memory,mild_cognitive_impairment,medium,1,21:00,2026-04-06,,True,treating physician,False
+MED_S0105_01,S0105,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2022-12-30,,True,treating physician,False
+MED_S0106_01,S0106,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-06-06,,True,treating physician,False
+MED_S0106_02,S0106,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2022-11-26,,True,treating physician,False
+MED_S0106_03,S0106,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2022-08-20,,True,treating physician,False
+MED_S0106_04,S0106,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0107_01,S0107,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-10-12,,True,treating physician,False
+MED_S0107_02,S0107,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2023-05-28,,True,treating physician,False
+MED_S0107_03,S0107,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2026-05-06,,True,treating physician,False
+MED_S0107_04,S0107,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2025-08-18,,True,treating physician,False
+MED_S0109_01,S0109,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2023-07-13,,True,treating physician,False
+MED_S0110_01,S0110,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2023-10-12,,True,treating physician,False
+MED_S0111_01,S0111,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2026-04-28,,True,treating physician,False
+MED_S0111_02,S0111,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-04-07,,True,treating physician,False
+MED_S0111_03,S0111,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2022-10-26,,True,treating physician,False
+MED_S0112_01,S0112,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-05-13,,True,treating physician,False
+MED_S0112_02,S0112,Thyroxine,50 mcg,thyroid,hypothyroidism,medium,1,06:30,2025-11-28,,True,treating physician,False
+MED_S0113_01,S0113,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-04-23,,True,treating physician,False
+MED_S0113_02,S0113,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2023-10-24,,True,treating physician,False
+MED_S0113_03,S0113,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0114_01,S0114,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2026-04-26,,True,treating physician,False
+MED_S0114_02,S0114,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-11-01,,True,treating physician,False
+MED_S0114_03,S0114,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2024-11-07,,True,treating physician,False
+MED_S0117_01,S0117,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2022-12-21,,True,treating physician,False
+MED_S0117_02,S0117,Donepezil,5 mg,memory,mild_cognitive_impairment,medium,1,21:00,2023-01-09,,True,treating physician,False
+MED_S0117_03,S0117,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0119_01,S0119,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-05-23,,True,treating physician,False
+MED_S0119_02,S0119,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2022-09-11,,True,treating physician,False
+MED_S0119_03,S0119,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0121_01,S0121,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-07-27,,True,treating physician,False
+MED_S0121_02,S0121,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-04-14,,True,treating physician,False
+MED_S0121_03,S0121,Ecosprin (Aspirin),75 mg,stroke prevention,prior_stroke,high,1,14:00,2025-08-31,,True,treating physician,False
+MED_S0122_01,S0122,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-08-08,,True,treating physician,False
+MED_S0122_02,S0122,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2026-02-15,,True,treating physician,False
+MED_S0122_03,S0122,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2025-06-07,,True,treating physician,False
+MED_S0123_01,S0123,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-04-14,,True,treating physician,False
+MED_S0124_01,S0124,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-12-26,,True,treating physician,False
+MED_S0124_02,S0124,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0125_01,S0125,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-07-17,,True,treating physician,False
+MED_S0125_02,S0125,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2026-04-22,,True,treating physician,False
+MED_S0125_03,S0125,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2022-07-26,,True,treating physician,False
+MED_S0125_04,S0125,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2025-02-06,,True,treating physician,False
+MED_S0126_01,S0126,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2022-11-26,,True,treating physician,False
+MED_S0126_02,S0126,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2025-07-09,,True,treating physician,False
+MED_S0126_03,S0126,Furosemide,20 mg,heart failure,chf,high,1,08:00,2022-12-09,,True,treating physician,False
+MED_S0126_04,S0126,Carvedilol,3.125 mg,heart failure,chf,high,2,08:00|20:00,2023-08-10,,True,treating physician,False
+MED_S0127_01,S0127,Ecosprin (Aspirin),75 mg,stroke prevention,prior_stroke,high,1,14:00,2024-06-30,,True,treating physician,False
+MED_S0128_01,S0128,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2023-02-06,,True,treating physician,False
+MED_S0129_01,S0129,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-02-19,,True,treating physician,False
+MED_S0129_02,S0129,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2026-04-25,,True,treating physician,False
+MED_S0130_01,S0130,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-05-01,,True,treating physician,False
+MED_S0130_02,S0130,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2022-07-16,,True,treating physician,False
+MED_S0132_01,S0132,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-09-09,,True,treating physician,False
+MED_S0132_02,S0132,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2022-08-01,,True,treating physician,False
+MED_S0132_03,S0132,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-05-21,,True,treating physician,False
+MED_S0132_04,S0132,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-06-26,,True,treating physician,False
+MED_S0133_01,S0133,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2026-02-18,,True,treating physician,False
+MED_S0134_01,S0134,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-12-31,,True,treating physician,False
+MED_S0134_02,S0134,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-12-22,,True,treating physician,False
+MED_S0134_03,S0134,Donepezil,5 mg,memory,mild_cognitive_impairment,medium,1,21:00,2024-11-30,,True,treating physician,False
+MED_S0134_04,S0134,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0137_01,S0137,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2026-04-11,,True,treating physician,False
+MED_S0137_02,S0137,Ecosprin (Aspirin),75 mg,stroke prevention,prior_stroke,high,1,14:00,2022-10-20,,True,treating physician,False
+MED_S0138_01,S0138,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-09-30,,True,treating physician,False
+MED_S0138_02,S0138,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-05-17,,True,treating physician,False
+MED_S0138_03,S0138,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2023-10-31,,True,treating physician,False
+MED_S0138_04,S0138,Thyroxine,50 mcg,thyroid,hypothyroidism,medium,1,06:30,2022-06-06,,True,treating physician,False
+MED_S0141_01,S0141,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2024-12-11,,True,treating physician,False
+MED_S0142_01,S0142,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2022-08-22,,True,treating physician,False
+MED_S0143_01,S0143,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-01-18,,True,treating physician,False
+MED_S0144_01,S0144,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0145_01,S0145,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2022-07-19,,True,treating physician,False
+MED_S0146_01,S0146,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-11-16,,True,treating physician,False
+MED_S0146_02,S0146,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2025-12-17,,True,treating physician,False
+MED_S0146_03,S0146,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-03-26,,True,treating physician,False
+MED_S0146_04,S0146,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2023-02-15,,True,treating physician,False
+MED_S0146_05,S0146,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0147_01,S0147,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2025-08-05,,True,treating physician,False
+MED_S0148_01,S0148,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-10-27,,True,treating physician,False
+MED_S0148_02,S0148,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2022-09-19,,True,treating physician,False
+MED_S0148_03,S0148,Thyroxine,50 mcg,thyroid,hypothyroidism,medium,1,06:30,2025-09-26,,True,treating physician,False
+MED_S0148_04,S0148,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2025-04-27,,True,treating physician,False
+MED_S0149_01,S0149,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-12-06,,True,treating physician,False
+MED_S0149_02,S0149,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-04-28,,True,treating physician,False
+MED_S0149_03,S0149,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2025-11-01,,True,treating physician,False
+MED_S0149_04,S0149,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2023-12-31,,True,treating physician,False
+MED_S0150_01,S0150,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-05-07,,True,treating physician,False
+MED_S0150_02,S0150,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2025-04-17,,True,treating physician,False
+MED_S0152_01,S0152,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-03-12,,True,treating physician,False
+MED_S0152_02,S0152,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2024-07-13,,True,treating physician,False
+MED_S0152_03,S0152,Ecosprin (Aspirin),75 mg,stroke prevention,prior_stroke,high,1,14:00,2022-06-01,,True,treating physician,False
+MED_S0154_01,S0154,Ecosprin (Aspirin),75 mg,stroke prevention,prior_stroke,high,1,14:00,2025-05-11,,True,treating physician,False
+MED_S0155_01,S0155,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2023-10-23,,True,treating physician,False
+MED_S0157_01,S0157,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-08-31,,True,treating physician,False
+MED_S0157_02,S0157,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0159_01,S0159,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2025-04-25,,True,treating physician,False
+MED_S0159_02,S0159,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0160_01,S0160,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2022-09-07,,True,treating physician,False
+MED_S0160_02,S0160,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0161_01,S0161,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2022-09-11,,True,treating physician,False
+MED_S0161_02,S0161,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2022-09-01,,True,treating physician,False
+MED_S0161_03,S0161,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2022-12-07,,True,treating physician,False
+MED_S0162_01,S0162,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2022-10-06,,True,treating physician,False
+MED_S0163_01,S0163,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2022-08-10,,True,treating physician,False
+MED_S0164_01,S0164,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2024-07-22,,True,treating physician,False
+MED_S0165_01,S0165,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-05-27,,True,treating physician,False
+MED_S0165_02,S0165,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2025-09-11,,True,treating physician,False
+MED_S0165_03,S0165,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2023-07-24,,True,treating physician,False
+MED_S0166_01,S0166,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-05-17,,True,treating physician,False
+MED_S0166_02,S0166,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2025-08-10,,True,treating physician,False
+MED_S0166_03,S0166,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0167_01,S0167,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-05-22,,True,treating physician,False
+MED_S0167_02,S0167,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-08-31,,True,treating physician,False
+MED_S0167_03,S0167,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2025-12-29,,True,treating physician,False
+MED_S0168_01,S0168,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-10-31,,True,treating physician,False
+MED_S0168_02,S0168,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-03-26,,True,treating physician,False
+MED_S0168_03,S0168,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2023-08-28,,True,treating physician,False
+MED_S0169_01,S0169,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2026-03-22,,True,treating physician,False
+MED_S0169_02,S0169,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2024-04-15,,True,treating physician,False
+MED_S0170_01,S0170,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2026-02-16,,True,treating physician,False
+MED_S0171_01,S0171,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2026-02-26,,True,treating physician,False
+MED_S0172_01,S0172,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-12-19,,True,treating physician,False
+MED_S0173_01,S0173,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2022-07-09,,True,treating physician,False
+MED_S0173_02,S0173,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2022-10-10,,True,treating physician,False
+MED_S0174_01,S0174,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2026-03-05,,True,treating physician,False
+MED_S0174_02,S0174,Ecosprin (Aspirin),75 mg,stroke prevention,prior_stroke,high,1,14:00,2022-10-06,,True,treating physician,False
+MED_S0177_01,S0177,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2025-01-25,,True,treating physician,False
+MED_S0178_01,S0178,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-03-18,,True,treating physician,False
+MED_S0178_02,S0178,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-10-21,,True,treating physician,False
+MED_S0178_03,S0178,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2025-06-05,,True,treating physician,False
+MED_S0178_04,S0178,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0179_01,S0179,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2022-12-21,,True,treating physician,False
+MED_S0179_02,S0179,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-08-30,,True,treating physician,False
+MED_S0180_01,S0180,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-11-23,,True,treating physician,False
+MED_S0180_02,S0180,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2024-03-19,,True,treating physician,False
+MED_S0181_01,S0181,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-06-25,,True,treating physician,False
+MED_S0181_02,S0181,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2023-07-05,,True,treating physician,False
+MED_S0181_03,S0181,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-08-02,,True,treating physician,False
+MED_S0181_04,S0181,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2023-04-22,,True,treating physician,False
+MED_S0182_01,S0182,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-07-29,,True,treating physician,False
+MED_S0182_02,S0182,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-05-01,,True,treating physician,False
+MED_S0182_03,S0182,Thyroxine,50 mcg,thyroid,hypothyroidism,medium,1,06:30,2023-07-18,,True,treating physician,False
+MED_S0183_01,S0183,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2025-01-26,,True,treating physician,False
+MED_S0183_02,S0183,Donepezil,5 mg,memory,mild_cognitive_impairment,medium,1,21:00,2026-01-15,,True,treating physician,False
+MED_S0183_03,S0183,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0184_01,S0184,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2022-07-19,,True,treating physician,False
+MED_S0184_02,S0184,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2022-11-05,,True,treating physician,False
+MED_S0184_03,S0184,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2023-01-25,,True,treating physician,False
+MED_S0185_01,S0185,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-10-24,,True,treating physician,False
+MED_S0185_02,S0185,Thyroxine,50 mcg,thyroid,hypothyroidism,medium,1,06:30,2025-10-08,,True,treating physician,False
+MED_S0187_01,S0187,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-12-22,,True,treating physician,False
+MED_S0187_02,S0187,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-11-21,,True,treating physician,False
+MED_S0187_03,S0187,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2025-11-25,,True,treating physician,False
+MED_S0187_04,S0187,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2022-07-13,,True,treating physician,False
+MED_S0188_01,S0188,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2024-08-14,,True,treating physician,False
+MED_S0189_01,S0189,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2025-11-16,,True,treating physician,False
+MED_S0189_02,S0189,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2025-09-24,,True,treating physician,False
+MED_S0190_01,S0190,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2024-06-23,,True,treating physician,False
+MED_S0191_01,S0191,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-10-20,,True,treating physician,False
+MED_S0191_02,S0191,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2025-01-07,,True,treating physician,False
+MED_S0191_03,S0191,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-06-25,,True,treating physician,False
+MED_S0191_04,S0191,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2025-02-11,,True,treating physician,False
+MED_S0191_05,S0191,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-02-02,,True,treating physician,False
+MED_S0191_06,S0191,Furosemide,20 mg,heart failure,chf,high,1,08:00,2023-05-09,,True,treating physician,False
+MED_S0191_07,S0191,Carvedilol,3.125 mg,heart failure,chf,high,2,08:00|20:00,2025-10-05,,True,treating physician,False
+MED_S0191_08,S0191,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2023-04-01,,True,treating physician,False
+MED_S0191_09,S0191,Donepezil,5 mg,memory,mild_cognitive_impairment,medium,1,21:00,2022-06-08,,True,treating physician,False
+MED_S0192_01,S0192,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2022-10-09,,True,treating physician,False
+MED_S0193_01,S0193,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-07-24,,True,treating physician,False
+MED_S0194_01,S0194,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2022-10-26,,True,treating physician,False
+MED_S0194_02,S0194,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2026-01-09,,True,treating physician,False
+MED_S0194_03,S0194,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2025-11-19,,True,treating physician,False
+MED_S0195_01,S0195,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2023-01-05,,True,treating physician,False
+MED_S0196_01,S0196,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-07-20,,True,treating physician,False
+MED_S0196_02,S0196,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-01-12,,True,treating physician,False
+MED_S0196_03,S0196,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-06-27,,True,treating physician,False
+MED_S0197_01,S0197,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2022-12-21,,True,treating physician,False
+MED_S0197_02,S0197,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-01-23,,True,treating physician,False
+MED_S0197_03,S0197,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2026-02-05,,True,treating physician,False
+MED_S0198_01,S0198,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-11-05,,True,treating physician,False
+MED_S0198_02,S0198,Ecosprin (Aspirin),75 mg,stroke prevention,prior_stroke,high,1,14:00,2024-10-06,,True,treating physician,False
+MED_S0198_03,S0198,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0200_01,S0200,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-05-23,,True,treating physician,False
+MED_S0200_02,S0200,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2025-09-15,,True,treating physician,False
+MED_S0200_03,S0200,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0201_01,S0201,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-11-11,,True,treating physician,False
+MED_S0201_02,S0201,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2024-03-25,,True,treating physician,False
+MED_S0201_03,S0201,Ecosprin (Aspirin),75 mg,stroke prevention,prior_stroke,high,1,14:00,2022-10-16,,True,treating physician,False
+MED_S0202_01,S0202,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2023-07-20,,True,treating physician,False
+MED_S0202_02,S0202,Furosemide,20 mg,heart failure,chf,high,1,08:00,2022-08-18,,True,treating physician,False
+MED_S0202_03,S0202,Carvedilol,3.125 mg,heart failure,chf,high,2,08:00|20:00,2024-05-13,,True,treating physician,False
+MED_S0203_01,S0203,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2022-08-25,,True,treating physician,False
+MED_S0203_02,S0203,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2022-08-02,,True,treating physician,False
+MED_S0204_01,S0204,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-07-04,,True,treating physician,False
+MED_S0204_02,S0204,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-07-10,,True,treating physician,False
+MED_S0204_03,S0204,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2026-01-27,,True,treating physician,False
+MED_S0204_04,S0204,Thyroxine,50 mcg,thyroid,hypothyroidism,medium,1,06:30,2023-09-27,,True,treating physician,False
+MED_S0204_05,S0204,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2023-11-29,,True,treating physician,False
+MED_S0205_01,S0205,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-10-24,,True,treating physician,False
+MED_S0205_02,S0205,Furosemide,20 mg,heart failure,chf,high,1,08:00,2025-11-22,,True,treating physician,False
+MED_S0205_03,S0205,Carvedilol,3.125 mg,heart failure,chf,high,2,08:00|20:00,2025-10-20,,True,treating physician,False
+MED_S0205_04,S0205,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0206_01,S0206,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2025-05-10,,True,treating physician,False
+MED_S0207_01,S0207,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-04-11,,True,treating physician,False
+MED_S0207_02,S0207,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-11-11,,True,treating physician,False
+MED_S0207_03,S0207,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2025-09-17,,True,treating physician,False
+MED_S0208_01,S0208,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2022-10-24,,True,treating physician,False
+MED_S0209_01,S0209,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2026-03-16,,True,treating physician,False
+MED_S0209_02,S0209,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2023-09-08,,True,treating physician,False
+MED_S0210_01,S0210,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-11-05,,True,treating physician,False
+MED_S0210_02,S0210,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0211_01,S0211,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-11-01,,True,treating physician,False
+MED_S0211_02,S0211,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2022-10-30,,True,treating physician,False
+MED_S0211_03,S0211,Furosemide,20 mg,heart failure,chf,high,1,08:00,2024-12-17,,True,treating physician,False
+MED_S0211_04,S0211,Carvedilol,3.125 mg,heart failure,chf,high,2,08:00|20:00,2024-12-24,,True,treating physician,False
+MED_S0212_01,S0212,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-02-11,,True,treating physician,False
+MED_S0212_02,S0212,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-09-10,,True,treating physician,False
+MED_S0212_03,S0212,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2024-10-09,,True,treating physician,False
+MED_S0212_04,S0212,Donepezil,5 mg,memory,mild_cognitive_impairment,medium,1,21:00,2026-04-16,,True,treating physician,False
+MED_S0213_01,S0213,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-11-18,,True,treating physician,False
+MED_S0213_02,S0213,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2026-01-25,,True,treating physician,False
+MED_S0213_03,S0213,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2023-10-23,,True,treating physician,False
+MED_S0213_04,S0213,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2024-12-30,,True,treating physician,False
+MED_S0213_05,S0213,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2025-06-06,,True,treating physician,False
+MED_S0213_06,S0213,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2023-04-22,,True,treating physician,False
+MED_S0214_01,S0214,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2022-12-16,,True,treating physician,False
+MED_S0215_01,S0215,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2026-01-21,,True,treating physician,False
+MED_S0216_01,S0216,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2023-04-09,,True,treating physician,False
+MED_S0216_02,S0216,Thyroxine,50 mcg,thyroid,hypothyroidism,medium,1,06:30,2024-05-20,,True,treating physician,False
+MED_S0216_03,S0216,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2023-01-27,,True,treating physician,False
+MED_S0217_01,S0217,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-12-29,,True,treating physician,False
+MED_S0218_01,S0218,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-12-30,,True,treating physician,False
+MED_S0219_01,S0219,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-03-09,,True,treating physician,False
+MED_S0219_02,S0219,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-11-16,,True,treating physician,False
+MED_S0219_03,S0219,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2024-04-15,,True,treating physician,False
+MED_S0220_01,S0220,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-10-07,,True,treating physician,False
+MED_S0220_02,S0220,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2022-06-12,,True,treating physician,False
+MED_S0220_03,S0220,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0221_01,S0221,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-02-27,,True,treating physician,False
+MED_S0221_02,S0221,Escitalopram,5 mg,mood,depression_anxiety,medium,1,09:00,2025-11-04,,True,treating physician,False
+MED_S0222_01,S0222,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-02-09,,True,treating physician,False
+MED_S0222_02,S0222,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2025-02-07,,True,treating physician,False
+MED_S0222_03,S0222,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2026-04-13,,True,treating physician,False
+MED_S0222_04,S0222,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2023-11-28,,True,treating physician,False
+MED_S0223_01,S0223,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-08-26,,True,treating physician,False
+MED_S0223_02,S0223,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2023-11-01,,True,treating physician,False
+MED_S0223_03,S0223,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2023-11-30,,True,treating physician,False
+MED_S0224_01,S0224,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2024-07-16,,True,treating physician,False
+MED_S0225_01,S0225,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2022-09-24,,True,treating physician,False
+MED_S0226_01,S0226,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-04-19,,True,treating physician,False
+MED_S0226_02,S0226,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-11-27,,True,treating physician,False
+MED_S0226_03,S0226,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2025-05-29,,True,treating physician,False
+MED_S0227_01,S0227,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2025-11-19,,True,treating physician,False
+MED_S0228_01,S0228,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2022-06-05,,True,treating physician,False
+MED_S0228_02,S0228,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-07-15,,True,treating physician,False
+MED_S0228_03,S0228,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2026-04-11,,True,treating physician,False
+MED_S0228_04,S0228,Donepezil,5 mg,memory,mild_cognitive_impairment,medium,1,21:00,2023-01-22,,True,treating physician,False
+MED_S0228_05,S0228,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0229_01,S0229,Furosemide,20 mg,heart failure,chf,high,1,08:00,2022-11-19,,True,treating physician,False
+MED_S0229_02,S0229,Carvedilol,3.125 mg,heart failure,chf,high,2,08:00|20:00,2025-08-16,,True,treating physician,False
+MED_S0230_01,S0230,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-08-10,,True,treating physician,False
+MED_S0230_02,S0230,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-07-31,,True,treating physician,False
+MED_S0231_01,S0231,Multivitamin,1 tab,general wellness,healthy,low,1,09:00,2024-11-04,,True,treating physician,False
+MED_S0232_01,S0232,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-06-30,,True,treating physician,False
+MED_S0232_02,S0232,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2025-08-09,,True,treating physician,False
+MED_S0232_03,S0232,Budesonide+Formoterol inhaler,2 puffs,breathing,copd_asthma,high,2,08:30|20:30,2024-09-21,,True,treating physician,False
+MED_S0233_01,S0233,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-10-13,,True,treating physician,False
+MED_S0233_02,S0233,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2023-05-23,,True,treating physician,False
+MED_S0234_01,S0234,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2026-04-28,,True,treating physician,False
+MED_S0234_02,S0234,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-09-28,,True,treating physician,False
+MED_S0234_03,S0234,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-07-02,,True,treating physician,False
+MED_S0234_04,S0234,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2024-10-01,,True,treating physician,False
+MED_S0234_05,S0234,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2022-09-27,,True,treating physician,False
+MED_S0235_01,S0235,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-01-24,,True,treating physician,False
+MED_S0235_02,S0235,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-05-14,,True,treating physician,False
+MED_S0235_03,S0235,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2024-12-22,,True,treating physician,False
+MED_S0235_04,S0235,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2024-10-13,,True,treating physician,False
+MED_S0235_05,S0235,Donepezil,5 mg,memory,mild_cognitive_impairment,medium,1,21:00,2023-03-17,,True,treating physician,False
+MED_S0235_06,S0235,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0237_01,S0237,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2026-03-01,,True,treating physician,False
+MED_S0237_02,S0237,Thyroxine,50 mcg,thyroid,hypothyroidism,medium,1,06:30,2024-05-04,,True,treating physician,False
+MED_S0240_01,S0240,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-05-28,,True,treating physician,False
+MED_S0240_02,S0240,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2024-07-14,,True,treating physician,False
+MED_S0240_03,S0240,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2022-08-03,,True,treating physician,False
+MED_S0240_04,S0240,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2022-06-26,,True,treating physician,False
+MED_S0240_05,S0240,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2026-03-23,,True,treating physician,False
+MED_S0241_01,S0241,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2023-05-12,,True,treating physician,False
+MED_S0241_02,S0241,Glimepiride,1 mg,diabetes,type2_diabetes,high,1,07:30,2025-07-17,,True,treating physician,False
+MED_S0243_01,S0243,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-03-16,,True,treating physician,False
+MED_S0243_02,S0243,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2022-07-12,,True,treating physician,False
+MED_S0243_03,S0243,Metformin,500 mg,diabetes,type2_diabetes,medium,2,09:00|21:00,2025-04-19,,True,treating physician,False
+MED_S0243_04,S0243,Paracetamol,650 mg,joint pain (as needed),osteoarthritis,low,0,,2025-06-01,,True,treating physician,True
+MED_S0244_01,S0244,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-03-03,,True,treating physician,False
+MED_S0244_02,S0244,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2026-02-02,,True,treating physician,False
+MED_S0244_03,S0244,Ecosprin (Aspirin),75 mg,stroke prevention,prior_stroke,high,1,14:00,2026-03-10,,True,treating physician,False
+MED_S0245_01,S0245,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2024-02-26,,True,treating physician,False
+MED_S0245_02,S0245,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2023-11-25,,True,treating physician,False
+MED_S0245_03,S0245,Donepezil,5 mg,memory,mild_cognitive_impairment,medium,1,21:00,2023-03-12,,True,treating physician,False
+MED_S0247_01,S0247,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2025-07-27,,True,treating physician,False
+MED_S0247_02,S0247,Thyroxine,50 mcg,thyroid,hypothyroidism,medium,1,06:30,2024-03-18,,True,treating physician,False
+MED_S0249_01,S0249,Amlodipine,5 mg,blood pressure,hypertension,high,1,08:00,2023-10-08,,True,treating physician,False
+MED_S0249_02,S0249,Telmisartan,40 mg,blood pressure,hypertension,high,1,08:00,2023-08-23,,True,treating physician,False
+MED_S0249_03,S0249,Atorvastatin,10 mg,cholesterol,dyslipidemia,low,1,21:30,2023-05-22,,True,treating physician,False
+MED_S0249_04,S0249,Calcium + Vitamin D3,1 tab,bones,osteoporosis,low,1,14:30,2024-07-07,,True,treating physician,False
+MED_S0249_05,S0249,Donepezil,5 mg,memory,mild_cognitive_impairment,medium,1,21:00,2025-02-08,,True,treating physician,False
