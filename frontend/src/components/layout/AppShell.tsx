@@ -1,6 +1,7 @@
 "use client";
 
 import React, { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { Navbar } from "./Navbar";
 import { ToastContainer } from "../ui/ToastContainer";
 
@@ -9,6 +10,19 @@ interface AppShellProps {
 }
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
+  const pathname = usePathname();
+  const isCityManagerPortal = pathname?.startsWith("/city-manager");
+
+  // If in City Manager Command Centre or Login screen, render full-bleed without top Navbar / footer duplication
+  if (isCityManagerPortal || pathname === "/login") {
+    return (
+      <div className="min-h-screen text-slate-900 font-sans antialiased">
+        {children}
+        <ToastContainer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       <Navbar />
@@ -20,7 +34,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       <footer className="bg-white border-t border-slate-200 mt-auto py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500 space-y-1">
           <p className="font-medium text-slate-700">
-            SamarthCare AI Early Warning & Remote Senior Wellbeing Decision-Support System
+            SahajCare AI Early Warning & Remote Senior Wellbeing Decision-Support System
           </p>
           <p>
             Regulatory & Medical Notice: This application is a decision-support and workflow coordination tool. Risk scores and signals do not constitute medical diagnoses or emergency dispatch instructions.
@@ -35,4 +49,5 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     </div>
   );
 };
+
 

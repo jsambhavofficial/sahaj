@@ -98,7 +98,7 @@ export const Navbar: React.FC = () => {
           </span>
         </div>
         <span className="hidden md:inline-block text-[11px] font-mono bg-amber-400/80 px-2 py-0.5 rounded">
-          Samarth AI v3.0
+          Sahaj AI v3.0
         </span>
       </div>
 
@@ -116,7 +116,7 @@ export const Navbar: React.FC = () => {
               </div>
               <div>
                 <span className="font-bold text-slate-900 tracking-tight text-base leading-none">
-                  Samarth<span className="text-brand-600">Care</span>
+                  Sahaj<span className="text-brand-600">Care</span>
                 </span>
                 <span className="block text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
                   {isAdmin ? "Admin Portal" : isCityManager ? "City Manager" : isCaretaker ? "Caretaker Portal" : "AI Early Warning"}
@@ -161,23 +161,23 @@ export const Navbar: React.FC = () => {
               <div className="flex items-center gap-2.5">
                 <div className="hidden sm:flex flex-col items-end">
                   <span className="text-xs font-bold text-slate-800 leading-tight">
-                    {user.full_name}
+                    {user.full_name || user.display_name || user.email}
                   </span>
                   <div className="flex items-center gap-1">
                     <span className="text-[10px] font-semibold text-brand-700 bg-brand-50 px-1.5 py-0.2 rounded">
                       {user.role.replace("_", " ")}
                     </span>
-                    {user.staff_profile?.city_id && (
+                    {(user.staff_profile?.city_id || user.city) && (
                       <span className="text-[10px] text-slate-500 flex items-center gap-0.5">
                         <MapPin className="w-2.5 h-2.5" />
-                        {user.staff_profile.city_id.replace("CITY_", "")}
+                        {(user.staff_profile?.city_id?.replace("CITY_", "") || user.city)}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs shadow-inner">
-                  {user.full_name.charAt(0)}
+                <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs shadow-inner uppercase">
+                  {(user.full_name || user.display_name || user.email || "U").charAt(0)}
                 </div>
 
                 <button

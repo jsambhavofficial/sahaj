@@ -141,12 +141,14 @@ export interface Alert {
   senior_display_name?: string;
   created_at: string;
   last_updated_at: string;
-  status: AlertStatus;
-  severity: RiskLevel;
-  triggering_signals: string;
+  status: AlertStatus | string;
+  severity: RiskLevel | string;
+  triggering_signals: string | string[];
   recommended_next_step: string;
   resolution_reason?: string | null;
   acknowledgement_notes?: string | null;
+  assigned_to?: string | null;
+  events?: any[];
 }
 
 export interface DashboardMetrics {

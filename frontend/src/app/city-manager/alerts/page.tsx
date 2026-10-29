@@ -349,8 +349,8 @@ export default function CityManagerAlertsPage() {
                     </td>
                     <td className="px-4 py-3.5">
                       <Link
-                        href={`/seniors/${alert.senior_id}`}
-                        className="font-semibold text-brand-600 hover:text-brand-800 hover:underline"
+                        href={`/city-manager/seniors/${alert.senior_id}`}
+                        className="font-semibold text-teal-800 hover:text-teal-950 hover:underline"
                       >
                         {alert.senior_name || alert.senior_id}
                       </Link>

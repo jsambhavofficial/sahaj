@@ -275,7 +275,7 @@ export default function FamilyVisitsPage() {
       <div className="bg-slate-100/70 border border-slate-200 rounded-xl p-4 text-[11px] text-slate-500 flex items-start gap-2.5">
         <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
         <span>
-          Visit observations and times are logged by certified Samarth care coordinators upon arrival and departure. Internal staff notes and coordinates are redacted for privacy.
+          Visit observations and times are logged by certified Sahaj care coordinators upon arrival and departure. Internal staff notes and coordinates are redacted for privacy.
         </span>
       </div>
     </div>

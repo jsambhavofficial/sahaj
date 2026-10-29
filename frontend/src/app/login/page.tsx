@@ -2,19 +2,61 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, LogIn, Lock, Mail, AlertCircle, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import {
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  AlertCircle,
+  Loader2,
+  ShieldCheck,
+  Building2,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, isAdmin, isCityManager, isCaretaker, isFamily, isSenior } = useAuth();
+  const {
+    login,
+    pairSenior,
+    isAuthenticated,
+    isAdmin,
+    isCityManager,
+    isCaretaker,
+    isFamily,
+    isSenior,
+  } = useAuth();
 
-  const [email, setEmail] = useState("");
+  const [activeTab, setActiveTab] = useState<"staff" | "senior">("staff");
+  const [email, setEmail] = useState("coord_001@demo.samarth.local");
   const [password, setPassword] = useState("Password@123!");
+  const [pairingCode, setPairingCode] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showQuickPills, setShowQuickPills] = useState(true);
 
-  // If already authenticated, redirect to appropriate portal
+  const redirectByRole = (userRole: string) => {
+    const r = (userRole || "").toLowerCase();
+    if (r === "ops" || r === "city_manager") {
+      router.push("/city-manager");
+    } else if (r === "coordinator" || r === "caretaker") {
+      router.push("/caretaker");
+    } else if (r === "admin" || r === "organization_admin") {
+      router.push("/admin");
+    } else if (r === "family") {
+      router.push("/family");
+    } else if (r === "senior") {
+      router.push("/senior");
+    } else {
+      router.push("/city-manager");
+    }
+  };
+
+  // If already authenticated, redirect to respective portal
   React.useEffect(() => {
     if (isAuthenticated) {
       if (isAdmin) {
@@ -28,55 +70,49 @@ export default function LoginPage() {
       } else if (isSenior) {
         router.push("/senior");
       } else {
-        router.push("/dashboard");
+        router.push("/city-manager");
       }
     }
   }, [isAuthenticated, isAdmin, isCityManager, isCaretaker, isFamily, isSenior, router]);
+
+  const normalizeEmail = (val: string) => {
+    return val.trim();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const user = await login(email, password);
-      if (user.role === "ORGANIZATION_ADMIN") {
-        router.push("/admin");
-      } else if (user.role === "CITY_MANAGER") {
-        router.push("/city-manager");
-      } else if (user.role === "CARETAKER") {
-        router.push("/caretaker");
-      } else if (user.role === "FAMILY") {
-        router.push("/family");
-      } else if (user.role === "SENIOR") {
-        router.push("/senior");
+      if (activeTab === "senior") {
+        if (!pairingCode.trim()) {
+          throw new Error("Please enter your senior device pairing code.");
+        }
+        const user = await pairSenior(pairingCode.trim());
+        redirectByRole(user.role);
       } else {
-        router.push("/dashboard");
+        const normalizedEmail = normalizeEmail(email);
+        const user = await login(normalizedEmail, password);
+        redirectByRole(user.role);
       }
     } catch (err: any) {
-      setError(err?.message || "Invalid email or password. Please verify your credentials.");
+      setError(err?.message || "Invalid credentials or pairing code. Please verify.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleQuickLogin = async (presetEmail: string) => {
+  const handleQuickLogin = async (presetEmail: string, roleRoute?: string) => {
     setEmail(presetEmail);
     setError(null);
     setLoading(true);
     try {
-      const user = await login(presetEmail, "Password@123!");
-      if (user.role === "ORGANIZATION_ADMIN") {
-        router.push("/admin");
-      } else if (user.role === "CITY_MANAGER") {
-        router.push("/city-manager");
-      } else if (user.role === "CARETAKER") {
-        router.push("/caretaker");
-      } else if (user.role === "FAMILY") {
-        router.push("/family");
-      } else if (user.role === "SENIOR") {
-        router.push("/senior");
+      const normalizedEmail = normalizeEmail(presetEmail);
+      const user = await login(normalizedEmail, "Password@123!");
+      if (roleRoute) {
+        router.push(roleRoute);
       } else {
-        router.push("/dashboard");
+        redirectByRole(user.role);
       }
     } catch (err: any) {
       setError(err?.message || "Quick sign in failed.");
@@ -85,184 +121,352 @@ export default function LoginPage() {
     }
   };
 
+  const handleQuickSeniorPair = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const user = await pairSenior("PAIR_S0001_DEMO");
+      redirectByRole(user.role);
+    } catch (err: any) {
+      setError(err?.message || "Senior demo pairing failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl border border-slate-200">
-        <div>
-          <div className="mx-auto w-12 h-12 rounded-xl bg-brand-600 text-white flex items-center justify-center font-bold text-2xl shadow-md">
-            S
+    <div className="relative h-screen max-h-screen w-screen overflow-hidden flex items-center justify-center p-2 sm:p-4 lg:p-6 select-none bg-[#38bdf8]">
+      {/* 1. Illustrated City Skyline Background Image */}
+      <div
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat pointer-events-none"
+        style={{
+          backgroundImage: "url('/images/auth/city_clean_bg.jpg')",
+        }}
+      >
+        <div className="absolute inset-0 bg-sky-500/10 backdrop-brightness-[1.02]" />
+      </div>
+
+      {/* 2. Outer Rounded Framing Border */}
+      <div className="relative z-10 w-full max-w-[1340px] h-[94vh] max-h-[95vh] border-2 sm:border-[3px] border-white/80 rounded-[24px] sm:rounded-[36px] flex flex-col justify-between p-3 sm:p-5 lg:p-7 shadow-2xl backdrop-blur-[0.5px] overflow-hidden">
+        {/* Top Navigation Bar */}
+        <header className="flex items-center justify-between w-full shrink-0">
+          <nav className="flex items-center gap-6 sm:gap-9 text-xs sm:text-sm font-black text-[#0a2540] uppercase tracking-wider drop-shadow-xs">
+            <Link
+              href="/login"
+              className="hover:text-emerald-900 transition-colors cursor-pointer"
+            >
+              HOME
+            </Link>
+            <Link
+              href="/city-manager"
+              className="hover:text-emerald-900 transition-colors cursor-pointer"
+            >
+              ABOUT
+            </Link>
+            <Link
+              href="/city-manager/reports"
+              className="hover:text-emerald-900 transition-colors cursor-pointer"
+            >
+              HELP
+            </Link>
+          </nav>
+
+          {/* Right Help Pill Button */}
+          <div className="flex items-center gap-3">
+            <Link
+              href="/city-manager/reports"
+              className="inline-flex items-center gap-1.5 bg-[#0c2438] hover:bg-[#14334c] text-white px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-md cursor-pointer"
+            >
+              <div className="w-3.5 h-3.5 rounded-full bg-white/20 flex items-center justify-center text-[9px] font-black">
+                ?
+              </div>
+              <span className="uppercase tracking-wider text-[11px]">HELP</span>
+            </Link>
           </div>
-          <h2 className="mt-4 text-center text-2xl font-extrabold text-slate-900 tracking-tight">
-            SamarthCare AI Portal
-          </h2>
-          <p className="mt-1 text-center text-xs text-slate-500">
-            Sign in to access your authorized elder-care management dashboard
-          </p>
-        </div>
+        </header>
 
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2.5 text-xs text-red-700">
-            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Quick Demo Login Cards */}
-        <div className="space-y-2">
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Quick 1-Click Demo Accounts
-          </label>
-          <div className="grid grid-cols-1 gap-2">
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => handleQuickLogin("org_admin@samarth.ai")}
-              className="text-left p-2.5 rounded-lg border border-brand-200 bg-brand-50/50 hover:bg-brand-100/60 transition-colors flex items-center justify-between"
-            >
-              <div>
-                <p className="text-xs font-bold text-slate-900">Dr. Ananya Sharma</p>
-                <p className="text-[11px] text-brand-700 font-medium">Organization Admin (National HQ)</p>
+        {/* Center Main Stage: Floating Login Card (Left) & Large Sahaj AI Title (Right) */}
+        <main className="w-full flex-1 my-auto py-2 sm:py-3 flex flex-col lg:flex-row items-center justify-center lg:justify-between gap-6 lg:gap-12 min-h-0">
+          {/* LEFT: Floating Login Box */}
+          <div className="w-full max-w-[410px] bg-white rounded-[28px] p-5 sm:p-6 shadow-2xl border border-white/90 space-y-3.5 shrink-0 animate-scaleUp">
+            {/* Top Avatar Badge */}
+            <div className="flex justify-center -mt-1">
+              <div className="w-16 h-16 rounded-full bg-[#f8b185] flex items-center justify-center shadow-md border-2 border-white">
+                <div className="flex flex-col items-center justify-center">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#0d2133]" />
+                  <div className="w-9 h-4 sm:w-10 sm:h-5 rounded-t-full bg-[#0d2133] mt-0.5" />
+                </div>
               </div>
-              <CheckCircle2 className="w-4 h-4 text-brand-600" />
-            </button>
-
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => handleQuickLogin("bengaluru_mgr@samarth.ai")}
-              className="text-left p-2.5 rounded-lg border border-blue-200 bg-blue-50/50 hover:bg-blue-100/60 transition-colors flex items-center justify-between"
-            >
-              <div>
-                <p className="text-xs font-bold text-slate-900">Rajesh Rao</p>
-                <p className="text-[11px] text-blue-700 font-medium">City Manager (Bengaluru Chapter)</p>
-              </div>
-              <CheckCircle2 className="w-4 h-4 text-blue-600" />
-            </button>
-
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => handleQuickLogin("delhi_mgr@samarth.ai")}
-              className="text-left p-2.5 rounded-lg border border-purple-200 bg-purple-50/50 hover:bg-purple-100/60 transition-colors flex items-center justify-between"
-            >
-              <div>
-                <p className="text-xs font-bold text-slate-900">Sunita Verma</p>
-                <p className="text-[11px] text-purple-700 font-medium">City Manager (Delhi Chapter)</p>
-              </div>
-              <CheckCircle2 className="w-4 h-4 text-purple-600" />
-            </button>
-
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => handleQuickLogin("caretaker_001@samarth.ai")}
-              className="text-left p-2.5 rounded-lg border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100/60 transition-colors flex items-center justify-between"
-            >
-              <div>
-                <p className="text-xs font-bold text-slate-900">Aarav Patel</p>
-                <p className="text-[11px] text-emerald-700 font-medium">Field Caretaker (Bengaluru)</p>
-              </div>
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            </button>
-
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => handleQuickLogin("family_s0001@samarth.ai")}
-              className="text-left p-2.5 rounded-lg border border-rose-200 bg-rose-50/50 hover:bg-rose-100/60 transition-colors flex items-center justify-between"
-            >
-              <div>
-                <p className="text-xs font-bold text-slate-900">Pooja Gupta</p>
-                <p className="text-[11px] text-rose-700 font-medium">Authorized Family Member (Daughter of Ramesh Gupta)</p>
-              </div>
-              <CheckCircle2 className="w-4 h-4 text-rose-600" />
-            </button>
-
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => handleQuickLogin("senior_s0001@samarth.ai")}
-              className="text-left p-2.5 rounded-lg border border-teal-200 bg-teal-50/50 hover:bg-teal-100/60 transition-colors flex items-center justify-between"
-            >
-              <div>
-                <p className="text-xs font-bold text-slate-900">Ramesh Gupta (Age 74)</p>
-                <p className="text-[11px] text-teal-700 font-medium">Senior Citizen Portal (Chandigarh)</p>
-              </div>
-              <CheckCircle2 className="w-4 h-4 text-teal-600" />
-            </button>
-          </div>
-        </div>
-
-        <div className="relative flex py-1 items-center">
-          <div className="flex-grow border-t border-slate-200"></div>
-          <span className="flex-shrink mx-4 text-slate-400 text-[11px] uppercase tracking-wider font-semibold">Or enter credentials</span>
-          <div className="flex-grow border-t border-slate-200"></div>
-        </div>
-
-        {/* Standard Form */}
-        <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <label className="block text-xs font-medium text-slate-700">Work Email Address</label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="h-4 w-4 text-slate-400" />
-              </div>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@samarth.ai"
-                className="pl-9 block w-full text-xs rounded-lg border border-slate-300 py-2.5 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500 focus:outline-none"
-              />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-700">Password</label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-4 w-4 text-slate-400" />
-              </div>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="pl-9 block w-full text-xs rounded-lg border border-slate-300 py-2.5 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500 focus:outline-none"
-              />
+            {/* Mode Selector Tabs (Staff vs Senior Device Pairing) */}
+            <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("staff");
+                  setError(null);
+                }}
+                className={`flex-1 py-1.5 rounded-lg text-center transition-all cursor-pointer ${
+                  activeTab === "staff"
+                    ? "bg-white text-slate-900 shadow-xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Staff & Ops Login
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("senior");
+                  setError(null);
+                }}
+                className={`flex-1 py-1.5 rounded-lg text-center transition-all cursor-pointer ${
+                  activeTab === "senior"
+                    ? "bg-white text-slate-900 shadow-xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Senior Device Pair
+              </button>
             </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors disabled:opacity-50"
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></span>
-                  Authenticating...
-                </span>
+            {/* Error Notification */}
+            {error && (
+              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 font-bold">
+                <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* Login Form */}
+            <form onSubmit={handleSubmit} className="space-y-3">
+              {activeTab === "staff" ? (
+                <>
+                  {/* Field 1: Email / Employee ID */}
+                  <div>
+                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                      Email or Employee ID
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="coord_001@demo.samarth.local"
+                        className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 bg-slate-50 hover:bg-white focus:bg-white text-slate-900 placeholder:text-slate-400 rounded-xl text-sm font-bold border border-slate-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 focus:outline-none transition-all shadow-xs"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Field 2: Password with Eye Toggle */}
+                  <div>
+                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                        <Lock className="w-4 h-4" />
+                      </div>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter password"
+                        className="w-full pl-10 pr-10 py-2.5 sm:py-3 bg-slate-50 hover:bg-white focus:bg-white text-slate-900 placeholder:text-slate-400 rounded-xl text-sm font-bold border border-slate-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 focus:outline-none transition-all shadow-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </>
               ) : (
-                <span className="flex items-center gap-2">
-                  <LogIn className="w-3.5 h-3.5" />
-                  Sign In
-                </span>
+                <>
+                  {/* Senior Device Pairing Code */}
+                  <div>
+                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                      Senior Device Pairing Code
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                        <Lock className="w-4 h-4" />
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        value={pairingCode}
+                        onChange={(e) => setPairingCode(e.target.value)}
+                        placeholder="Enter QR/Pairing code (e.g. PAIR_S0001_DEMO)"
+                        className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 bg-slate-50 hover:bg-white focus:bg-white text-slate-900 placeholder:text-slate-400 rounded-xl text-sm font-bold border border-slate-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 focus:outline-none transition-all shadow-xs"
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-1 font-medium">
+                      Generated by your Care Coordinator via <code>POST /auth/senior/pairing-code</code>.
+                    </p>
+                  </div>
+                </>
               )}
-            </button>
-          </div>
-        </form>
 
-        <div className="text-center">
-          <p className="text-[11px] text-slate-400">
-            Compliant with DPDP Act 2023 & Clinical Decision Support Standards
-          </p>
-        </div>
+              {/* Orange Login Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 sm:py-3.5 bg-gradient-to-r from-[#f97316] via-[#fa7930] to-[#fb923c] hover:from-[#ea580c] hover:to-[#f97316] text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-lg shadow-orange-500/25 transition-all transform active:scale-98 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 mt-1"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Signing in...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{activeTab === "senior" ? "PAIR & LAUNCH APP" : "LOGIN"}</span>
+                    <ArrowRight className="w-4 h-4 stroke-[3]" />
+                  </>
+                )}
+              </button>
+
+              {activeTab === "staff" && (
+                <div className="text-center pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => alert("Password reset instructions sent to registered administrator email.")}
+                    className="text-xs font-bold text-[#2563eb] hover:text-[#1d4ed8] underline cursor-pointer"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
+            </form>
+
+            {/* Quick Demo Switcher Pills */}
+            <div className="pt-2 border-t border-slate-100 space-y-1.5">
+              <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <span>Contract Demo Logins:</span>
+                <button
+                  type="button"
+                  onClick={() => setShowQuickPills(!showQuickPills)}
+                  className="text-[10px] text-teal-800 hover:underline cursor-pointer font-bold"
+                >
+                  {showQuickPills ? "Hide" : "Show"}
+                </button>
+              </div>
+
+              {showQuickPills && (
+                <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => handleQuickLogin("coord_001@demo.samarth.local", "/caretaker")}
+                    className="p-1.5 text-left bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-950 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <User className="w-3 h-3 text-emerald-700 shrink-0" />
+                    <span className="truncate">Coordinator (coord_001)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleQuickLogin("ops@demo.samarth.local", "/city-manager")}
+                    className="p-1.5 text-left bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-950 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <Building2 className="w-3 h-3 text-teal-700 shrink-0" />
+                    <span className="truncate">Ops (ops@demo)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleQuickLogin("admin@demo.samarth.local", "/admin")}
+                    className="p-1.5 text-left bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-950 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <ShieldCheck className="w-3 h-3 text-indigo-700 shrink-0" />
+                    <span className="truncate">Admin (admin@demo)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleQuickLogin("family.f0001@demo.samarth.local", "/family")}
+                    className="p-1.5 text-left bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-950 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <User className="w-3 h-3 text-amber-700 shrink-0" />
+                    <span className="truncate">Family (f0001)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleQuickSeniorPair}
+                    className="col-span-2 p-1.5 text-left bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-950 rounded-lg font-bold transition-all flex items-center justify-between cursor-pointer"
+                  >
+                    <span className="flex items-center gap-1">
+                      <User className="w-3 h-3 text-rose-700 shrink-0" />
+                      <span>Senior Device (S0001 Quick Pair)</span>
+                    </span>
+                    <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-rose-200/80 font-black">
+                      Device Token
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT: Big Bold Sahaj AI Branding (High Contrast & Crystal-Clear Readability) */}
+          <div className="text-center lg:text-left space-y-3 sm:space-y-4 max-w-xl bg-white/65 backdrop-blur-md p-6 sm:p-8 rounded-[32px] border border-white/90 shadow-xl">
+            <div className="flex items-center justify-center lg:justify-start gap-3.5">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shadow-md border-2 border-white bg-white p-1 shrink-0">
+                <Image
+                  src="/images/logo/sahaj_logo.jpg"
+                  alt="Sahaj AI Logo"
+                  width={80}
+                  height={80}
+                  className="w-full h-full object-contain rounded-xl"
+                  priority
+                />
+              </div>
+              <div className="hidden sm:block text-left">
+                <span className="inline-block px-2.5 py-0.5 rounded-full bg-teal-100/90 text-teal-900 text-[10px] font-black uppercase tracking-wider border border-teal-300/60">
+                  Municipal Eldercare Platform
+                </span>
+                <p className="text-xs font-bold text-slate-700 mt-0.5">Government of Karnataka • Sahaj AI</p>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#0a2540] tracking-tight leading-none drop-shadow-sm">
+                Sahaj AI
+              </h1>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#0a2540] tracking-tight leading-none drop-shadow-sm">
+                City Care Portal
+              </h2>
+            </div>
+
+            {/* Teal underline accent bar */}
+            <div className="w-20 h-1.5 bg-[#0d9488] rounded-full mx-auto lg:mx-0 shadow-sm" />
+
+            <p className="text-sm sm:text-base lg:text-lg font-bold text-slate-800 tracking-wide pt-1 leading-relaxed">
+              Connecting seniors with safer, smarter care.
+            </p>
+          </div>
+        </main>
+
+        {/* Footer info within frame */}
+        <footer className="w-full shrink-0 flex flex-col sm:flex-row items-center justify-between text-[10px] sm:text-[11px] font-black text-[#0a2540] pt-2 border-t border-white/50">
+          <span className="bg-white/40 backdrop-blur-xs px-3 py-0.5 rounded-full border border-white/60">
+            Sahaj AI Eldercare Operations Platform v3.0
+          </span>
+          <span className="bg-white/40 backdrop-blur-xs px-3 py-0.5 rounded-full border border-white/60 mt-1 sm:mt-0">
+            DPDP 2023 Compliant • 24/7 AI Voice Monitoring
+          </span>
+        </footer>
       </div>
     </div>
   );
 }
-

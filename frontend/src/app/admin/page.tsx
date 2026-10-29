@@ -14,16 +14,39 @@ import {
   RefreshCw,
   Clock,
   Calendar,
+  Zap,
+  Play,
+  CheckCircle2,
+  Activity,
+  Sparkles,
 } from "lucide-react";
 import { defaultApiClient } from "@/services/apiClient";
-import { AdminDashboardMetrics } from "@/types/api";
+import { getDataService } from "@/services";
+import { AdminDashboardMetrics, AdminJobRunResponse } from "@/types/api";
 import { useAuth } from "@/context/AuthContext";
 
 export default function AdminDashboardPage() {
   const { user, isAdmin } = useAuth();
+  const dataService = getDataService();
   const [data, setData] = useState<AdminDashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Contract 5.4: Admin Jobs State
+  const [runningJob, setRunningJob] = useState<string | null>(null);
+  const [jobResponses, setJobResponses] = useState<Record<string, AdminJobRunResponse>>({});
+
+  const handleRunJob = async (jobName: string) => {
+    setRunningJob(jobName);
+    try {
+      const res = await dataService.runAdminJob(jobName);
+      setJobResponses((prev) => ({ ...prev, [jobName]: res }));
+    } catch (err: any) {
+      alert(`Job failed to trigger: ${err?.message || "Unknown error"}`);
+    } finally {
+      setRunningJob(null);
+    }
+  };
 
   const fetchDashboard = async () => {
     setLoading(true);
@@ -247,6 +270,107 @@ export default function AdminDashboardPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Contract 5.4: System Admin & Batch AI Pipeline Jobs */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
+              <span>System Admin &amp; Batch AI Pipeline Jobs</span>
+              <span className="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200">
+                POST /admin/jobs/&#123;name&#125;/run
+              </span>
+            </h3>
+            <p className="text-xs text-slate-500">
+              Trigger asynchronous background worker jobs for clinical risk calculations, ML calibration, and reports.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {[
+            {
+              id: "run_daily_risk",
+              title: "Run Daily Risk Pipeline",
+              desc: "Recompute deterministic rule scores & ML risk percentiles for all seniors.",
+              icon: Activity,
+            },
+            {
+              id: "refresh_ml_predictions",
+              title: "Refresh ML Predictions",
+              desc: "Batch infer and calibrate machine learning risk probabilities.",
+              icon: Sparkles,
+            },
+            {
+              id: "sync_vitals",
+              title: "Sync Vitals Ingestion",
+              desc: "Poll and aggregate vitals from IoT devices and mobile check-ins.",
+              icon: Zap,
+            },
+            {
+              id: "generate_daily_reports",
+              title: "Generate Daily Reports",
+              desc: "Compile ops summaries, caseload status, and city performance metrics.",
+              icon: Building2,
+            },
+            {
+              id: "send_morning_notifications",
+              title: "Send Morning Notifications",
+              desc: "Dispatch scheduled check-in reminders and alerts to coordinators.",
+              icon: Bell,
+            },
+          ].map((job) => {
+            const isRunning = runningJob === job.id;
+            const res = jobResponses[job.id];
+            const JobIcon = job.icon;
+
+            return (
+              <div
+                key={job.id}
+                className="p-4 rounded-xl border border-slate-200 hover:border-slate-300 bg-slate-50/50 flex flex-col justify-between gap-3 transition-colors"
+              >
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-bold text-xs text-slate-900">
+                      <JobIcon className="w-4 h-4 text-brand-600" />
+                      <span>{job.title}</span>
+                    </div>
+                    {res && (
+                      <span
+                        className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                          res.status === "completed"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : res.status === "running"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
+                        {res.status}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">{job.desc}</p>
+                  {res && (
+                    <div className="text-[10px] text-slate-400 font-mono">
+                      Task: {res.task_id || res.job_name || res.job} • {res.triggered_at ? new Date(res.triggered_at).toLocaleTimeString() : new Date().toLocaleTimeString()}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => handleRunJob(job.id)}
+                  disabled={isRunning}
+                  className="w-full py-1.5 px-3 bg-white hover:bg-brand-50 border border-slate-200 hover:border-brand-300 rounded-lg text-xs font-bold text-slate-700 hover:text-brand-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all active:scale-98 disabled:opacity-60"
+                >
+                  <Play className={`w-3.5 h-3.5 ${isRunning ? "animate-spin text-brand-600" : "fill-current"}`} />
+                  <span>{isRunning ? "Triggering..." : "Execute Job"}</span>
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
 

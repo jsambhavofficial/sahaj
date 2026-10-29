@@ -269,7 +269,7 @@ export default function SeniorProfilePage() {
               <h4 className="text-lg font-bold text-teal-950">Aapka Data Surakshit Hai (DPDP Act 2023)</h4>
             </div>
             <p className="text-sm text-teal-800 leading-relaxed font-medium">
-              Samarth aapki gopaniyata (privacy) ka samman karta hai. Aapka data keval aapki dekhbhal aur suraksha ke liye upyog kiya jata hai. Kisi bhi teesre paksh (third-party) ko bina aapki anumati ke nahi diya jata.
+              Sahaj aapki gopaniyata (privacy) ka samman karta hai. Aapka data keval aapki dekhbhal aur suraksha ke liye upyog kiya jata hai. Kisi bhi teesre paksh (third-party) ko bina aapki anumati ke nahi diya jata.
             </p>
           </div>
         </div>

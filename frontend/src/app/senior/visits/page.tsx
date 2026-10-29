@@ -143,7 +143,7 @@ export default function SeniorVisitsPage() {
                         </span>
                         <span className="flex items-center gap-1.5 font-medium">
                           <UserCheck className="w-4 h-4 text-teal-600" />
-                          Caretaker: <strong className="text-slate-900">{v.caretaker_name || "Samarth Team"}</strong>
+                          Caretaker: <strong className="text-slate-900">{v.caretaker_name || "Sahaj Team"}</strong>
                         </span>
                       </div>
                     </div>
@@ -181,7 +181,7 @@ export default function SeniorVisitsPage() {
                         </span>
                       </div>
                       <span className="text-xs text-slate-500 font-medium">
-                        Caretaker: <strong className="text-slate-800">{v.caretaker_name || "Samarth Staff"}</strong>
+                        Caretaker: <strong className="text-slate-800">{v.caretaker_name || "Sahaj Staff"}</strong>
                       </span>
                     </div>
 
