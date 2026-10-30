@@ -67,6 +67,8 @@ class Settings(BaseSettings):
     sarvam_stt_model: str = "saaras:v4"
     sarvam_tts_model: str = "bulbul:v4-flash"
     sarvam_tts_speaker: str = ""  # empty = the model's default voice
+    groq_api_key: str = ""
+    groq_model: str = "openai/gpt-oss-120b"
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.8-flash"
     aws_region: str = "ap-south-1"

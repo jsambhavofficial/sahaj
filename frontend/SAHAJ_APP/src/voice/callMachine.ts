@@ -25,6 +25,7 @@ export interface CallState {
   playing: boolean; // agent audio still playing
   turnDone: boolean; // the server finished its turn
   ending: boolean; // the server ended the call; settle to `ended` / `error` once audio stops
+  audioIssue: string | null; // why the agent's sound could not be played (shown so it can be reported)
 }
 
 export const initialCallState: CallState = {
@@ -36,6 +37,7 @@ export const initialCallState: CallState = {
   playing: false,
   turnDone: false,
   ending: false,
+  audioIssue: null,
 };
 
 export type CallAction =
@@ -46,6 +48,7 @@ export type CallAction =
   | { kind: 'playback_finished' }
   | { kind: 'socket_closed'; code: number }
   | { kind: 'hang_up' }
+  | { kind: 'audio_error'; message: string }
   | { kind: 'fail'; code: string; message: string }; // the call cannot start or continue
 
 function settle(s: CallState): CallState {
@@ -71,6 +74,8 @@ export function callReducer(s: CallState, a: CallAction): CallState {
         : { ...s, phase: 'your_turn', turnDone: true, error: { code: 'too_short', message: 'The recording was too short.' } };
     case 'playback_finished':
       return settle({ ...s, playing: false });
+    case 'audio_error':
+      return { ...s, audioIssue: a.message };
     case 'fail':
       return { ...s, phase: 'error', playing: false, error: { code: a.code, message: a.message } };
     case 'hang_up':

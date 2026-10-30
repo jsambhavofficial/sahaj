@@ -372,13 +372,13 @@ def test_nothing_personal_reaches_the_llm(client, world, monkeypatch):
 
 
 def test_llm_name_tokens_are_restored_for_the_senior(client, world, monkeypatch):
-    use(monkeypatch, stt=FakeSTT("main Ramesh bol raha hoon"),
-        llm=RecordingLLM(lambda s, u: "Namaste [NAME_1] ji, aap kaise hain?"))
+    replies = iter(["Namaste [NAME_1] ji, aap kaise hain?", "Dhanyavaad [NAME_1] ji, kal raat neend poori hui thi kya?"])
+    use(monkeypatch, stt=FakeSTT("main Ramesh bol raha hoon"), llm=RecordingLLM(lambda s, u: next(replies)))
     with connect(client, world["token"]) as ws:
         ws.send_json({"type": "start"})
         until(ws, "turn_done")
         ev = speak(ws)
-        assert next(e for e in ev if e["type"] == "agent_text")["text"] == "Namaste Ramesh ji, aap kaise hain?"
+        assert next(e for e in ev if e["type"] == "agent_text")["text"] == "Dhanyavaad Ramesh ji, kal raat neend poori hui thi kya?"
         ws.send_json({"type": "end_call"})
         until(ws, "call_end")
 
@@ -386,7 +386,7 @@ def test_llm_name_tokens_are_restored_for_the_senior(client, world, monkeypatch)
 def test_unsafe_llm_reply_is_replaced(client, world, monkeypatch):
     unsafe = "You have diabetes. Stop taking your medicine and you are fine."
     use(monkeypatch, llm=RecordingLLM(unsafe), stt=FakeSTT("thoda thaka hua hoon"))
-    events = run_call(client, world)
+    events = run_call(client, world, answers=7)  # a model-led call has 3 extra follow-up turns
     texts = " ".join(e["text"] for e in events if e["type"] == "agent_text")
     assert "diabetes" not in texts and "Stop taking" not in texts
     assert agent_mod.load_phrases("hindi")["safe_fallback"] in texts

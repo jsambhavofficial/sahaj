@@ -13,10 +13,10 @@ const TEXT: Record<'hi' | 'en', Record<string, string>> = {
   hi: {
     title: 'सहज से बात करें',
     connecting: 'जुड़ रहे हैं…',
-    agent_speaking: 'सहज बोल रही हैं…',
-    your_turn: 'बोलने के लिए बटन दबाइए',
-    recording: 'आप बोलिए… पूरा होने पर फिर दबाइए',
-    thinking: 'सुन रही हूँ…',
+    agent_speaking: 'सहज बोल रहे हैं…',
+    your_turn: 'मैं सुन रहा हूँ…',
+    recording: 'बोलिए, मैं सुन रहा हूँ। पूरा होने पर रुक जाइए।',
+    thinking: 'समझ रहा हूँ…',
     tap_talk: 'बोलिए',
     tap_send: 'भेजिए',
     hang_up: 'कॉल खत्म करें',
@@ -31,9 +31,9 @@ const TEXT: Record<'hi' | 'en', Record<string, string>> = {
     title: 'Talk to Sahaj',
     connecting: 'Connecting…',
     agent_speaking: 'Sahaj is speaking…',
-    your_turn: 'Tap the button to speak',
-    recording: 'Go ahead… tap again when you are done',
-    thinking: 'Listening…',
+    your_turn: 'Listening…',
+    recording: 'Go ahead, I am listening. Pause when you are done.',
+    thinking: 'One moment…',
     tap_talk: 'Speak',
     tap_send: 'Send',
     hang_up: 'End call',
@@ -57,7 +57,7 @@ const STATUS_KEY: Partial<Record<Phase, string>> = {
 export const VoiceCallScreen: React.FC<Props> = ({ onBack }) => {
   const { language } = useAppState();
   const t = TEXT[language === 'hi' ? 'hi' : 'en'];
-  const { state, start, startTalking, stopTalking, hangUp } = useVoiceCall();
+  const { state, micDebug, start, startTalking, stopTalking, hangUp } = useVoiceCall();
   const { phase } = state;
 
   useEffect(() => {
@@ -81,6 +81,8 @@ export const VoiceCallScreen: React.FC<Props> = ({ onBack }) => {
           </Text>
         ) : null}
         {phase === 'ended' ? <Text style={styles.status}>{t.ended}</Text> : null}
+        {__DEV__ && phase === 'recording' && micDebug ? <Text style={styles.audioIssue}>{micDebug}</Text> : null}
+        {state.audioIssue ? <Text style={styles.audioIssue}>Sound problem: {state.audioIssue}</Text> : null}
         {state.error ? <Text style={styles.error}>{state.error.code === 'too_short' ? t.too_short : state.error.message}</Text> : null}
         {phase === 'ended' && state.summary ? <Text style={styles.summary}>{state.summary}</Text> : null}
       </ScrollView>
@@ -133,6 +135,7 @@ const styles = StyleSheet.create({
   body: { flexGrow: 1, justifyContent: 'center', paddingVertical: 16 },
   agentText: { fontSize: 24, lineHeight: 34, color: '#0F172A', textAlign: 'center' },
   transcript: { fontSize: 16, color: '#64748B', textAlign: 'center', marginTop: 16 },
+  audioIssue: { fontSize: 13, color: '#B45309', textAlign: 'center', marginTop: 12 },
   summary: { fontSize: 16, color: '#334155', textAlign: 'center', marginTop: 16 },
   error: { fontSize: 18, color: '#B91C1C', textAlign: 'center', marginTop: 16 },
   statusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 32 },

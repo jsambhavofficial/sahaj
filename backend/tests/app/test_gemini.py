@@ -5,7 +5,7 @@ import pytest
 
 from app.integrations.gemini.client import GeminiError, GeminiLLM
 from app.modules.voice import agent as agent_mod
-from app.modules.voice.schemas import CallContext, Stage
+from app.modules.voice.schemas import CallContext, Stage, Turn
 
 
 def llm(handler, **kw):
@@ -84,3 +84,25 @@ def test_factory_uses_gemini_only_with_a_key(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "abc")
     get_settings.cache_clear(); factory.get_llm.cache_clear()
     assert isinstance(factory.get_llm(), GeminiLLM)
+
+
+def test_llm_agent_never_repeats_a_question_and_moves_to_the_next_topic():
+    ctx = CallContext(language="hindi")
+    phrases = agent_mod.load_phrases("hindi")
+    # the model keeps asking about the day's health, which the opening already asked
+    class Repeats:
+        def complete(self, system, user):
+            return "सर में दर्द सुनकर खेद है। " + phrases["questions"][0]
+    ag = agent_mod.LLMAgent(Repeats(), "hindi", ctx, [])
+    history = [Turn("agent", "नमस्ते जी। " + phrases["questions"][0]), Turn("senior", "सर में दर्द है")]
+    reply = ag.say(Stage("question", 1, 7), history)
+    assert phrases["questions"][1] in reply and phrases["questions"][0] not in reply  # next unasked topic
+    # once every topic has been asked, it ends with the generic question instead of looping
+    history += [Turn("agent", q) for q in phrases["questions"][1:]]
+    assert phrases["more"] in ag.say(Stage("question", 5, 7), history)
+
+
+def test_only_the_first_question_is_kept():
+    two = "सर में दर्द की बात सुनकर खेद है। यह दर्द अभी भी है? यह दर्द कब से शुरू हुआ?"
+    assert agent_mod._one_question(two) == "सर में दर्द की बात सुनकर खेद है। यह दर्द अभी भी है?"
+    assert agent_mod._one_question("ठीक है जी।") == "ठीक है जी।"

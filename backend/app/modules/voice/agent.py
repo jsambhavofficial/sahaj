@@ -8,6 +8,7 @@ the safety guard, and replaced by the scripted line if the model fails or says s
 import json
 import logging
 import re
+from difflib import SequenceMatcher
 from functools import lru_cache
 from pathlib import Path
 
@@ -22,12 +23,14 @@ from app.modules.voice.schemas import CallContext, Stage, Turn
 log = logging.getLogger(__name__)
 PROMPT_DIR = Path(__file__).parent / "prompts"
 _MAX_REPLY_CHARS = 400
+FOLLOWUP_TURNS = 3  # extra turns the LLM agent may spend on follow-ups beyond the fixed topics
 
 # The shared cue extractor only knows "fall"; these are the other phrases that must reach a human now.
 _URGENT_TEXT = [re.compile(p, re.IGNORECASE) for p in [
     r"chest\s*pain|seene\s*(?:mein|me|main)\s*(?:bahut\s*)?(?:dard|jalan|bhaari)|सीने\s*में\s*(?:दर्द|जलन)",
     r"(?:can'?t|cannot|unable to)\s*breathe|breathless|saans\s*(?:nahi|nahin|phool|lene mein)|सांस\s*(?:नहीं|फूल)|साँस\s*(?:नहीं|फूल)",
     r"\b(?:faint(?:ed|ing)?|unconscious|behosh|behoshi)\b|बेहोश",
+    r"dil\s*(?:baith|dooba|doob)|दिल\s*(?:बैठ|डूब)",
     r"\b(?:fell|gir\s*(?:gaya|gayi|gai|pada|padi))\b|गिर\s*(?:गया|गई|गयी|पड़)",
     r"\b(?:bachao|emergency|ambulance|heart attack)\b|बचाओ",
     r"\bsuicide|marna chahta|marna chahti|jeena nahi|मरना चाहत",
@@ -59,6 +62,35 @@ def question_count(language: str) -> int:
     return len(load_phrases(language)["questions"])
 
 
+def _norm(text: str) -> str:
+    return re.sub(r"[\W_]+", " ", text.lower()).strip()
+
+
+def _question_part(text: str) -> str:
+    """The question in a reply: its last sentence (the first part is usually just an acknowledgement)."""
+    sentences = [x for x in re.split(r"(?<=[?।.])\s+", text.strip()) if x]
+    questions = [x for x in sentences if x.endswith("?")]
+    return _norm((questions or sentences or [text])[-1])
+
+
+def _is_repeat(text: str, history: list[Turn]) -> bool:
+    """True if `text` asks (nearly) what the agent already asked, so the senior is never asked the same thing twice."""
+    q = _question_part(text)
+    return any(SequenceMatcher(None, q, _question_part(t.text)).ratio() > 0.8 or SequenceMatcher(None, _norm(text), _norm(t.text)).ratio() > 0.85
+               for t in history if t.speaker == "agent")
+
+
+def _one_question(reply: str) -> str:
+    """Keep the acknowledgement and the first question; drop any further questions (one question per turn)."""
+    sentences = [x for x in re.split(r"(?<=[?।.])\s+", reply.strip()) if x]
+    kept = []
+    for sentence in sentences:
+        kept.append(sentence)
+        if sentence.endswith("?"):
+            break
+    return " ".join(kept)
+
+
 class ScriptedAgent:
     """Fixed question sequence and a polite goodbye. Works with zero accounts."""
     name = "scripted"
@@ -76,7 +108,8 @@ class ScriptedAgent:
             first = p["followup"] if self.context.has_open_symptom else p["questions"][0]
             return f"{p['greeting']} {first}"
         ack = p["acks"][(stage.index - 1) % len(p["acks"])]
-        return f"{ack} {p['questions'][stage.index]}"
+        qs = p["questions"]
+        return f"{ack} {qs[stage.index] if stage.index < len(qs) else p.get('more', qs[-1])}"
 
 
 class LLMAgent:
@@ -91,16 +124,39 @@ class LLMAgent:
         self.script = ScriptedAgent(language, context)
         self.system = load_system_prompt(language)
 
-    def _task(self, stage: Stage) -> str:
+    def _task(self, stage: Stage, history: list[Turn]) -> str:
         intended = self.script.say(stage, [])
         if stage.kind == "goodbye":
             return "TASK: Thank the person warmly and say goodbye. Do not ask a question."
         if stage.kind == "opening":
             return ("TASK: Greet the person warmly as Samarth's caller in one short sentence, then ask a simple "
-                    f"question about how they are feeling. Question {stage.index + 1} of {stage.total}. "
-                    f"Suggested wording: \"{intended}\"")
-        return (f"TASK: Acknowledge what they just said in a few kind words (no advice, no diagnosis), then ask "
-                f"question {stage.index + 1} of {stage.total}. Suggested wording: \"{self.script.phrases['questions'][stage.index]}\"")
+                    f"question about how they are feeling. Suggested wording: \"{intended}\"")
+        topics = "\n".join(f"- {q}" for q in self.script.phrases["questions"])
+        asked = "\n".join(f"- {t.text}" for t in history if t.speaker == "agent") or "- (nothing yet)"
+        left = max(1, stage.total - stage.index)
+        return (
+            "TASK: The person has just answered. Reply in at most two short sentences.\n"
+            "1) Acknowledge what THEY said, naming the specific thing (for example the headache or the missed meal).\n"
+            "2) Then ask exactly ONE short question:\n"
+            "   - If they mentioned pain, dizziness, weakness, breathing trouble, a fall, a missed meal or medicine, or a low mood, "
+            "ask ONE gentle follow-up about it (since when, how bad is it now, who is with them). "
+            "At most two follow-ups in a row about the same thing.\n"
+            "   - Otherwise ask about the next topic below that you have NOT asked yet, in your own words.\n"
+            f"TOPICS TO COVER (each once, any order):\n{topics}\n"
+            f"QUESTIONS YOU HAVE ALREADY ASKED (never repeat or rephrase any of them):\n{asked}\n"
+            f"TURNS LEFT including this one: {left}. Cover every topic before the turns run out, "
+            "so skip a follow-up when turns left is not more than the topics still uncovered.\n"
+            "STRICT RULES:\n"
+            "- Use only what the person actually said. Never invent or assume any detail (for example never say there is "
+            "no food at home unless they said so).\n"
+            "- Read the whole dialogue. If they have already told you something (sleep, food, medicine, mood), that topic is "
+            "COVERED even if it is on the list: do not ask about it again.\n"
+            "- Do not call the person sir, madam or सर (it is confused with सर meaning head); just say आप or जी.\n"
+            "- Ask about their situation, never make a suggestion in question form (not 'will you try to eat?', "
+            "'will you rest?', 'have you seen a doctor?').\n"
+            "- Never give advice or tell them to eat, rest, drink, take medicine or see a doctor; never diagnose. "
+            "If something sounds serious, just say their coordinator will be told.\n"
+            "- When every topic is covered and no follow-up is needed, ask if there is anything else they want to share.")
 
     def build_user_prompt(self, stage: Stage, history: list[Turn]) -> str:
         parts = []
@@ -108,8 +164,17 @@ class LLMAgent:
         parts.append("CONTEXT:\n" + (ctx or "(none)"))
         if history:
             parts.append("DIALOGUE SO FAR:\n" + "\n".join(f"{t.speaker.title()}: {t.text}" for t in history))
-        parts.append(self._task(stage))
+        parts.append(self._task(stage, history))
         return "\n\n".join(parts)
+
+    def _next_unasked(self, stage: Stage, history: list[Turn]) -> str:
+        """An acknowledgement plus the first scripted topic not asked yet (or the generic closing question)."""
+        p = self.script.phrases
+        ack = p["acks"][max(stage.index - 1, 0) % len(p["acks"])]
+        for q in p["questions"]:
+            if not _is_repeat(q, history):
+                return f"{ack} {q}"
+        return f"{ack} {p.get('more', p['questions'][-1])}"
 
     def say(self, stage: Stage, history: list[Turn]) -> str:
         masked_prompt, mapping = mask(self.build_user_prompt(stage, history), self.names)
@@ -120,6 +185,10 @@ class LLMAgent:
             log.warning("LLM failed (%s); using the scripted line", type(e).__name__)
             return fallback_line
         reply = " ".join((reply or "").split()).strip('"')[:_MAX_REPLY_CHARS]
+        reply = _one_question(reply)
+        if reply and _is_repeat(reply, history):
+            log.info("LLM repeated an earlier question; asking the next topic it has not asked")
+            return self._next_unasked(stage, history)
         if not reply:
             return fallback_line
         if violations(reply):

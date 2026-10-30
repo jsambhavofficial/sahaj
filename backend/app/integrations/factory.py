@@ -8,6 +8,7 @@ from app.integrations.base import LLMProvider, PushProvider, STTProvider, Storag
 from app.integrations.bhashini.client import BhashiniClient, BhashiniSTT, BhashiniTTS
 from app.integrations.exotel.client import ExotelTelephony
 from app.integrations.gemini.client import GeminiLLM
+from app.integrations.groq.client import GroqLLM
 from app.integrations.sarvam.client import SarvamClient, SarvamSTT, SarvamTTS
 from app.integrations.storage import LocalStorage, SupabaseStorage
 from app.integrations.stub.providers import StubLLM, StubPush, StubSTT, StubTTS, StubTelephony
@@ -55,6 +56,10 @@ def get_tts() -> TTSProvider:
 @lru_cache
 def get_llm() -> LLMProvider:
     s = get_settings()
+    if s.llm_provider == "groq":
+        if s.groq_api_key:
+            return GroqLLM(api_key=s.groq_api_key, model=s.groq_model)
+        logging.getLogger(__name__).warning("LLM_PROVIDER=groq but GROQ_API_KEY is empty; using the stub LLM")
     if s.llm_provider == "gemini":
         if s.gemini_api_key:
             return GeminiLLM(api_key=s.gemini_api_key, model=s.gemini_model)
