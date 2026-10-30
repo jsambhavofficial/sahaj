@@ -135,28 +135,28 @@ class LLMAgent:
         asked = "\n".join(f"- {t.text}" for t in history if t.speaker == "agent") or "- (nothing yet)"
         left = max(1, stage.total - stage.index)
         return (
-            "TASK: The person has just answered. Reply in at most two short sentences.\n"
-            "1) Acknowledge what THEY said, naming the specific thing (for example the headache or the missed meal).\n"
-            "2) Then ask exactly ONE short question:\n"
-            "   - If they mentioned pain, dizziness, weakness, breathing trouble, a fall, a missed meal or medicine, or a low mood, "
-            "ask ONE gentle follow-up about it (since when, how bad is it now, who is with them). "
-            "At most two follow-ups in a row about the same thing.\n"
-            "   - Otherwise ask about the next topic below that you have NOT asked yet, in your own words.\n"
-            f"TOPICS TO COVER (each once, any order):\n{topics}\n"
+            "TASK: The person has just answered. Your job is ONLY to collect answers to the decided questions—never inform, teach, or advise them. Reply in at most two short sentences.\n"
+            "1) Briefly acknowledge what THEY said in a few warm words.\n"
+            "2) Choose your ONE question using this exact decision flow:\n"
+            "   - CASE A (Clear answer + no issue mentioned): If their first response already gives the information needed for the question you asked and mentions no issue from the Important / Useful Issues List, DO NOT ask a follow-up. Ask the next decided question below.\n"
+            "   - CASE B (Vague / incomplete answer): If their response does not meaningfully answer the question you asked or is not elaborate enough, ask a clarifying follow-up question that helps them answer the original question better.\n"
+            "   - CASE C (Answer mentions an Important / Useful Issue): If they answered the question AND also mentioned something from the Important / Useful Issues List (1. falls/slips/injury, 2. dizziness/vertigo, 3. chest/joint/body pain, 4. breathing trouble, 5. severe weakness/fatigue, 6. fever/swelling/urinary discomfort, 7. poor sleep or skipped meals/low appetite, 8. loneliness/anxiety/memory confusion, 9. missed/confusing/finished medicines, or 10. needing escort/groceries/app help/coordinator support—e.g. 'Yes I took the medicine, btw I felt dizzy'), ask a follow-up question about that specific issue (since when, how bad is it now, or what help they need).\n"
+            "   - HARD CAP OF 2 FOLLOW-UPS: Ask at most 2 follow-up questions per decided question (whether clarifying or probing an issue). After 2 follow-ups, drop the topic whatever the result is and ask the NEXT decided question (not another follow-up).\n"
+            f"DECIDED QUESTIONS TO COVER (each once, any order):\n{topics}\n"
             f"QUESTIONS YOU HAVE ALREADY ASKED (never repeat or rephrase any of them):\n{asked}\n"
-            f"TURNS LEFT including this one: {left}. Cover every topic before the turns run out, "
-            "so skip a follow-up when turns left is not more than the topics still uncovered.\n"
+            f"TURNS LEFT including this one: {left}. Cover every decided question before the turns run out, "
+            "so skip a follow-up when turns left is not more than the decided questions still uncovered.\n"
             "STRICT RULES:\n"
             "- Use only what the person actually said. Never invent or assume any detail (for example never say there is "
             "no food at home unless they said so).\n"
-            "- Read the whole dialogue. If they have already told you something (sleep, food, medicine, mood), that topic is "
+            "- Read the whole dialogue. If they have already told you something (sleep, food, medicine, mood), that decided question is "
             "COVERED even if it is on the list: do not ask about it again.\n"
             "- Do not call the person sir, madam or सर (it is confused with सर meaning head); just say आप or जी.\n"
             "- Ask about their situation, never make a suggestion in question form (not 'will you try to eat?', "
             "'will you rest?', 'have you seen a doctor?').\n"
             "- Never give advice or tell them to eat, rest, drink, take medicine or see a doctor; never diagnose. "
             "If something sounds serious, just say their coordinator will be told.\n"
-            "- When every topic is covered and no follow-up is needed, ask if there is anything else they want to share.")
+            "- When every decided question is covered and no follow-up is needed, ask if there is anything else they want to share.")
 
     def build_user_prompt(self, stage: Stage, history: list[Turn]) -> str:
         parts = []

@@ -134,6 +134,7 @@ class VoiceSession:
         self.finished = True
         call, db = self.call, self.db
         now = _now()
+        duration_sec = int(time.monotonic() - self._t0)
         all_cues = [c for _, cues in self.senior_turns for c in cues]
         try:
             repo.add_nlp_cues(db, call.id, call.senior_id, all_cues, nlp.EXTRACTOR_VERSION)
@@ -145,9 +146,13 @@ class VoiceSession:
             call.summary = summarizer.summarize(self.llm, self.language, transcript, fallback, self.names) \
                 if status != "failed" else fallback
             call.sentiment = summarizer.sentiment(all_cues, self.urgent)
-            call.call_insights = {"questions_answered": self.answered, "questions_total": self.total,
-                                  "urgent": self.urgent, "end_reason": reason,
-                                  "cue_types": sorted({c["cue_type"] for c in all_cues if c["cue_value"] == "present"})}
+            insights: dict = {"questions_answered": self.answered, "questions_total": self.total,
+                              "urgent": self.urgent, "end_reason": reason,
+                              "cue_types": sorted({c["cue_type"] for c in all_cues if c["cue_value"] == "present"})}
+            call_proc = self._run_process_call_pipeline(call, duration_sec, now)
+            if call_proc is not None:
+                insights["process_call"] = call_proc
+            call.call_insights = insights
             if self.senior_turns:
                 repo.add_checkin(db, call, " ".join(t for t, _ in self.senior_turns), self._started_at)
         except Exception:
@@ -157,7 +162,7 @@ class VoiceSession:
             call.summary = "AI wellbeing call ended; the summary could not be generated."
         call.status = status
         call.ended_at = now
-        call.duration_sec = int(time.monotonic() - self._t0)
+        call.duration_sec = duration_sec
         call.transcript_status = "done"
         call.processed_at = now
         audit(db, self.user, "voice_call.end", call.senior_id,
@@ -165,6 +170,37 @@ class VoiceSession:
         db.commit()
         self._rescore(db, call.senior_id, self.day, "post_ai_call")
         return [{"type": "call_end", "call_id": str(call.id), "summary": call.summary}]
+
+    def _run_process_call_pipeline(self, call: Call, duration_sec: int, now: datetime) -> dict | None:
+        """Triggers the CallProcessingService (process_call) pipeline on the completed dialogue."""
+        if not self.history:
+            return None
+        try:
+            from app.modules.checkins.schemas import CallProcessRequest, CallTurn as ProcessCallTurn
+            from app.modules.checkins.service import CallProcessingService
+
+            turns = [
+                ProcessCallTurn(
+                    speaker="Coordinator" if t.speaker == "agent" else "Senior",
+                    text=t.text,
+                )
+                for t in self.history
+            ]
+            req = CallProcessRequest(
+                senior_id=call.senior_id,
+                turns=turns,
+                call_id=str(call.id),
+                call_duration_seconds=duration_sec,
+                timestamp=now.isoformat(),
+            )
+            res = CallProcessingService().process_call(req)
+            if res.requires_clinical_escalation:
+                self.urgent = True
+                call.urgency_flag = True
+            return res.model_dump()
+        except Exception:
+            log.warning("process_call pipeline skipped for call %s", call.id, exc_info=True)
+            return None
 
     # ---------------------------------------------------------------- one turn
     def _transcribe(self, audio: bytes) -> tuple[str, float | None]:

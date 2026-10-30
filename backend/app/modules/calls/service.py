@@ -195,11 +195,46 @@ class CallService:
 
         call.summary = self._summarise(call, segments)
         call.urgency_flag = call.urgency_flag or is_urgent(cues)
+        call_proc = self._run_process_call_pipeline(call, segments)
+        if call_proc is not None:
+            call.call_insights = {**(call.call_insights or {}), "process_call": call_proc}
         call.transcript_status, call.processed_at = "done", _now()
         call.model_info = {**(call.model_info or {}), "stt": "stub", "llm": "stub"}
         self.db.commit()
         self._after_processing(call)
         return call
+
+    def _run_process_call_pipeline(self, call: Call, segments) -> dict | None:
+        """Triggers the CallProcessingService (process_call) pipeline on the diarized call segments."""
+        if not segments:
+            return None
+        try:
+            from app.modules.checkins.schemas import CallProcessRequest, CallTurn as ProcessCallTurn
+            from app.modules.checkins.service import CallProcessingService
+
+            turns = [
+                ProcessCallTurn(
+                    speaker="Coordinator" if s.speaker == "coordinator" else "Senior",
+                    text=s.text,
+                )
+                for s in segments
+                if (s.text or "").strip()
+            ]
+            if not turns:
+                return None
+            req = CallProcessRequest(
+                senior_id=call.senior_id,
+                turns=turns,
+                call_id=str(call.id),
+                call_duration_seconds=call.duration_sec,
+            )
+            res = CallProcessingService().process_call(req)
+            if res.requires_clinical_escalation:
+                call.urgency_flag = True
+            return res.model_dump()
+        except Exception:
+            logger.warning("process_call pipeline skipped for call %s", call.id, exc_info=True)
+            return None
 
     def _after_processing(self, call: Call) -> None:
         """Re-score the senior and tell the coordinator. Failures here never fail the call."""

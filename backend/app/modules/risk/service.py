@@ -1,6 +1,9 @@
 """Scoring orchestration: score seniors, keep daily_risk_scores current, drive alerts and re-ranking."""
 
 from datetime import date
+import logging
+from pathlib import Path
+import sys
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -11,8 +14,23 @@ from app.modules.alerts import service as alert_service
 from app.modules.alerts.service import AlertChange
 from app.modules.risk import repository as repo
 from app.modules.risk.models import DailyRiskScore
+from app.modules.risk.schemas import RiskCalculationRequest, RiskCalculationResponse
 from app.modules.risk.scorer import HeuristicScorer, RiskScorer, ScoreResult
 from app.modules.seniors.models import Senior
+
+# Ensure backend and backend/ml are on sys.path
+_backend_dir = Path(__file__).resolve().parents[3]
+_ml_dir = _backend_dir / "ml"
+for _p in (_backend_dir, _ml_dir):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+
+try:
+    from ml.src.risk_engine.risk_score_calculation import MultimodalRiskCalculator, RiskCalculationResult
+except ImportError:
+    from src.risk_engine.risk_score_calculation import MultimodalRiskCalculator, RiskCalculationResult
+
+logger = logging.getLogger("risk_service")
 
 SCORERS: dict[str, type] = {"heuristic": HeuristicScorer}
 BATCH_SIZE = 50
@@ -78,3 +96,16 @@ def rescore_and_rerank(db: Session, senior_id: str, on_date: date, reason: str =
         db, on_date, reason=reason, coordinator_ids=[senior.coordinator_id],
         ai_done_seniors={senior_id} if reason == "post_ai_call" else None)
     return lists[0] if lists else None
+
+
+class RiskScoringService:
+    """Computes daily multimodal risk scores and dual-queue recommendations."""
+
+    def __init__(self):
+        self.calculator = MultimodalRiskCalculator()
+
+    def calculate_score(self, request: RiskCalculationRequest) -> RiskCalculationResponse:
+        logger.info("Computing multimodal risk score for senior_id=%s, date=%s", request.senior_id, request.date)
+        input_data = request.model_dump()
+        result: RiskCalculationResult = self.calculator.calculate(input_data)
+        return RiskCalculationResponse(**result.to_dict())

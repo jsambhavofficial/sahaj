@@ -224,8 +224,22 @@ def send_voice_note(db: Session, sender: User, senior_id: str, data: bytes, *, f
     if transcript and sender.role == "senior":
         _summarise(db, message, senior, transcript)
         _analyse(db, message, senior, transcript)
+        _run_voice_note_processor(senior_id, transcript)
     _after_send(db, message, sender, senior)
     return _out_many(db, [message], sender)[0]
+
+
+def _run_voice_note_processor(senior_id: str, transcript: str) -> None:
+    """Runs VoiceNoteService on the senior's voice note transcript to populate talking points."""
+    try:
+        from app.modules.voice.schemas import VoiceNoteProcessRequest
+        from app.modules.voice.service import VoiceNoteService
+
+        VoiceNoteService().process_voice_note(
+            VoiceNoteProcessRequest(senior_id=senior_id, transcript=transcript)
+        )
+    except Exception:
+        logger.warning("VoiceNoteService processing skipped for senior %s", senior_id, exc_info=True)
 
 
 def _transcribe(db: Session, message: Message, data: bytes, language: str | None) -> str | None:

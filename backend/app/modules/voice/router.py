@@ -1,10 +1,11 @@
-"""WS /ws/voice-agent: HTTP-free transport only. The call logic is in session.py."""
+"""WS /ws/voice-agent and HTTP /voice/* endpoints."""
 
 import asyncio
 import json
 import logging
+from typing import List
 
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, status
 from fastapi.concurrency import run_in_threadpool
 from pydantic import TypeAdapter, ValidationError
 from sqlalchemy.orm import Session
@@ -12,7 +13,14 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.exceptions import AppError
 from app.modules.voice import service
-from app.modules.voice.schemas import SimpleMessage, StartMessage
+from app.modules.voice.schemas import (
+    SimpleMessage,
+    StartMessage,
+    TalkingPointItem,
+    VoiceNoteProcessRequest,
+    VoiceNoteProcessResponse,
+)
+from app.modules.voice.service import VoiceNoteService
 
 log = logging.getLogger(__name__)
 router = APIRouter(tags=["voice-agent"])
@@ -24,6 +32,47 @@ _client_message = TypeAdapter(StartMessage | SimpleMessage)
 
 def _err(code: str, message: str) -> dict:
     return {"type": "error", "code": code, "message": message}
+
+
+def get_voice_service() -> VoiceNoteService:
+    return VoiceNoteService()
+
+
+@router.post(
+    "/voice/process-note",
+    response_model=VoiceNoteProcessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Process Senior Voice Note Transcript",
+    description=(
+        "Ingests senior audio transcript, extracts Risk vs Attention Required events, "
+        "computes bounded risk delta, and returns dynamic talking points for future bot check-ins."
+    ),
+)
+def process_voice_note(
+    request: VoiceNoteProcessRequest,
+    svc: VoiceNoteService = Depends(get_voice_service),
+) -> VoiceNoteProcessResponse:
+    try:
+        return svc.process_voice_note(request)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to process voice note transcript: {str(exc)}",
+        )
+
+
+@router.get(
+    "/voice/talking-points/{senior_id}",
+    response_model=List[TalkingPointItem],
+    status_code=status.HTTP_200_OK,
+    summary="Get Active Talking Points for Senior",
+    description="Returns all active, unresolved talking points for dynamic check-in bot question generation.",
+)
+def get_talking_points(
+    senior_id: str,
+    svc: VoiceNoteService = Depends(get_voice_service),
+) -> List[TalkingPointItem]:
+    return svc.get_active_talking_points(senior_id)
 
 
 @router.websocket("/ws/voice-agent")
