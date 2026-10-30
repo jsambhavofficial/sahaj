@@ -63,6 +63,33 @@ class RiskHistoryItem(BaseModel):
     top_factors: list[dict[str, Any]] = []
     recommended_action: str | None = None
     scoring_version: str
+    is_top_5_percent: bool = False
+    score_breakdown: dict[str, Any] | None = None
+    primary_driver_summary: str | None = None
+    suggested_action: str | None = None
+
+
+class ScoreBreakdown(BaseModel):
+    sub_scores: dict[str, float] = {}
+    top_factors: list[dict[str, Any]] = []
+    active_synergies: list[dict[str, Any]] = []
+    safety_tripwire_triggered: bool = False
+
+
+class SeniorRiskDetailResponse(BaseModel):
+    senior_id: str
+    date: date
+    risk_score: int
+    risk_level: str
+    confidence_level: str | None = None
+    baseline_confidence: str | None = None
+    is_top_5_percent: bool = False
+    score_breakdown: ScoreBreakdown
+    primary_driver_summary: str | None = None
+    suggested_action: str | None = None
+    action_type: str | None = None
+    recommended_action: str | None = None
+    scoring_version: str = "unknown"
 
 
 class SeniorCallItem(BaseModel):

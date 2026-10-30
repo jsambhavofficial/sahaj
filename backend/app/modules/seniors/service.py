@@ -125,7 +125,27 @@ def risk_history(db: Session, user: User, senior_id: str, date_from, date_to, li
     date_bounds(date_from, date_to)  # validates the range
     rows = repository.list_risk_history(db, senior_id, date_from, date_to, limit)
     audit_read(db, user, "view_risk_history", senior_id)
-    return rows
+
+    from app.modules.risk.alert_explainer import get_senior_risk_detail
+
+    out = []
+    for r in rows:
+        detail = get_senior_risk_detail(db, senior_id, r.date)
+        out.append(
+            {
+                "date": r.date,
+                "risk_score": r.risk_score,
+                "risk_level": r.risk_level,
+                "top_factors": r.top_factors or [],
+                "recommended_action": r.recommended_action,
+                "scoring_version": r.scoring_version,
+                "is_top_5_percent": detail.get("is_top_5_percent", False),
+                "score_breakdown": detail.get("score_breakdown"),
+                "primary_driver_summary": detail.get("primary_driver_summary"),
+                "suggested_action": detail.get("suggested_action"),
+            }
+        )
+    return out
 
 
 _INSIGHT_KEYS = ("questions_answered", "questions_total", "urgent", "end_reason", "cue_types")

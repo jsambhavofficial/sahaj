@@ -13,6 +13,7 @@ from app.modules.auth.audit import audit
 from app.modules.auth.models import User
 from app.modules.risk.schemas import RiskCalculationRequest, RiskCalculationResponse
 from app.modules.risk.service import RiskScoringService
+from app.modules.seniors.schemas import SeniorRiskDetailResponse
 from app.modules.vitals import service as vitals_service
 
 router = APIRouter(prefix="/risk", tags=["Multimodal Risk Calculation"])
@@ -68,6 +69,28 @@ def calculate_senior_risk_endpoint(
     audit(db, user, "risk.calculate_senior", senior_id, {"date": target_date.isoformat()})
     db.commit()
     return resp
+
+
+@router.get(
+    "/senior/{senior_id}",
+    response_model=SeniorRiskDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get Detailed Risk Score Breakdown, Primary Driver Summary, and Suggested Action",
+    description=(
+        "Returns the complete score breakdown (subscores, contributing factors, synergies). "
+        "For seniors in the top 5% highest risk, also returns the LLM-generated primary driver summary "
+        "and suggested action from context_repo."
+    ),
+)
+def get_senior_risk_detail_endpoint(
+    senior_id: str,
+    on_date: date | None = Query(None, alias="date", description="Risk date; default demo date"),
+    user: User = Depends(require_role("coordinator", "ops", "admin", "senior")),
+    db: Session = Depends(get_db),
+):
+    target_date = on_date or demo_today()
+    from app.modules.risk.alert_explainer import get_senior_risk_detail
+    return get_senior_risk_detail(db, senior_id, target_date)
 
 
 @router.post(

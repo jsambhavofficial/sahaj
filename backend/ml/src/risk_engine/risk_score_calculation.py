@@ -1288,6 +1288,17 @@ def calculate_senior_risk(
         on_date=target_date,
         baseline_confidence=base_conf_map.get(senior_id, "NONE"),
     )
+    if result.final_risk_score >= 50 or result.safety_tripwire_triggered:
+        try:
+            from app.modules.risk.alert_explainer import explain_and_persist_top_risk_alerts
+            explain_and_persist_top_risk_alerts(
+                db=db,
+                scored_results={senior_id: result},
+                on_date=target_date,
+                top_percentile=1.0,
+            )
+        except Exception as exc:
+            logger.warning("Failed to explain top alert for %s: %s", senior_id, exc)
     if commit:
         db.commit()
     else:
@@ -1345,6 +1356,17 @@ def calculate_cohort_risk(
         )
         results_by_senior[sid] = res
         levels_count[res.risk_level] = levels_count.get(res.risk_level, 0) + 1
+
+    try:
+        from app.modules.risk.alert_explainer import explain_and_persist_top_risk_alerts
+        explain_and_persist_top_risk_alerts(
+            db=db,
+            scored_results=results_by_senior,
+            on_date=target_date,
+            top_percentile=0.05,
+        )
+    except Exception as exc:
+        logger.warning("Failed to explain top 5 percent alerts in cohort: %s", exc)
 
     if commit:
         db.commit()
