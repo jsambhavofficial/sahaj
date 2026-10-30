@@ -151,3 +151,101 @@ def test_me_notifications_senior_only(client, db_session):
     assert r.status_code == 200 and r.json()["total"] == 1
     assert client.get(f"{API}/me/notifications", headers=auth(client, coord.email)).status_code == 403
     assert client.get(f"{API}/me/notifications").status_code == 401
+
+
+
+def test_unread_count_and_mark_all(client, db_session):
+    u = _seed(db_session)
+    h = auth(client, u.email)
+    r = client.get(f"{API}/notifications/unread-count", headers=h)
+    assert r.status_code == 200
+    assert r.json()["unread_count"] == 3
+
+    r2 = client.post(f"{API}/notifications/read-all", headers=h)
+    assert r2.status_code == 200
+    assert r2.json()["marked_read"] == 3
+
+    r3 = client.get(f"{API}/notifications/unread-count", headers=h)
+    assert r3.json()["unread_count"] == 0
+
+
+def test_notification_preferences(client, db_session):
+    u = make_user(db_session, "coordinator")
+    h = auth(client, u.email)
+    r = client.get(f"{API}/notifications/preferences", headers=h)
+    assert r.status_code == 200
+    prefs = r.json()["preferences"]
+    assert prefs["new_concerns"] is True
+
+    # Disable new_concerns
+    prefs["new_concerns"] = False
+    r2 = client.put(f"{API}/notifications/preferences", headers=h, json={"preferences": prefs})
+    assert r2.status_code == 200
+    assert r2.json()["preferences"]["new_concerns"] is False
+
+    # notify should now be suppressed for new_concerns
+    res = service.notify(db_session, u.id, "wellbeing_concern", "Concern", "Review", commit=True)
+    assert res is None
+
+    # But critical escalation must still be allowed
+    esc = service.notify(db_session, u.id, "escalation", "Escalation", "Critical", commit=True)
+    assert esc is not None
+
+
+def test_coordinator_senior_assignment_security(client, db_session):
+    coord1 = make_user(db_session, "coordinator")
+    coord2 = make_user(db_session, "coordinator")
+    senior, _ = make_senior(db_session, coord1)
+
+    # coord1 is assigned: notification allowed
+    n1 = service.notify(db_session, coord1.id, "wellbeing_concern", "Title", "Body",
+                        data={"senior_id": senior.senior_id})
+    assert n1 is not None
+
+    # coord2 is NOT assigned to this senior: notification suppressed
+    n2 = service.notify(db_session, coord2.id, "wellbeing_concern", "Title", "Body",
+                        data={"senior_id": senior.senior_id})
+    assert n2 is None
+
+
+def test_test_notification_endpoint(client, db_session):
+    u = make_user(db_session, "coordinator")
+    h = auth(client, u.email)
+    r = client.post(
+        f"{API}/notifications/test",
+        headers=h,
+        json={"kind": "wellbeing_concern", "title": "Test Title", "body": "Test Body"}
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["title"] == "Test Title"
+    assert body["kind"] == "wellbeing_concern"
+
+
+def test_transient_push_error_keeps_notification_pending(client, db_session, monkeypatch):
+    from app.integrations.base import PushTransientError
+    from app.modules.notifications.models import DeviceToken
+
+    class Flaky:
+        def __init__(self):
+            self.fail = True
+
+        def send(self, token, title, body, data):
+            if self.fail:
+                raise PushTransientError("FCM HTTP 503")
+            return True
+
+    flaky = Flaky()
+    monkeypatch.setattr(service, "get_push", lambda: flaky)
+    u = make_user(db_session, "coordinator")
+    db_session.add(DeviceToken(user_id=u.id, platform="android", token="tok_12345678"))
+    n = service.notify(db_session, u.id, "escalation", "Escalation", "Review now", commit=True)
+
+    assert service.send_pending(db_session) == 0
+    db_session.refresh(n)
+    assert n.delivery_status == "pending"          # retried on the next tick
+
+    flaky.fail = False
+    assert service.send_pending(db_session) == 1
+    db_session.refresh(n)
+    assert n.delivery_status == "sent"

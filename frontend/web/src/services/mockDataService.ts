@@ -24,6 +24,9 @@ import {
   ContractAlertFeedbackRequest,
   ContractMessageItem,
   ContractNotificationItem,
+  ContractNotificationPreferences,
+  ContractDeviceRegister,
+  ContractDeviceOut,
   SeniorHomeResponse,
   OpsOverviewResponse,
   OpsAlertVolumeItem,
@@ -836,26 +839,99 @@ export class MockDataService implements IDataService {
     return;
   }
 
+  private mockNotifications: ContractNotificationItem[] = [
+    {
+      id: "notif_001",
+      kind: "daily_wellbeing",
+      title: "नमस्ते जी!",
+      body: "आज अपना हाल-चाल बताना न भूलें।",
+      data: { senior_id: "S0042" },
+      sent_at: new Date(Date.now() - 3600000).toISOString(),
+      read_at: null,
+    },
+    {
+      id: "notif_002",
+      kind: "ai_saathi_reminder",
+      title: "सहज साथी",
+      body: "आपका सहज साथी आपसे बात करने के लिए तैयार है।",
+      data: { senior_id: "S0042" },
+      sent_at: new Date(Date.now() - 7200000).toISOString(),
+      read_at: null,
+    },
+  ];
+
+  private mockPreferences: Record<string, any> = {
+    daily_wellbeing: true,
+    ai_saathi_reminder: true,
+    caretaker_visit_reminder: true,
+    medication_reminder: true,
+    appointment_reminder: true,
+    care_update: true,
+    wellbeing_concern_detected: true,
+    senior_assigned: true,
+    pending_followup_task: true,
+    missed_checkin_verification: true,
+    overdue_caretaker_visit: true,
+    family_concern_submitted: true,
+    reminder_time: "09:00",
+  };
+
   async getNotifications(
     unreadOnly: boolean = true
   ): Promise<{ items: ContractNotificationItem[] }> {
-    return {
-      items: [
-        {
-          id: "notif_001",
-          kind: "priority_list_updated",
-          title: "Priority List Revision 3 Available",
-          body: "Shanti Khanna (S0042) moved up to Rank 1 following AI checkin.",
-          data: { senior_id: "S0042", date: "2026-10-11" },
-          sent_at: "2026-10-11T16:28:10+05:30",
-          read_at: null,
-        },
-      ],
-    };
+    const items = unreadOnly
+      ? this.mockNotifications.filter((n) => !n.read_at)
+      : this.mockNotifications;
+    return { items: [...items] };
   }
 
   async markNotificationRead(id: string): Promise<void> {
-    return;
+    const n = this.mockNotifications.find((item) => item.id === id);
+    if (n) {
+      n.read_at = new Date().toISOString();
+    }
+  }
+
+  async markAllNotificationsRead(): Promise<number> {
+    let count = 0;
+    const now = new Date().toISOString();
+    for (const n of this.mockNotifications) {
+      if (!n.read_at) {
+        n.read_at = now;
+        count++;
+      }
+    }
+    return count;
+  }
+
+  async getUnreadNotificationCount(): Promise<number> {
+    return this.mockNotifications.filter((n) => !n.read_at).length;
+  }
+
+  async getNotificationPreferences(): Promise<ContractNotificationPreferences> {
+    return {
+      preferences: { ...this.mockPreferences },
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  async updateNotificationPreferences(
+    preferences: Record<string, any>
+  ): Promise<ContractNotificationPreferences> {
+    this.mockPreferences = { ...this.mockPreferences, ...preferences };
+    return {
+      preferences: { ...this.mockPreferences },
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  async registerDevice(device: ContractDeviceRegister): Promise<ContractDeviceOut> {
+    return {
+      id: "dev_mock_" + Math.random().toString(36).substring(2, 9),
+      platform: device.platform,
+      app_version: device.app_version ?? "1.0.0",
+      created_at: new Date().toISOString(),
+    };
   }
 
   // --- Senior App (/me/*) ---

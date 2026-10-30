@@ -30,6 +30,10 @@ import {
   ContractAlertFeedbackRequest,
   ContractMessageItem,
   ContractNotificationItem,
+  ContractNotificationPreferences,
+  ContractUnreadCountResponse,
+  ContractDeviceRegister,
+  ContractDeviceOut,
   SeniorHomeResponse,
   OpsOverviewResponse,
   OpsAlertVolumeItem,
@@ -586,6 +590,41 @@ export class HttpDataService implements IDataService {
     return this.client.post<void>(`/notifications/${id}/read`);
   }
 
+
+  async markAllNotificationsRead(): Promise<number> {
+    const res = await this.client.post<{ ok: boolean; marked_count: number }>(
+      '/notifications/read-all'
+    );
+    return res?.marked_count ?? 0;
+  }
+
+  async getUnreadNotificationCount(): Promise<number> {
+    const res = await this.client.get<ContractUnreadCountResponse>(
+      '/notifications/unread-count'
+    );
+    return res?.unread_count ?? 0;
+  }
+
+  async getNotificationPreferences(): Promise<ContractNotificationPreferences> {
+    return this.client.get<ContractNotificationPreferences>(
+      '/notifications/preferences'
+    );
+  }
+
+  async updateNotificationPreferences(
+    preferences: Record<string, any>
+  ): Promise<ContractNotificationPreferences> {
+    return this.client.put<ContractNotificationPreferences>(
+      '/notifications/preferences',
+      { preferences }
+    );
+  }
+
+  async registerDevice(
+    device: ContractDeviceRegister
+  ): Promise<ContractDeviceOut> {
+    return this.client.post<ContractDeviceOut>('/devices', device);
+  }
   // --- Senior App (/me/*) ---
 
   async getSeniorHome(): Promise<SeniorHomeResponse> {

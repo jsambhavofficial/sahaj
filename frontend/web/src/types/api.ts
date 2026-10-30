@@ -1095,6 +1095,28 @@ export interface ContractNotificationItem {
   read_at?: string | null;
 }
 
+export interface ContractNotificationPreferences {
+  preferences: Record<string, any>;
+  updated_at?: string | null;
+}
+
+export interface ContractUnreadCountResponse {
+  unread_count: number;
+}
+
+export interface ContractDeviceRegister {
+  platform: 'android' | 'ios' | 'web';
+  token: string;
+  app_version?: string;
+}
+
+export interface ContractDeviceOut {
+  id: string;
+  platform: string;
+  app_version?: string | null;
+  created_at: string;
+}
+
 // Section 4: Senior App
 export interface SeniorMedicationToday {
   medication_id: string;

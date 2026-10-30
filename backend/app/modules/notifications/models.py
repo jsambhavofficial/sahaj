@@ -6,6 +6,33 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import TZ, Base, JSONType, created_at_col, one_of, uuid_pk
 
+ALL_NOTIFICATION_KINDS = (
+    # Senior Citizen Portal kinds
+    "daily_wellbeing",
+    "checkin_prompt",
+    "ai_saathi",
+    "caretaker_visit",
+    "medication_reminder",
+    "appointment_reminder",
+    "care_update",
+    # Care Coordinator Portal kinds
+    "wellbeing_concern",
+    "senior_assigned",
+    "ai_concern_review",
+    "missed_checkin",
+    "pending_followup",
+    "overdue_visit",
+    "family_observation",
+    "escalation",
+    "followup_update",
+    # Legacy / system kinds
+    "alert_new",
+    "alert_escalated",
+    "priority_list_updated",
+    "message_received",
+    "call_summary_ready",
+)
+
 
 class DeviceToken(Base):
     __tablename__ = "device_tokens"
@@ -26,8 +53,7 @@ class Notification(Base):
 
     __tablename__ = "notifications"
     __table_args__ = (
-        one_of("kind", ("medication_reminder", "checkin_prompt", "alert_new", "alert_escalated",
-                        "priority_list_updated", "message_received", "call_summary_ready")),
+        one_of("kind", ALL_NOTIFICATION_KINDS),
         one_of("delivery_status", ("pending", "sent", "failed", "skipped")),
         Index("ix_notifications_user_time", "user_id", "scheduled_for"),
         Index("ix_notifications_status_time", "delivery_status", "scheduled_for"),
@@ -43,3 +69,14 @@ class Notification(Base):
     sent_at: Mapped[datetime | None] = mapped_column(TZ)
     delivery_status: Mapped[str] = mapped_column(Text, default="pending")
     read_at: Mapped[datetime | None] = mapped_column(TZ)
+
+
+class NotificationPreference(Base):
+    """User-level notification category preferences and reminder timings."""
+
+    __tablename__ = "notification_preferences"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), unique=True, index=True)
+    preferences: Mapped[dict] = mapped_column(JSONType, default=dict)
+    updated_at: Mapped[datetime] = created_at_col()

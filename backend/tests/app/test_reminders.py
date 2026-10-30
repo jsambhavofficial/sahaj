@@ -92,3 +92,15 @@ def test_process_due_covers_today_and_yesterday_grace(db_session):
     out = reminders.process_due(db_session, now)
     assert out["unconfirmed_doses_recorded"] == 1
     assert reminders.process_due(db_session, now)["unconfirmed_doses_recorded"] == 0
+
+
+def test_missed_checkin_alert_goes_to_coordinator_once(db_session):
+    senior, _ = _setup(db_session, checkin_preferred_hour=9, checkin_days_of_week=["mon"])
+    assert reminders.create_missed_checkin_alerts(db_session, D, _now(9, 30)) == 0   # still inside grace
+    assert reminders.create_missed_checkin_alerts(db_session, D, _now(11)) == 1
+    db_session.commit()
+    reminders.create_missed_checkin_alerts(db_session, D, _now(12))
+    db_session.commit()
+    rows = db_session.query(Notification).filter_by(kind="missed_checkin").all()
+    assert len(rows) == 1 and rows[0].user_id == senior.coordinator_id
+    assert rows[0].data["senior_id"] == senior.senior_id

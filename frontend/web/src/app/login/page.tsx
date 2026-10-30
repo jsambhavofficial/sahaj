@@ -359,6 +359,22 @@ export default function LoginPage() {
                     <ShieldCheck className="w-3 h-3 text-indigo-700 shrink-0" />
                     <span className="truncate">Admin (admin@demo)</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleQuickLogin("senior@demo.samarth.local", "/senior/notifications")}
+                    className="p-1.5 text-left bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-950 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <span className="truncate">👴 Senior (Notifications)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleQuickLogin("coord_001@demo.samarth.local", "/caretaker/notifications")}
+                    className="p-1.5 text-left bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-950 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <span className="truncate">🩺 Coordinator (Notifications)</span>
+                  </button>
                 </div>
               )}
             </div>

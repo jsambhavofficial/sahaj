@@ -13,3 +13,6 @@ htmlcov/
 .seed_credentials.txt
 .recordings/
 .playwright-mcp/
+
+credentials/
+*firebase*.json

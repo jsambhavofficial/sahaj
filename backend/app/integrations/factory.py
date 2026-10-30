@@ -7,6 +7,7 @@ from app.core.config import get_settings
 from app.integrations.base import LLMProvider, PushProvider, STTProvider, StorageProvider, TTSProvider, TelephonyProvider
 from app.integrations.bhashini.client import BhashiniClient, BhashiniSTT, BhashiniTTS
 from app.integrations.exotel.client import ExotelTelephony
+from app.integrations.fcm import FCMPushProvider
 from app.integrations.gemini.client import GeminiLLM
 from app.integrations.groq.client import GroqLLM
 from app.integrations.sarvam.client import SarvamClient, SarvamSTT, SarvamTTS
@@ -77,4 +78,12 @@ def get_storage() -> StorageProvider:
 
 @lru_cache
 def get_push() -> PushProvider:
-    return StubPush()  # FCM is added when credentials are available
+    s = get_settings()
+    if s.push_provider == "fcm" or s.fcm_credentials_json:
+        fcm = FCMPushProvider()
+        if fcm.is_configured:
+            return fcm
+        logging.getLogger(__name__).warning(
+            "FCM is requested but the service-account credentials could not be loaded "
+            "(check FCM_CREDENTIALS_JSON); using the stub push provider")
+    return StubPush()

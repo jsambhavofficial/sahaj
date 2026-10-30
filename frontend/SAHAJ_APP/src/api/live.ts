@@ -229,3 +229,33 @@ export async function sendSeniorVoiceNote(
     body: formData,
   });
 }
+
+
+// ---- notifications & device push tokens --------------------------------------------------
+export interface AppNotificationItem {
+  id: string;
+  kind: string;
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+  scheduled_for?: string;
+  sent_at?: string;
+  read_at?: string | null;
+}
+
+export const getNotifications = (unreadOnly: boolean = false) =>
+  request<{ items: AppNotificationItem[]; total: number }>('/notifications', {
+    query: { unread: unreadOnly ? 'true' : 'false' },
+  });
+
+export const markNotificationRead = (id: string) =>
+  request<void>(`/notifications/${id}/read`, { method: 'POST' });
+
+export const markAllNotificationsRead = () =>
+  request<{ marked_read: number }>('/notifications/read-all', { method: 'POST' });
+
+export const registerMobileDevice = (token: string, platform: 'android' | 'ios' = 'android') =>
+  request<{ id: string; platform: string }>('/devices', {
+    method: 'POST',
+    body: { platform, token, app_version: '2.0.0-mobile' },
+  });
