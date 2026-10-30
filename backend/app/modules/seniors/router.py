@@ -8,9 +8,12 @@ from sqlalchemy.orm import Session
 from app.core.config import today
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_role
+from app.modules.auth import scope
 from app.modules.auth.models import User
 from app.modules.checkins.router import router as cues_router
 from app.modules.medications.router import router as medications_router
+from app.modules.risk import repository as risk_repo
+from app.modules.risk import service as risk_service
 from app.modules.seniors import service
 from app.modules.seniors.schemas import (
     FamilyInteractionOut, MemoryItemOut, RiskHistoryItem, SeniorCallPage, SeniorDetail,
@@ -74,6 +77,21 @@ def risk_history(senior_id: str, date_from: date | None = Query(None, alias="fro
                  limit: int = Query(90, ge=1, le=366),
                  user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return service.risk_history(db, user, senior_id, date_from, date_to, limit)
+
+
+@router.post("/seniors/{senior_id}/calculate-risk", response_model=RiskHistoryItem,
+             summary="Recalculate and persist risk score for a senior on a date")
+def calculate_senior_risk(
+    senior_id: str,
+    on_date: date | None = Query(None, alias="date", description="Default: demo today"),
+    user: User = Depends(require_role("coordinator", "ops", "admin", "senior")),
+    db: Session = Depends(get_db),
+):
+    scope.require_senior_access(db, user, senior_id)
+    target_date = on_date or today()
+    risk_service.rescore_and_rerank(db, senior_id, target_date, reason="manual_recalc")
+    row = risk_repo.get_score(db, senior_id, target_date)
+    return row
 
 
 @router.get("/seniors/{senior_id}/calls", response_model=SeniorCallPage,
