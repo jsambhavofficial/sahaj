@@ -865,10 +865,15 @@ def build_multimodal_inputs_from_db(
     from app.modules.messages.models import Message
     from app.modules.seniors.models import SeniorBaseline
     from app.modules.vitals.models import AccelerometerWindow, DailyActivity, Vital
-    from app.modules.voice.models import Call, SeniorMemoryItem
+    from app.modules.voice.models import Call, ContextRepo, SeniorMemoryItem
 
     if not senior_ids:
         return {}, {}
+
+    try:
+        ContextRepo.__table__.create(bind=db.get_bind(), checkfirst=True)
+    except Exception:
+        pass
 
     first_day = on_date - timedelta(days=6)
     start_dt = _day_start_ist(first_day)
@@ -1020,7 +1025,7 @@ def build_multimodal_inputs_from_db(
     ):
         fall_sensors[sid] = True
 
-    # 7. Open SeniorMemoryItems (talking points & unresolved operational/clinical issues)
+    # 7. Open SeniorMemoryItems & ContextRepo entries (NLP signals, risk contribution, talking points)
     memory_items: Dict[str, List[SeniorMemoryItem]] = {sid: [] for sid in senior_ids}
     for item in db.scalars(
         select(SeniorMemoryItem).where(
@@ -1030,6 +1035,40 @@ def build_multimodal_inputs_from_db(
         )
     ):
         memory_items.setdefault(item.senior_id, []).append(item)
+
+    context_open_tps: Dict[str, List[Tuple[Dict[str, Any], datetime]]] = {sid: [] for sid in senior_ids}
+    for ctx_row in db.scalars(
+        select(ContextRepo).where(
+            ContextRepo.senior_id.in_(senior_ids),
+            ContextRepo.timestamp < end_dt,
+        ).order_by(ContextRepo.timestamp.asc())
+    ):
+        sid = ctx_row.senior_id
+        ts = ctx_row.timestamp
+        ts_aware = ts if (ts and ts.tzinfo is not None) else (ts.replace(tzinfo=IST) if ts else start_dt)
+        day = _to_ist_date(ts_aware)
+        if ts_aware >= start_dt:
+            if (on_date - day).days <= 2:
+                try:
+                    nlp_deltas[sid] = nlp_deltas.get(sid, 0.0) + float(ctx_row.risk_score_contribution or 0.0)
+                except (TypeError, ValueError):
+                    pass
+                if ctx_row.requires_clinical_escalation:
+                    urgent_comm[sid] = True
+            if (on_date - day).days <= 6:
+                for sig in (ctx_row.extracted_signals or []):
+                    if not isinstance(sig, dict):
+                        continue
+                    if sig.get("status", "present") != "present" or sig.get("temporality") == "historical":
+                        continue
+                    intent = str(sig.get("intent", "")).lower()
+                    if intent:
+                        conf_val = float(sig["confidence"]) if sig.get("confidence") is not None else None
+                        cues_by_senior.setdefault(sid, []).append((intent, sig.get("severity"), conf_val))
+
+        for tp in (ctx_row.talking_points or []):
+            if isinstance(tp, dict) and tp.get("status", "OPEN") == "OPEN":
+                context_open_tps.setdefault(sid, []).append((tp, ts))
 
     inputs_by_senior: Dict[str, Dict[str, Any]] = {}
     baseline_conf_by_senior: Dict[str, str] = {}
@@ -1122,7 +1161,7 @@ def build_multimodal_inputs_from_db(
         rec_confirmed = sum(1 for c, _, _ in cues_by_senior.get(sid, []) if c in ("recovery_confirmed",))
         well_streak = sum(1 for c, _, _ in cues_by_senior.get(sid, []) if c in ("routine_wellbeing",))
 
-        # Inspect open SeniorMemoryItem records (talking points)
+        # Inspect open SeniorMemoryItem and ContextRepo talking points
         max_aging_hours = 0
         end_ref = _day_start_ist(on_date + timedelta(days=1))
         for m in memory_items.get(sid, []):
@@ -1137,6 +1176,22 @@ def build_multimodal_inputs_from_db(
                 tech_confusion = True
             if m.first_seen_at:
                 seen_dt = m.first_seen_at if m.first_seen_at.tzinfo else m.first_seen_at.replace(tzinfo=IST)
+                hrs = int(max(0.0, (end_ref - seen_dt).total_seconds() / 3600.0))
+                if hrs > max_aging_hours:
+                    max_aging_hours = hrs
+
+        for tp, ts in context_open_tps.get(sid, []):
+            txt = f"{tp.get('topic', '')} {tp.get('target_signal_to_verify', '')}".lower()
+            if "refill" in txt or "khatam" in txt or "depleted" in txt:
+                med_refill = True
+            if "escort" in txt or "station" in txt or "hospital" in txt or "transport" in txt:
+                needs_escort = True
+            if "grocery" in txt or "essential" in txt or "ration" in txt or "milk" in txt:
+                needs_essentials = True
+            if "app" in txt or "button" in txt or "tech" in txt:
+                tech_confusion = True
+            if ts:
+                seen_dt = ts if ts.tzinfo else ts.replace(tzinfo=IST)
                 hrs = int(max(0.0, (end_ref - seen_dt).total_seconds() / 3600.0))
                 if hrs > max_aging_hours:
                     max_aging_hours = hrs

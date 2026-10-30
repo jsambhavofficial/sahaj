@@ -45,15 +45,17 @@ def get_voice_service() -> VoiceNoteService:
     summary="Process Senior Voice Note Transcript",
     description=(
         "Ingests senior audio transcript, extracts Risk vs Attention Required events, "
-        "computes bounded risk delta, and returns dynamic talking points for future bot check-ins."
+        "computes bounded risk delta, writes to context_repo, triggers risk calculation, "
+        "and returns dynamic talking points for future bot check-ins."
     ),
 )
 def process_voice_note(
     request: VoiceNoteProcessRequest,
+    db: Session = Depends(get_db),
     svc: VoiceNoteService = Depends(get_voice_service),
 ) -> VoiceNoteProcessResponse:
     try:
-        return svc.process_voice_note(request)
+        return svc.process_voice_note(request, db=db)
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -66,13 +68,14 @@ def process_voice_note(
     response_model=List[TalkingPointItem],
     status_code=status.HTTP_200_OK,
     summary="Get Active Talking Points for Senior",
-    description="Returns all active, unresolved talking points for dynamic check-in bot question generation.",
+    description="Returns all active, unresolved talking points from context_repo for dynamic check-in bot question generation.",
 )
 def get_talking_points(
     senior_id: str,
+    db: Session = Depends(get_db),
     svc: VoiceNoteService = Depends(get_voice_service),
 ) -> List[TalkingPointItem]:
-    return svc.get_active_talking_points(senior_id)
+    return svc.get_active_talking_points(senior_id, db=db)
 
 
 @router.websocket("/ws/voice-agent")

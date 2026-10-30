@@ -11,7 +11,7 @@ from app.modules.medications.models import MedicationEvent, MedicationSchedule
 from app.modules.risk.models import DailyRiskScore
 from app.modules.seniors.models import Senior, SeniorContact, SeniorHealthProfile
 from app.modules.vitals.models import Vital
-from app.modules.voice.models import Call, CallTurn, SeniorMemoryItem
+from app.modules.voice.models import Call, CallTurn, ContextRepo, SeniorMemoryItem
 
 
 def get_senior_by_user(db: Session, user_id: uuid.UUID) -> Senior | None:
@@ -33,6 +33,33 @@ def last_summary(db: Session, senior_id: str, exclude_call_id: uuid.UUID | None 
     if exclude_call_id:
         q = q.where(Call.id != exclude_call_id)
     return db.scalar(q.order_by(Call.started_at.desc()).limit(1))
+
+
+def last_context_summary(db: Session, senior_id: str) -> str | None:
+    """Latest NLP summary written to context_repo for this senior."""
+    try:
+        ContextRepo.__table__.create(bind=db.get_bind(), checkfirst=True)
+        return db.scalar(
+            select(ContextRepo.summary)
+            .where(ContextRepo.senior_id == senior_id, ContextRepo.summary.is_not(None))
+            .order_by(ContextRepo.timestamp.desc())
+            .limit(1)
+        )
+    except Exception:
+        return None
+
+
+def open_context_talking_points(db: Session, senior_id: str, limit: int = 10) -> list[dict]:
+    """Open talking points from context_repo for dynamic check-in bot script generation."""
+    try:
+        from ml.src.nlp.call_processing import load_open_talking_points_from_context_repo
+    except ImportError:
+        from src.nlp.call_processing import load_open_talking_points_from_context_repo
+
+    try:
+        return load_open_talking_points_from_context_repo(db, senior_id)[:limit]
+    except Exception:
+        return []
 
 
 def open_memory_items(db: Session, senior_id: str, limit: int = 10) -> list[SeniorMemoryItem]:

@@ -28,9 +28,17 @@ for _p in (_backend_dir, _ml_dir):
         sys.path.insert(0, str(_p))
 
 try:
-    from ml.src.nlp.call_processing import CallProcessor
+    from ml.src.nlp.call_processing import (
+        CallProcessor,
+        load_open_talking_points_from_context_repo,
+        save_call_result_to_db,
+    )
 except ImportError:
-    from src.nlp.call_processing import CallProcessor
+    from src.nlp.call_processing import (
+        CallProcessor,
+        load_open_talking_points_from_context_repo,
+        save_call_result_to_db,
+    )
 
 logger = logging.getLogger("checkin_service")
 
@@ -81,7 +89,14 @@ class CallProcessingService:
         # Shared living-context store (same one the voice module writes to).
         return VoiceNoteService._talking_points_store[senior_id]
 
-    def process_call(self, request: CallProcessRequest) -> CallProcessResponse:
+    def process_call(
+        self,
+        request: CallProcessRequest,
+        db: Session | None = None,
+        source_type: str = "checkin_call",
+        trigger_risk_calc: bool = True,
+        commit: bool = True,
+    ) -> CallProcessResponse:
         logger.info("Processing call for senior_id=%s (%d turns)", request.senior_id, len(request.turns))
 
         processor = self.processor
@@ -90,6 +105,16 @@ class CallProcessingService:
 
         store = self._store(request.senior_id)
         active = [tp.model_dump() for tp in store if tp.status == "OPEN"]
+        seen_topics = {tp["topic"] for tp in active if tp.get("topic")}
+        if db is not None:
+            try:
+                for tp in load_open_talking_points_from_context_repo(db, request.senior_id):
+                    topic = tp.get("topic")
+                    if topic and topic not in seen_topics:
+                        active.append(tp)
+                        seen_topics.add(topic)
+            except Exception:
+                logger.warning("Failed to load open talking points from context_repo for %s", request.senior_id, exc_info=True)
 
         result = processor.process(
             senior_id=request.senior_id,
@@ -101,6 +126,25 @@ class CallProcessingService:
         )
 
         self._reconcile_store(store, result)
+
+        if db is not None:
+            try:
+                raw_transcript = "\n".join(f"{t.speaker}: {t.text}" for t in request.turns)
+                save_call_result_to_db(
+                    db=db,
+                    result=result,
+                    raw_transcript=raw_transcript,
+                    source_type=source_type,
+                    trigger_risk_calc=trigger_risk_calc,
+                    commit=commit,
+                )
+            except Exception:
+                logger.exception("Failed to persist call processing result to context_repo for %s", request.senior_id)
+                if commit:
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass
 
         return CallProcessResponse(
             call_id=result.call_id,

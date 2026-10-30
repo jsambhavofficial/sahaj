@@ -72,7 +72,7 @@ class VoiceSession:
                                             full_name=self.names[0] if self.names else None)
         self.ctx = ctx
         self.agent = agent_mod.select_agent(self.llm, self.language, ctx, self.names)
-        self.total = agent_mod.question_count(self.language) + (agent_mod.FOLLOWUP_TURNS if self.agent.name == "llm" else 0)
+        self.total = agent_mod.question_count(self.language, ctx) + (agent_mod.FOLLOWUP_TURNS if self.agent.name == "llm" else 0)
         self._started_at = _now()
         self._t0 = time.monotonic()
         self.call = repo.add_call(
@@ -193,7 +193,13 @@ class VoiceSession:
                 call_duration_seconds=duration_sec,
                 timestamp=now.isoformat(),
             )
-            res = CallProcessingService().process_call(req)
+            res = CallProcessingService().process_call(
+                req,
+                db=self.db,
+                source_type="checkin_call",
+                trigger_risk_calc=False,
+                commit=False,
+            )
             if res.requires_clinical_escalation:
                 self.urgent = True
                 call.urgency_flag = True

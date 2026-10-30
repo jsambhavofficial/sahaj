@@ -224,22 +224,35 @@ def send_voice_note(db: Session, sender: User, senior_id: str, data: bytes, *, f
     if transcript and sender.role == "senior":
         _summarise(db, message, senior, transcript)
         _analyse(db, message, senior, transcript)
-        _run_voice_note_processor(senior_id, transcript)
+        _run_voice_note_processor(db, message, senior_id, transcript)
+        safe_rescore(db, senior_id, reason="new_alert")
     _after_send(db, message, sender, senior)
     return _out_many(db, [message], sender)[0]
 
 
-def _run_voice_note_processor(senior_id: str, transcript: str) -> None:
-    """Runs VoiceNoteService on the senior's voice note transcript to populate talking points."""
+def _run_voice_note_processor(db: Session, message: Message, senior_id: str, transcript: str) -> None:
+    """Runs VoiceNoteService on the senior's voice note transcript, writes to context_repo, and updates message summary/urgency."""
     try:
         from app.modules.voice.schemas import VoiceNoteProcessRequest
         from app.modules.voice.service import VoiceNoteService
 
-        VoiceNoteService().process_voice_note(
-            VoiceNoteProcessRequest(senior_id=senior_id, transcript=transcript)
+        res = VoiceNoteService().process_voice_note(
+            VoiceNoteProcessRequest(senior_id=senior_id, transcript=transcript),
+            db=db,
+            source_id=str(message.id),
+            trigger_risk_calc=False,
         )
+        if res.summary and (not message.summary or "stub" in message.summary.lower()):
+            message.summary = res.summary
+        if res.requires_clinical_escalation:
+            message.urgency_flag = True
+        db.commit()
     except Exception:
         logger.warning("VoiceNoteService processing skipped for senior %s", senior_id, exc_info=True)
+        try:
+            db.rollback()
+        except Exception:
+            pass
 
 
 def _transcribe(db: Session, message: Message, data: bytes, language: str | None) -> str | None:

@@ -58,7 +58,9 @@ def load_system_prompt(language: str) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def question_count(language: str) -> int:
+def question_count(language: str, context: CallContext | None = None) -> int:
+    if context is not None:
+        return len(ScriptedAgent(language, context).questions)
     return len(load_phrases(language)["questions"])
 
 
@@ -92,23 +94,48 @@ def _one_question(reply: str) -> str:
 
 
 class ScriptedAgent:
-    """Fixed question sequence and a polite goodbye. Works with zero accounts."""
+    """Dynamic + scripted question sequence generated from context_repo and a polite goodbye. Works with zero accounts."""
     name = "scripted"
 
     def __init__(self, language: str, context: CallContext | None = None):
         self.language = language
         self.phrases = load_phrases(language)
         self.context = context or CallContext(language=language)
+        self.questions = self._build_questions()
+
+    def _build_questions(self) -> list[str]:
+        """Builds the check-in bot's question script dynamically from context_repo talking points + baseline questions."""
+        dynamic_qs: list[str] = []
+        for tp in (self.context.talking_points or []):
+            if not isinstance(tp, dict) or tp.get("status", "OPEN") != "OPEN":
+                continue
+            q = (
+                tp.get("suggested_bot_question_english")
+                if self.language == "english"
+                else tp.get("suggested_bot_question_hinglish")
+            ) or tp.get("suggested_bot_question_hinglish") or tp.get("suggested_bot_question_english")
+            if q and q not in dynamic_qs:
+                dynamic_qs.append(q)
+        base_qs = list(self.phrases.get("questions", []))
+        for bq in base_qs:
+            if bq not in dynamic_qs:
+                dynamic_qs.append(bq)
+        return dynamic_qs or base_qs
 
     def say(self, stage: Stage, history: list[Turn]) -> str:
         p = self.phrases
+        qs = self.questions
         if stage.kind == "goodbye":
             return p["goodbye"]
         if stage.kind == "opening":
-            first = p["followup"] if self.context.has_open_symptom else p["questions"][0]
+            if self.context.talking_points and qs:
+                first = qs[0]
+            elif self.context.has_open_symptom:
+                first = p["followup"]
+            else:
+                first = qs[0]
             return f"{p['greeting']} {first}"
         ack = p["acks"][(stage.index - 1) % len(p["acks"])]
-        qs = p["questions"]
         return f"{ack} {qs[stage.index] if stage.index < len(qs) else p.get('more', qs[-1])}"
 
 
@@ -131,7 +158,7 @@ class LLMAgent:
         if stage.kind == "opening":
             return ("TASK: Greet the person warmly as Samarth's caller in one short sentence, then ask a simple "
                     f"question about how they are feeling. Suggested wording: \"{intended}\"")
-        topics = "\n".join(f"- {q}" for q in self.script.phrases["questions"])
+        topics = "\n".join(f"- {q}" for q in self.script.questions)
         asked = "\n".join(f"- {t.text}" for t in history if t.speaker == "agent") or "- (nothing yet)"
         left = max(1, stage.total - stage.index)
         return (
@@ -170,11 +197,12 @@ class LLMAgent:
     def _next_unasked(self, stage: Stage, history: list[Turn]) -> str:
         """An acknowledgement plus the first scripted topic not asked yet (or the generic closing question)."""
         p = self.script.phrases
+        qs = self.script.questions
         ack = p["acks"][max(stage.index - 1, 0) % len(p["acks"])]
-        for q in p["questions"]:
+        for q in qs:
             if not _is_repeat(q, history):
                 return f"{ack} {q}"
-        return f"{ack} {p.get('more', p['questions'][-1])}"
+        return f"{ack} {p.get('more', qs[-1])}"
 
     def say(self, stage: Stage, history: list[Turn]) -> str:
         masked_prompt, mapping = mask(self.build_user_prompt(stage, history), self.names)
