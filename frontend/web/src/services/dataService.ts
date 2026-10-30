@@ -29,6 +29,9 @@ import {
   ContractAlertFeedbackRequest,
   ContractMessageItem,
   ContractNotificationItem,
+  ContractNotificationPreferences,
+  ContractDeviceRegister,
+  ContractDeviceOut,
   SeniorHomeResponse,
   OpsOverviewResponse,
   OpsAlertVolumeItem,
@@ -146,6 +149,13 @@ export interface IDataService {
     unreadOnly?: boolean
   ): Promise<{ items: ContractNotificationItem[] }>;
   markNotificationRead(id: string): Promise<void>;
+  markAllNotificationsRead(): Promise<number>;
+  getUnreadNotificationCount(): Promise<number>;
+  getNotificationPreferences(): Promise<ContractNotificationPreferences>;
+  updateNotificationPreferences(
+    preferences: Record<string, any>
+  ): Promise<ContractNotificationPreferences>;
+  registerDevice(device: ContractDeviceRegister): Promise<ContractDeviceOut>;
 
   // --- Senior App (/me/*) ---
   getSeniorHome(): Promise<SeniorHomeResponse>;

@@ -29,15 +29,15 @@ def uuid_pk():
     return mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
 
 
+def utcnow() -> datetime:
+    return datetime.now().astimezone()
+
+
 def created_at_col():
-    return mapped_column(TZ, server_default=func.now(), nullable=False)
+    return mapped_column(TZ, server_default=func.now(), default=utcnow, nullable=False)
 
 
 def one_of(column: str, values: tuple[str, ...]) -> CheckConstraint:
     """CHECK constraint restricting a text column to a fixed set of values."""
     quoted = ", ".join(f"'{v}'" for v in values)
     return CheckConstraint(f"{column} IN ({quoted})", name=f"{column}_valid")
-
-
-def utcnow() -> datetime:
-    return datetime.now().astimezone()

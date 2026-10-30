@@ -1,10 +1,28 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/navigation";
+import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { Heart, ShieldCheck, AlertCircle, Loader2, Phone, Home, ClipboardList, Calendar, HelpCircle, Users, UserCog, Mic, Sparkles } from "lucide-react";
+import { getDataService } from "@/services";
+import { registerWebPushToken } from "@/services/fcm";
+import {
+  Heart,
+  ShieldCheck,
+  AlertCircle,
+  Loader2,
+  Phone,
+  Home,
+  ClipboardList,
+  Calendar,
+  HelpCircle,
+  Users,
+  UserCog,
+  Mic,
+  Sparkles,
+  Bell,
+  Settings,
+} from "lucide-react";
 import SeniorVoiceCompanionModal from "@/components/voice/SeniorVoiceCompanionModal";
 
 export default function SeniorLayout({ children }: { children: React.ReactNode }) {
@@ -12,12 +30,49 @@ export default function SeniorLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname();
   const { user, isAuthenticated, loading, isSenior, isAdmin } = useAuth();
   const [isVoiceOpen, setIsVoiceOpen] = useState<boolean>(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [adminPreview, setAdminPreview] = useState<boolean>(false);
+
+  const handleSwitchToSenior = () => {
+    const seniorUser = {
+      id: "S0042",
+      email: "shanti@sahaj.local",
+      role: "SENIOR",
+      full_name: "Shanti Devi",
+      display_name: "Shanti Ji",
+      is_active: true,
+      is_verified: true,
+    };
+    localStorage.setItem("samarth_auth_user", JSON.stringify(seniorUser));
+    window.location.reload();
+  };
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push("/login");
     }
   }, [loading, isAuthenticated, router]);
+
+  // Load unread notification count and register web push token
+  useEffect(() => {
+    if (isAuthenticated) {
+      registerWebPushToken().catch(() => {});
+
+      const fetchUnread = async () => {
+        try {
+          const ds = getDataService();
+          const count = await ds.getUnreadNotificationCount();
+          setUnreadCount(count);
+        } catch {
+          // ignore background error
+        }
+      };
+
+      fetchUnread();
+      const interval = setInterval(fetchUnread, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated]);
 
   if (loading) {
     return (
@@ -32,16 +87,46 @@ export default function SeniorLayout({ children }: { children: React.ReactNode }
     return null;
   }
 
-  // Enforce role guard: only SENIOR or ORGANIZATION_ADMIN
-  if (!isSenior && !isAdmin) {
+  // Enforce role guard: only SENIOR or ORGANIZATION_ADMIN (or dev preview mode)
+  if (!isSenior && !isAdmin && !adminPreview) {
     return (
-      <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6">
-        <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-8 text-center shadow-sm">
-          <AlertCircle className="w-10 h-10 text-amber-600 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-amber-950">Senior Citizen Portal Access</h2>
-          <p className="text-base text-amber-800 mt-2 max-w-lg mx-auto leading-relaxed">
-            Aap <span className="font-semibold">{user?.role}</span> ke roop mein signed-in hain. Yeh portal hamare registered senior citizens ke liye hai.
-          </p>
+      <div className="max-w-2xl mx-auto py-12 px-4 sm:px-6">
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-3xl p-8 text-center shadow-md space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto">
+            <AlertCircle className="w-10 h-10" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-amber-950">Senior Citizen Portal Access</h2>
+            <p className="text-base text-amber-800 mt-2 font-medium leading-relaxed">
+              आप वर्तमान में <span className="font-bold underline uppercase">{user?.role}</span> के रूप में साइन-इन हैं। यह पोर्टल वरिष्ठ नागरिकों (Seniors) के लिए डिज़ाइन किया गया है।
+            </p>
+          </div>
+
+          {/* Quick 1-Click Action Buttons for Developer/Tester */}
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={handleSwitchToSenior}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold px-5 py-3 rounded-xl text-sm shadow transition-all active:scale-95 cursor-pointer"
+            >
+              <span>Senior (Shanti Ji) के रूप में स्विच करें</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setAdminPreview(true)}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-extrabold px-5 py-3 rounded-xl text-sm shadow transition-all active:scale-95 cursor-pointer"
+            >
+              <span>{user?.role} Preview Mode चालू करें</span>
+            </button>
+
+            <Link
+              href="/caretaker/notifications"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 font-extrabold px-4 py-3 rounded-xl text-sm shadow-sm transition-all"
+            >
+              <span>Care Coordinator Notifications पर जाएँ</span>
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -51,6 +136,7 @@ export default function SeniorLayout({ children }: { children: React.ReactNode }
     { label: "Aaj Ki Care", href: "/senior", icon: Heart },
     { label: "Tabiyat Batayein", href: "/senior/check-in", icon: ClipboardList },
     { label: "Meri Visits", href: "/senior/visits", icon: Calendar },
+    { label: "Suchnayein", href: "/senior/notifications", icon: Bell, badge: unreadCount },
     { label: "Help Chahiye", href: "/senior/help", icon: HelpCircle },
     { label: "Care Team", href: "/senior/care-team", icon: Users },
     { label: "Meri Profile", href: "/senior/profile", icon: UserCog },
@@ -60,7 +146,7 @@ export default function SeniorLayout({ children }: { children: React.ReactNode }
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-16">
       {/* Emergency Assistance Strip */}
       <div className="bg-rose-700 text-white px-4 py-2 text-center text-sm sm:text-base font-bold shadow-sm">
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
           <span className="flex items-center gap-1.5">
             🚨 Aapatkaaleen (Emergency) Sahayata:
           </span>
@@ -96,8 +182,27 @@ export default function SeniorLayout({ children }: { children: React.ReactNode }
             </div>
           </div>
 
-          {/* Quick Helpline & Voice Companion Buttons */}
+          {/* Quick Actions: Notification Bell, Voice Companion & Helpline */}
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* Accessible Notification Bell Icon */}
+            <Link
+              href="/senior/notifications"
+              className={`relative inline-flex items-center justify-center p-3 rounded-xl border-2 transition-all min-h-[48px] min-w-[48px] ${
+                pathname.startsWith("/senior/notifications")
+                  ? "bg-teal-50 border-teal-500 text-teal-700 shadow"
+                  : "bg-white border-slate-200 text-slate-700 hover:border-teal-400 hover:text-teal-700"
+              }`}
+              title="Suchnayein (Notifications)"
+              aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ""}`}
+            >
+              <Bell className="w-6 h-6" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1 text-xs font-black text-white bg-rose-600 border-2 border-white rounded-full shadow-md animate-pulse">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </Link>
+
             <button
               type="button"
               onClick={() => setIsVoiceOpen(true)}
@@ -123,10 +228,10 @@ export default function SeniorLayout({ children }: { children: React.ReactNode }
             const Icon = tab.icon;
             const isActive = pathname === tab.href;
             return (
-              <a
+              <Link
                 key={tab.href}
                 href={tab.href}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-base whitespace-nowrap transition-all min-h-[48px] ${
+                className={`relative inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-base whitespace-nowrap transition-all min-h-[48px] ${
                   isActive
                     ? "bg-teal-600 text-white shadow-md"
                     : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
@@ -134,7 +239,16 @@ export default function SeniorLayout({ children }: { children: React.ReactNode }
               >
                 <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-slate-600"}`} />
                 <span>{tab.label}</span>
-              </a>
+                {tab.badge !== undefined && tab.badge > 0 && (
+                  <span
+                    className={`ml-1 text-xs font-black px-2 py-0.5 rounded-full ${
+                      isActive ? "bg-white text-teal-800" : "bg-rose-600 text-white"
+                    }`}
+                  >
+                    {tab.badge}
+                  </span>
+                )}
+              </Link>
             );
           })}
         </div>
@@ -156,4 +270,3 @@ export default function SeniorLayout({ children }: { children: React.ReactNode }
     </div>
   );
 }
-

@@ -151,3 +151,72 @@ def test_me_notifications_senior_only(client, db_session):
     assert r.status_code == 200 and r.json()["total"] == 1
     assert client.get(f"{API}/me/notifications", headers=auth(client, coord.email)).status_code == 403
     assert client.get(f"{API}/me/notifications").status_code == 401
+
+
+
+def test_unread_count_and_mark_all(client, db_session):
+    u = _seed(db_session)
+    h = auth(client, u.email)
+    r = client.get(f"{API}/notifications/unread-count", headers=h)
+    assert r.status_code == 200
+    assert r.json()["unread_count"] == 3
+
+    r2 = client.post(f"{API}/notifications/read-all", headers=h)
+    assert r2.status_code == 200
+    assert r2.json()["marked_read"] == 3
+
+    r3 = client.get(f"{API}/notifications/unread-count", headers=h)
+    assert r3.json()["unread_count"] == 0
+
+
+def test_notification_preferences(client, db_session):
+    u = make_user(db_session, "coordinator")
+    h = auth(client, u.email)
+    r = client.get(f"{API}/notifications/preferences", headers=h)
+    assert r.status_code == 200
+    prefs = r.json()["preferences"]
+    assert prefs["new_concerns"] is True
+
+    # Disable new_concerns
+    prefs["new_concerns"] = False
+    r2 = client.put(f"{API}/notifications/preferences", headers=h, json={"preferences": prefs})
+    assert r2.status_code == 200
+    assert r2.json()["preferences"]["new_concerns"] is False
+
+    # notify should now be suppressed for new_concerns
+    res = service.notify(db_session, u.id, "wellbeing_concern", "Concern", "Review", commit=True)
+    assert res is None
+
+    # But critical escalation must still be allowed
+    esc = service.notify(db_session, u.id, "escalation", "Escalation", "Critical", commit=True)
+    assert esc is not None
+
+
+def test_coordinator_senior_assignment_security(client, db_session):
+    coord1 = make_user(db_session, "coordinator")
+    coord2 = make_user(db_session, "coordinator")
+    senior, _ = make_senior(db_session, coord1)
+
+    # coord1 is assigned: notification allowed
+    n1 = service.notify(db_session, coord1.id, "wellbeing_concern", "Title", "Body",
+                        data={"senior_id": senior.senior_id})
+    assert n1 is not None
+
+    # coord2 is NOT assigned to this senior: notification suppressed
+    n2 = service.notify(db_session, coord2.id, "wellbeing_concern", "Title", "Body",
+                        data={"senior_id": senior.senior_id})
+    assert n2 is None
+
+
+def test_test_notification_endpoint(client, db_session):
+    u = make_user(db_session, "coordinator")
+    h = auth(client, u.email)
+    r = client.post(
+        f"{API}/notifications/test",
+        headers=h,
+        json={"kind": "wellbeing_concern", "title": "Test Title", "body": "Test Body"}
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["title"] == "Test Title"
+    assert body["kind"] == "wellbeing_concern"

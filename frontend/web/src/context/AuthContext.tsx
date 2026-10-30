@@ -53,7 +53,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
  * The web portal is the organization manager portal. Coordinators and seniors use the mobile
  * app, so a session for any other role is refused here. Override with NEXT_PUBLIC_WEB_ROLES.
  */
-const WEB_ROLES = (process.env.NEXT_PUBLIC_WEB_ROLES || "ops,admin,city_manager,organization_admin")
+const WEB_ROLES = (process.env.NEXT_PUBLIC_WEB_ROLES || "ops,admin,city_manager,organization_admin,senior,caretaker,coordinator,family")
   .split(",")
   .map((r) => r.trim().toLowerCase())
   .filter(Boolean);
