@@ -65,6 +65,8 @@ interface AppContextType {
   // Call & alert state
   activeCall: { active: boolean; recipient: string; message: string } | null;
   startCall: (recipientName: string, seniorId?: string) => Promise<void>;
+  /** Senior: the assigned coordinator's phone number, if one is on file. */
+  coordinatorPhone: string | null;
   endCall: () => void;
 
   alertResolved: boolean;
@@ -83,6 +85,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [pendingRole, setPendingRole] = useState<UserRole | null>(null);
   const [language, setLanguage] = useState<Language>('hi');
+  const [coordinatorPhone, setCoordinatorPhone] = useState<string | null>(null);
   const [activeScreen, setActiveScreen] = useState<string>('welcome');
 
   const [dataStatus, setDataStatus] = useState<DataStatus>('idle');
@@ -112,6 +115,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   // ---- sessions ------------------------------------------------------------------------------------
   const clearDetail = useCallback(() => {
     setMedications([]);
+    setCoordinatorPhone(null);
     setVitals(ZERO_VITALS);
     setSeniorProfile(null);
     setRiskHistory([]);
@@ -185,6 +189,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
           setSeniorsList([me]);
           clearDetail();
           setMedications(home.medications);
+          setCoordinatorPhone(home.coordinatorPhone);
           setLanguage(home.language === 'english' ? 'en' : 'hi');
         }
         setDataStatus((s) => (s === 'error' ? s : 'ready'));
@@ -436,7 +441,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         setActiveSeniorById, createPairingCode,
         medications, confirmMedication,
         vitals, updateVitals,
-        activeCall, startCall, endCall,
+        activeCall, startCall, coordinatorPhone, endCall,
         alertResolved, markAlertActionTaken,
         checkInStatus, submitQuickCheckIn, sendVoiceNote,
       }}

@@ -94,11 +94,13 @@ export interface HomeResult {
   greeting: string;
   language: string;
   medications: MedicationItem[];
+  /** The assigned coordinator's dialable number, or null if none is on file. */
+  coordinatorPhone: string | null;
 }
 
 export async function fetchHome(): Promise<HomeResult> {
-  const h = await request<{ greeting_name: string; language: string; medications_today: HomeDoseDto[] }>('/me/home');
-  return { greeting: h.greeting_name, language: h.language, medications: mapHomeDoses(h.medications_today) };
+  const h = await request<{ greeting_name: string; language: string; medications_today: HomeDoseDto[]; coordinator?: { phone: string | null } | null }>('/me/home');
+  return { greeting: h.greeting_name, language: h.language, medications: mapHomeDoses(h.medications_today), coordinatorPhone: h.coordinator?.phone ?? null };
 }
 
 export function confirmDose(doseIdValue: string): Promise<{ status: string; actual_at: string }> {
