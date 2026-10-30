@@ -22,12 +22,30 @@ import {
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
+import { registerWebPushToken } from "@/services/fcm";
+import { useState, useEffect } from "react";
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { metrics, service } = useApp();
   const { user, isAuthenticated, isAdmin, isCityManager, isCaretaker, isFamily, isSenior, logout } = useAuth();
+  const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (isAuthenticated && isCaretaker) {
+      registerWebPushToken().catch(() => {});
+      const fetchCount = async () => {
+        try {
+          const count = await service.getUnreadNotificationCount();
+          setUnreadNotifCount(count);
+        } catch {}
+      };
+      fetchCount();
+      const interval = setInterval(fetchCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, isCaretaker, service]);
 
   // Dynamic role-based navigation items
   let navItems: Array<{ label: string; href: string; icon: any; badge?: number }> = [];
@@ -56,6 +74,7 @@ export const Navbar: React.FC = () => {
       { label: "Today's Schedule", href: "/caretaker", icon: Calendar },
       { label: "My Seniors", href: "/caretaker/seniors", icon: Users },
       { label: "Visit History", href: "/caretaker/history", icon: History },
+      { label: "Notifications", href: "/caretaker/notifications", icon: Bell, badge: unreadNotifCount || undefined },
     ];
   } else if (isFamily) {
     navItems = [
@@ -157,6 +176,21 @@ export const Navbar: React.FC = () => {
 
           {/* User Profile & Auth Status */}
           <div className="flex items-center gap-3">
+            {isAuthenticated && isCaretaker && (
+              <Link
+                href="/caretaker/notifications"
+                className="relative p-2 text-slate-600 hover:text-brand-600 hover:bg-slate-100 rounded-lg transition-colors"
+                title="Care Coordinator Notifications"
+                aria-label="Notifications"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadNotifCount > 0 && (
+                  <span className="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-600 rounded-full border-2 border-white shadow-sm">
+                    {unreadNotifCount > 99 ? "99+" : unreadNotifCount}
+                  </span>
+                )}
+              </Link>
+            )}
             {isAuthenticated && user ? (
               <div className="flex items-center gap-2.5">
                 <div className="hidden sm:flex flex-col items-end">

@@ -37,3 +37,19 @@ class NotificationPage(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class NotificationPreferencesIn(BaseModel):
+    preferences: dict = Field(default_factory=dict)
+
+
+class NotificationPreferencesOut(BaseModel):
+    preferences: dict = Field(default_factory=dict)
+    updated_at: datetime | None = None
+
+
+class NotificationTestRequest(BaseModel):
+    kind: str = "daily_wellbeing"
+    title: str | None = None
+    body: str | None = None
+    data: dict = Field(default_factory=dict)

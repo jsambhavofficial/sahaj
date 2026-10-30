@@ -8,7 +8,7 @@ from app.modules.coordinators.models import PriorityList, PriorityListItem  # no
 from app.modules.family.models import FamilyInteraction, WeeklyFamilySummary  # noqa: F401
 from app.modules.medications.models import MedicationEvent, MedicationSchedule  # noqa: F401
 from app.modules.messages.models import Message  # noqa: F401
-from app.modules.notifications.models import DeviceToken, Notification  # noqa: F401
+from app.modules.notifications.models import DeviceToken, Notification, NotificationPreference  # noqa: F401
 from app.modules.risk.models import DailyRiskScore  # noqa: F401
 from app.modules.seniors.models import (  # noqa: F401
     Senior, SeniorBaseline, SeniorCondition, SeniorContact, SeniorHealthProfile,
