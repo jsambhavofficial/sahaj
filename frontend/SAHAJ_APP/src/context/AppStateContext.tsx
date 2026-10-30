@@ -72,6 +72,7 @@ interface AppContextType {
 
   checkInStatus: string | null;
   submitQuickCheckIn: (feeling: string) => Promise<boolean>;
+  sendVoiceNote: (audioUri: string, durationSec: number) => Promise<boolean>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -268,7 +269,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         setAuthStatus('signedOut');
       }
     })();
-    return () => {
+
+  return () => {
       cancelled = true;
       configureAuth(null);
     };
@@ -413,6 +415,17 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const sendVoiceNote = async (audioUri: string, durationSec: number): Promise<boolean> => {
+    try {
+      const langParam = language === 'hi' ? 'hindi' : 'english';
+      await live.sendSeniorVoiceNote(audioUri, durationSec, langParam);
+      return true;
+    } catch (e) {
+      Alert.alert('Could not send voice note', messageOf(e));
+      return false;
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -425,7 +438,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         vitals, updateVitals,
         activeCall, startCall, endCall,
         alertResolved, markAlertActionTaken,
-        checkInStatus, submitQuickCheckIn,
+        checkInStatus, submitQuickCheckIn, sendVoiceNote,
       }}
     >
       {children}

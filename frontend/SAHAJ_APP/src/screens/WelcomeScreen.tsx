@@ -11,8 +11,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppState } from '../context/AppStateContext';
 import { BotanicalDecor } from '../components/common/BotanicalDecor';
 import { CaringIllustration } from '../components/illustrations/CaringIllustration';
-import Svg, { Path, Circle } from 'react-native-svg';
-import { UserCheck, Heart, ChevronRight, User } from 'lucide-react-native';
+import Svg, { Path } from 'react-native-svg';
+import { UserCheck, ChevronRight, User } from 'lucide-react-native';
 
 interface Props {
   onSelectRole: (role: 'coordinator' | 'senior') => void;

@@ -1,4 +1,5 @@
 /** Calls to the Sahaj backend (v1 contract), already shaped for the screens. */
+import { Platform } from 'react-native';
 import { request } from './http';
 import {
   ZERO_VITALS, latestVitals, mapHomeDoses, mapProfile, mapRiskHistory, mapScheduleDoses, mapTodayItem,
@@ -117,3 +118,47 @@ export const postReport = (text: string, language: 'hindi' | 'english') =>
 
 export const startSeniorCall = () =>
   request('/me/call-coordinator', { method: 'POST', body: { recording_consent: true } });
+
+export interface VoiceNoteResponse {
+  id: string;
+  senior_id: string;
+  kind: string;
+  audio_url?: string | null;
+  transcript?: string | null;
+  language: string;
+  duration_sec?: number | null;
+  created_at: string;
+}
+
+export async function sendSeniorVoiceNote(
+  audioUri: string,
+  durationSec: number,
+  language: 'hindi' | 'english' | 'hinglish' = 'hindi',
+  fileName: string = 'voicenote.m4a',
+  mimeType: string = 'audio/m4a'
+): Promise<VoiceNoteResponse> {
+  const ext = audioUri.split('.').pop()?.toLowerCase();
+  const validExt = ext === 'wav' ? 'wav' : ext === 'mp3' ? 'mp3' : ext === 'aac' ? 'aac' : 'm4a';
+  const finalName = fileName.includes('.') ? fileName : `voicenote.${validExt}`;
+  const finalType = validExt === 'wav' ? 'audio/wav' : validExt === 'mp3' ? 'audio/mpeg' : (mimeType || 'audio/m4a');
+
+  const formData = new FormData();
+  if (Platform.OS === 'web' || audioUri.startsWith('blob:') || audioUri.startsWith('data:')) {
+    const res = await fetch(audioUri);
+    const blob = await res.blob();
+    formData.append('audio', blob, finalName);
+  } else {
+    formData.append('audio', {
+      uri: audioUri,
+      name: finalName,
+      type: finalType,
+    } as unknown as Blob);
+  }
+  formData.append('language', language);
+  formData.append('duration_sec', String(Math.max(1, Math.round(durationSec))));
+
+  return request<VoiceNoteResponse>('/me/messages', {
+    method: 'POST',
+    body: formData,
+  });
+}
