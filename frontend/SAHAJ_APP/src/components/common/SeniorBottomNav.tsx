@@ -5,8 +5,6 @@ import {
   CalendarCheck,
   HeartPulse,
   Bell,
-  Mic,
-  Globe,
 } from 'lucide-react-native';
 
 export type SeniorTab = 'home' | 'checkin' | 'vitals' | 'notifications' | 'voicenote' | 'language' | 'aicall';
@@ -82,36 +80,6 @@ export const SeniorBottomNav: React.FC<Props> = ({ currentTab, onTabChange }) =>
           ]}
         >
           Notifications
-        </Text>
-      </TouchableOpacity>
-
-      {/* Tab 5: Voice Note */}
-      <TouchableOpacity
-        style={styles.tabItem}
-        onPress={() => onTabChange('voicenote')}
-        activeOpacity={0.7}
-      >
-        <Mic
-          size={20}
-          color={currentTab === 'voicenote' ? '#008774' : '#64748B'}
-        />
-        <Text style={[styles.tabLabel, currentTab === 'voicenote' && styles.tabLabelActive]}>
-          Voice Note
-        </Text>
-      </TouchableOpacity>
-
-      {/* Tab 6: Language */}
-      <TouchableOpacity
-        style={styles.tabItem}
-        onPress={() => onTabChange('language')}
-        activeOpacity={0.7}
-      >
-        <Globe
-          size={20}
-          color={currentTab === 'language' ? '#008774' : '#64748B'}
-        />
-        <Text style={[styles.tabLabel, currentTab === 'language' && styles.tabLabelActive]}>
-          Language
         </Text>
       </TouchableOpacity>
     </View>

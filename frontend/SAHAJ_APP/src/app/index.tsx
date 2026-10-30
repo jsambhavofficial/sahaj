@@ -32,7 +32,7 @@ import { EnterVitalsScreen } from '../screens/senior/EnterVitalsScreen';
 import { SeniorNotificationsScreen } from '../screens/senior/SeniorNotificationsScreen';
 import { SeniorBottomNav, SeniorTab } from '../components/common/SeniorBottomNav';
 
-import { Phone, PhoneOff, UserCheck, User, RefreshCw } from 'lucide-react-native';
+import { Phone, PhoneOff, UserCheck, RefreshCw } from 'lucide-react-native';
 
 export default function AppEntry() {
   const {
@@ -332,24 +332,6 @@ export default function AppEntry() {
 
   return (
     <View style={[styles.appWrapper, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      {/* Top Role Indicator Bar */}
-      <View style={[styles.topRoleBanner, { backgroundColor: '#F0FAF7' }]}>
-        <View style={styles.roleTag}>
-          <User size={14} color="#008774" />
-          <Text style={[styles.roleTagText, { color: '#008774' }]}>
-            Senior Mode{activeSenior.senior_id ? ` (${activeSenior.display_name})` : ''}
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => void logout()}
-          style={[styles.switchRoleBtn, { borderColor: '#A7F3D0' }]}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.switchRoleText, { color: '#008774' }]}>
-            Sign out
-          </Text>
-        </TouchableOpacity>
-      </View>
       {renderDataStatus()}
 
       <View style={styles.screenContainer}>{seniorContent}</View>
