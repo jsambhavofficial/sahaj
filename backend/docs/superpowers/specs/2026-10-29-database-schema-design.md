@@ -1,6 +1,8 @@
+> **STALE:** written for the old dataset. The SQLAlchemy models and Alembic migrations are the source of truth; see `docs/database-schema.md` (generated). Kept only for design intent.
+
 # SamarthCare AI — Database Schema Design (v1)
 
-Status: draft for review. Target: Supabase Postgres 17, accessed only by the FastAPI backend (SQLAlchemy 2 + Alembic).
+Status: draft for review (v1.1: adds phone-call recording, messages, priority lists, push notifications and ops views; see `docs/system-overview.md`). Target: Supabase Postgres 17, accessed only by the FastAPI backend (SQLAlchemy 2 + Alembic).
 
 ## 1. Conventions
 
@@ -10,7 +12,7 @@ Status: draft for review. Target: Supabase Postgres 17, accessed only by the Fas
 - **Flexible payloads:** `jsonb` (top factors, call context snapshot, extracted cues).
 - **Row Level Security:** enabled on every table with no policies. The app connects with the database role, which bypasses RLS; the Supabase REST/anon API sees nothing. Access control is enforced in FastAPI.
 - **Privacy split:** direct identifiers (name, phone) live only in `senior_contacts`. No other table, prompt, log or LLM payload carries them.
-- **No raw audio** is stored. Transcripts only.
+- **Audio:** never stored in Postgres. Recordings and voice notes live in a private Supabase Storage bucket with an expiry; the DB keeps only the path, consent flag, transcript and summary. The AI voice agent stores transcripts only (no audio).
 - **Not in the DB:** ground truth (`decline_episodes`, `*_with_ground_truth`, `nlp_annotations`) and derived feature tables (`daily_risk_features`, `daily_master`, `master_dataset`). They stay in `ml/data` and are rebuilt from DB tables when needed.
 
 ## 2. Tables
@@ -25,8 +27,10 @@ Status: draft for review. Target: Supabase Postgres 17, accessed only by the Fas
 | external_ref | text unique null | dataset id, e.g. `COORD_001` |
 | display_name | text | |
 | email | text unique null | |
+| phone | text null | coordinator's number for click-to-call; senior numbers live in `senior_contacts` |
 | password_hash | text null | null for seniors (device token auth) |
 | city_id | text null | ops/coordinator scope |
+| team_id | text null | ops scope by team |
 | is_active | bool default true | |
 | created_at | timestamptz | |
 
@@ -63,6 +67,7 @@ Status: draft for review. Target: Supabase Postgres 17, accessed only by the Fas
 | location_detail | text null | free-text area, no street address |
 | living_arrangement | text | `alone`, `with_spouse`, `with_family` (all in the dataset), plus `with_house_help` (app-only, from the team's requirements) |
 | coordinator_id | uuid FK users | |
+| user_id | uuid FK users unique null | the senior's own login row (device-token auth); needed so messages and notifications can reference the senior |
 | expected_checkin_frequency | text | `daily`, `alternate_days`, `weekly_3x` |
 | family_consent | bool | master switch; per-person consent lives on `family_links` |
 | cohort_start_date, cohort_end_date | date null | demo cohort window |
@@ -129,20 +134,21 @@ Status: draft for review. Target: Supabase Postgres 17, accessed only by the Fas
 | checkin_id | text PK | |
 | senior_id | text FK | |
 | at | timestamptz | |
-| channel | text | `phone_call`, `coordinator_visit`, `whatsapp_voice`, `app_checkin` (dataset); `voice_agent`, `one_tap`, `missed_call` (app-only) |
+| channel | text | `phone_call`, `coordinator_visit`, `whatsapp_voice`, `app_checkin` (dataset); `voice_agent`, `phone_bridge`, `voice_note`, `one_tap`, `missed_call` (app-only) |
 | language | text | |
 | note_text | text null | transcript or coordinator note |
 | transcription_status | text | `verified`, `auto_transcribed` (dataset); `failed`, `none` (app-only) |
 | consent_status | text | |
-| source_role | text | `care_coordinator`, `senior_citizen` (dataset); `voice_agent` (app-only) |
-| voice_call_id | uuid FK null | set when the check-in came from the agent |
+| source_role | text | `care_coordinator`, `senior_citizen` (dataset); `voice_agent`, `coordinator` (app-only) |
+| call_id | uuid FK calls null | set when the check-in came from an AI call or a recorded phone call |
 
 **nlp_cues** (extractor output; same shape as `nlp_annotations.csv` but produced by the live extractor)
 | column | type | notes |
 |---|---|---|
 | id | uuid PK | |
-| checkin_id | text FK | |
-| senior_id | text | denormalised for queries |
+| source_type | text | `checkin`, `call`, `message` |
+| source_id | text | id of the check-in, call or message (no FK, since the source varies) |
+| senior_id | text FK | denormalised for queries |
 | cue_type | text | pain, confusion, low_appetite, loneliness, fall, no_new_concern, ... |
 | cue_value | text | |
 | temporal_context | text | current, historical |
@@ -151,30 +157,60 @@ Status: draft for review. Target: Supabase Postgres 17, accessed only by the Fas
 | confidence | numeric | |
 | extractor_version | text | |
 
-**voice_calls**
+**calls** (both the AI wellbeing call and the recorded senior ↔ coordinator phone call)
 | column | type | notes |
 |---|---|---|
 | id | uuid PK | |
+| kind | text | `ai_agent`, `phone_bridge` |
 | senior_id | text FK | |
-| started_at, ended_at | timestamptz | |
-| status | text | `completed`, `abandoned`, `failed`, `declined` |
-| language | text | |
-| context_snapshot | jsonb | exactly what the agent was told at start (summary, open memory items, today's risk factors, missed meds) |
-| summary | text null | written by the summarizer at the end |
+| coordinator_id | uuid FK users null | null for AI calls |
+| initiated_by_user_id | uuid FK users null | who tapped call (null = scheduler) |
+| provider | text | `in_app` (AI agent), `exotel` |
+| provider_call_sid | text unique null | Exotel `CallSid`, used to match the webhook |
+| status | text | `queued`, `in_progress`, `completed`, `abandoned`, `failed`, `declined`, `no_answer`, `busy` |
+| started_at, ended_at | timestamptz null | |
+| duration_sec | int null | |
+| language | text null | |
+| recording_path | text null | private bucket path (`phone_bridge` only) |
+| recording_expires_at | timestamptz null | retention limit |
+| recording_consent | bool | both parties told the call is recorded |
+| consent_at | timestamptz null | |
+| transcript_status | text | `pending`, `done`, `failed`, `not_applicable` |
+| context_snapshot | jsonb null | AI calls: exactly what the agent was told at start (summary, open memory items, today's risk factors, missed meds) |
+| summary | text null | LLM summary written after the call (masked input) |
 | model_info | jsonb | stt/llm/tts provider and versions |
+| processed_at | timestamptz null | when transcription, summary, cues and rescoring finished |
+| index | (senior_id, started_at desc), (provider_call_sid) | |
 
-**voice_turns**
+**call_turns** (transcript segments; for dual-channel recordings each channel is one speaker)
 | column | type | notes |
 |---|---|---|
 | id | uuid PK | |
-| call_id | uuid FK | |
+| call_id | uuid FK calls | |
 | turn_index | int | unique with call_id |
-| speaker | text | `agent`, `senior` |
+| speaker | text | `agent`, `senior`, `coordinator` |
 | text | text | transcript, as spoken |
 | language | text null | |
 | stt_confidence | numeric null | |
 | cues | jsonb null | per-turn extracted cues |
+| offset_ms | int null | position in the recording |
 | at | timestamptz | |
+
+**messages** (senior ↔ their coordinator; text and voice notes)
+| column | type | notes |
+|---|---|---|
+| id | uuid PK | |
+| senior_id | text FK | thread key: one thread per senior and their coordinator |
+| sender_user_id | uuid FK users | |
+| kind | text | `text`, `voice_note` |
+| body | text null | text messages |
+| audio_path | text null | private bucket path (voice notes) |
+| transcript | text null | STT result |
+| summary | text null | short summary for the coordinator |
+| language | text null | |
+| checkin_id | text FK checkins null | link to the check-in/cues this message produced |
+| created_at, delivered_at, read_at | timestamptz | |
+| index | (senior_id, created_at) | |
 
 **senior_memory_items** (the agent's "what we know from before")
 | column | type | notes |
@@ -184,7 +220,7 @@ Status: draft for review. Target: Supabase Postgres 17, accessed only by the Fas
 | kind | text | `symptom`, `medication_issue`, `mood`, `promise`, `topic` |
 | content | text | short, no names or phone numbers |
 | status | text | `open`, `resolved` |
-| first_seen_call_id, last_seen_call_id | uuid FK null | |
+| first_seen_call_id, last_seen_call_id | uuid FK calls null | |
 | first_seen_at, last_seen_at | timestamptz | |
 | follow_up_after | date null | |
 | resolved_at | timestamptz null | |
@@ -205,6 +241,65 @@ Rule: items are only created from senior statements or system facts, never from 
 
 **weekly_family_summaries**: `id`, `senior_id`, `week_start date`, `body_text`, `language`, `generated_by` (`template`, `llm`), `sent_at` null; unique `(senior_id, week_start)`. Only generated when consent is on.
 
+### 2.6 Coordinator priority list
+
+**priority_lists** (one row per build of a coordinator's day list; a new revision is written after each AI call, new alert or manual refresh)
+| column | type | notes |
+|---|---|---|
+| id | uuid PK | |
+| coordinator_id | uuid FK users | |
+| list_date | date | |
+| revision | int | 1 = morning build |
+| reason | text | `morning_build`, `post_ai_call`, `new_alert`, `manual_refresh` |
+| created_at | timestamptz | |
+| unique | (coordinator_id, list_date, revision) | |
+
+**priority_list_items**
+| column | type | notes |
+|---|---|---|
+| id | uuid PK | |
+| list_id | uuid FK priority_lists | |
+| rank | int | 1 = most urgent; unique with list_id |
+| senior_id | text FK | |
+| risk_score | int | copied from `daily_risk_scores` at build time |
+| risk_level | text | |
+| reasons | jsonb | plain-language reasons (top factors) |
+| suggested_action | text | |
+| alert_id | text FK alerts null | open alert, if any |
+| ai_call_done | bool | whether today's AI call has happened |
+| previous_rank | int null | rank in the prior revision, for "moved up" display |
+
+The app shows the highest revision for today; older revisions stay for audit and for the ops dashboard.
+
+### 2.7 Notifications and devices
+
+**device_tokens**: `id`, `user_id` FK, `platform` (`android`, `ios`, `web`), `token` unique (FCM), `app_version`, `created_at`, `last_seen_at`, `revoked_at` null.
+
+**notifications**
+| column | type | notes |
+|---|---|---|
+| id | uuid PK | |
+| user_id | uuid FK users | recipient |
+| kind | text | `medication_reminder`, `checkin_prompt`, `alert_new`, `alert_escalated`, `priority_list_updated`, `message_received`, `call_summary_ready` |
+| title, body | text | push text; keep generic (no names or conditions) since push goes through a third party |
+| data | jsonb | ids to open the right screen |
+| scheduled_for | timestamptz | |
+| sent_at | timestamptz null | |
+| delivery_status | text | `pending`, `sent`, `failed`, `skipped` |
+| read_at | timestamptz null | |
+| index | (user_id, scheduled_for), (delivery_status, scheduled_for) | |
+
+Medication reminders are generated by a scheduled job from `medication_schedules.scheduled_times`; each reminder is a `notifications` row, and the senior's "taken" tap writes a `medication_events` row (source `senior_app_confirmation`).
+
+### 2.8 Ops dashboard views (no new tables)
+
+SQL views over existing tables, scoped by `users.city_id` / `team_id` in the API:
+- `v_ops_alert_response`: per alert, minutes from created to first acknowledged and to resolved (from `alert_events`), city, coordinator.
+- `v_ops_alert_volume`: alerts per day, city, severity, status.
+- `v_ops_outcomes`: resolution reasons and `alert_feedback` (useful or not, outcome).
+- `v_ops_coordinator_activity`: per coordinator per day: alerts handled, calls (`calls`), messages sent, list revisions viewed.
+- `v_ops_alert_precision`: share of alerts marked useful, by city and week.
+
 ## 3. Relationships (summary)
 
 ```
@@ -212,11 +307,13 @@ users(coordinator) 1─* seniors 1─1 senior_contacts
                        seniors 1─1 senior_baselines
                        seniors 1─* senior_conditions, vitals, daily_activity,
                                    medication_schedules 1─* medication_events,
-                                   checkins 1─* nlp_cues, voice_calls 1─* voice_turns,
+                                   checkins 1─* nlp_cues, calls 1─* call_turns, messages,
                                    senior_memory_items, family_observations,
                                    daily_risk_scores, alerts 1─* alert_events, alert_feedback,
                                    weekly_family_summaries
 users(family) *─* seniors  via family_links
+users(coordinator) 1─* priority_lists 1─* priority_list_items *─1 seniors
+users 1─* device_tokens, notifications
 ```
 
 ## 4. Seed mapping
@@ -234,6 +331,7 @@ users(family) *─* seniors  via family_links
 | `processed/daily_risk_scores.csv` | `daily_risk_scores` |
 | `processed/alert_events.csv` | `alerts` (the CSV is one row per alert, not per transition) |
 | `coordinator_id` values | `users` rows with role `coordinator` |
+| generated | `priority_lists` / `priority_list_items` revision 1 for each coordinator and day, built from `daily_risk_scores` (top N by score) so the demo has history |
 
 Not seeded: `nlp_annotations.csv` (evaluation labels). `nlp_cues` is filled by running the live extractor over the seeded check-ins.
 
@@ -243,3 +341,6 @@ Not seeded: `nlp_annotations.csv` (evaluation labels). `nlp_cues` is filled by r
 2. Coordinators and family members become `users`; seed creates one demo user per coordinator and a few family users with a known dev password. Passwords never go in the repo; they come from env at seed time.
 3. Seniors authenticate in the mobile app with a device token rather than a password.
 4. `activity_events` is deferred until the sensor stretch goal.
+5. Calls: `calls` covers both the AI agent call (`in_app`, no audio kept) and the Exotel phone bridge (`exotel`, audio in a private bucket). The Exotel webhook is matched through `provider_call_sid`.
+6. Family members have no mobile app in v1; the weekly summary goes out by SMS or WhatsApp, so `device_tokens` only applies to seniors, coordinators and ops.
+7. Audio retention period and bucket name are to be decided (`recording_expires_at` is ready for it).

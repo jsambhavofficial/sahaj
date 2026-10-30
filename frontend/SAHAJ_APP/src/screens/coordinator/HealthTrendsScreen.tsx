@@ -7,12 +7,17 @@ import {
   ScrollView,
 } from 'react-native';
 import { useAppState } from '../../context/AppStateContext';
-import Svg, { Circle, Path, Line } from 'react-native-svg';
+import Svg, { Circle, Path, Line, Text as SvgText } from 'react-native-svg';
+import {
+  VITAL_KINDS, chartGeometry, levelLabel, levelPalette, recentReadings, riskTrend, vitalKindInfo, vitalSeries,
+  type VitalKind,
+} from '../../api/mappers';
 import {
   ChevronLeft,
   MoreVertical,
   ChevronRight,
   TrendingUp,
+  TrendingDown,
 } from 'lucide-react-native';
 
 interface Props {
@@ -21,8 +26,16 @@ interface Props {
 }
 
 export const HealthTrendsScreen: React.FC<Props> = ({ onBack, onViewDetails }) => {
-  const { vitals } = useAppState();
-  const [activeFilter, setActiveFilter] = useState<'BP' | 'Sugar' | 'SpO2' | 'Pulse' | 'Weight'>('BP');
+  const { activeSenior, readings, riskHistory, detailLoading } = useAppState();
+  const [activeFilter, setActiveFilter] = useState<VitalKind>('BP');
+
+  const info = vitalKindInfo(activeFilter);
+  const series = vitalSeries(readings, activeFilter, 7);
+  const geo = chartGeometry(series);
+  const latest = recentReadings(readings, activeFilter, 5);
+  const palette = levelPalette(activeSenior.risk_level);
+  const trend = riskTrend(riskHistory);
+  const GAUGE_LENGTH = 238.76; // circumference of the r=38 ring
 
   return (
     <View style={styles.container}>
@@ -47,7 +60,7 @@ export const HealthTrendsScreen: React.FC<Props> = ({ onBack, onViewDetails }) =
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterBar}
         >
-          {(['BP', 'Sugar', 'SpO2', 'Pulse', 'Weight'] as const).map((filter) => {
+          {VITAL_KINDS.map((filter) => {
             const isActive = activeFilter === filter;
             return (
               <TouchableOpacity
@@ -67,133 +80,107 @@ export const HealthTrendsScreen: React.FC<Props> = ({ onBack, onViewDetails }) =
           })}
         </ScrollView>
 
-        {/* Blood Pressure Chart Card */}
+        {/* Trend chart for the chosen vital: daily averages from the senior's real readings */}
         <View style={styles.chartCard}>
           <View style={styles.chartHeader}>
-            <Text style={styles.chartTitle}>Blood Pressure (mmHg)</Text>
+            <Text style={styles.chartTitle}>{info.title}</Text>
             <View style={styles.legendRow}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: '#1E6FE3' }]} />
-                <Text style={styles.legendLabel}>Systolic</Text>
+                <Text style={styles.legendLabel}>{info.names[0]}</Text>
               </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#9333EA' }]} />
-                <Text style={styles.legendLabel}>Diastolic</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* SVG Chart Graphic Container */}
-          <View style={styles.chartGraphicContainer}>
-            {/* Horizontal Grid lines */}
-            <View style={styles.gridLinesContainer}>
-              {[160, 120, 80, 40].map((val) => (
-                <View key={val} style={styles.gridLineRow}>
-                  <Text style={styles.yAxisLabel}>{val}</Text>
-                  <View style={styles.dashedLine} />
+              {info.names[1] ? (
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#9333EA' }]} />
+                  <Text style={styles.legendLabel}>{info.names[1]}</Text>
                 </View>
-              ))}
-            </View>
-
-            {/* SVG Trend Lines & Dots */}
-            <View style={styles.svgWrapper}>
-              <Svg width="100%" height="130" viewBox="0 0 300 130" fill="none">
-                {/* Systolic Line (Blue) ~125-135 */}
-                <Path
-                  d="M 15 42 L 60 40 L 105 48 L 155 42 L 205 45 L 255 52 L 285 48"
-                  stroke="#1E6FE3"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <Circle cx="15" cy="42" r="3.5" fill="#1E6FE3" />
-                <Circle cx="60" cy="40" r="3.5" fill="#1E6FE3" />
-                <Circle cx="105" cy="48" r="3.5" fill="#1E6FE3" />
-                <Circle cx="155" cy="42" r="3.5" fill="#1E6FE3" />
-                <Circle cx="205" cy="45" r="3.5" fill="#1E6FE3" />
-                <Circle cx="255" cy="52" r="3.5" fill="#1E6FE3" />
-                <Circle cx="285" cy="48" r="3.5" fill="#1E6FE3" />
-
-                {/* Diastolic Line (Purple) ~75-85 */}
-                <Path
-                  d="M 15 85 L 60 84 L 105 90 L 155 86 L 205 88 L 255 94 L 285 90"
-                  stroke="#9333EA"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <Circle cx="15" cy="85" r="3.5" fill="#9333EA" />
-                <Circle cx="60" cy="84" r="3.5" fill="#9333EA" />
-                <Circle cx="105" cy="90" r="3.5" fill="#9333EA" />
-                <Circle cx="155" cy="86" r="3.5" fill="#9333EA" />
-                <Circle cx="205" cy="88" r="3.5" fill="#9333EA" />
-                <Circle cx="255" cy="94" r="3.5" fill="#9333EA" />
-                <Circle cx="285" cy="90" r="3.5" fill="#9333EA" />
-              </Svg>
-            </View>
-
-            {/* X-Axis Dates */}
-            <View style={styles.xAxisRow}>
-              {['22 Apr', '23 Apr', '24 Apr', '25 Apr', '26 Apr', '27 Apr', '28 Apr'].map(
-                (date) => (
-                  <Text key={date} style={styles.xAxisLabel}>
-                    {date}
-                  </Text>
-                )
-              )}
+              ) : null}
             </View>
           </View>
+
+          {geo ? (
+            <>
+              <Svg width="100%" height={geo.height} viewBox={`0 0 ${geo.width} ${geo.height}`} fill="none">
+                {geo.ticks.map((tick) => (
+                  <React.Fragment key={`${tick.label}-${tick.y}`}>
+                    <Line x1={geo.plot.left} x2={geo.plot.right} y1={tick.y} y2={tick.y} stroke="#E2E8F0" strokeWidth={1} strokeDasharray="3 3" />
+                    <SvgText x={geo.plot.left - 6} y={tick.y + 3} fontSize="9" fill="#94A3B8" textAnchor="end">{tick.label}</SvgText>
+                  </React.Fragment>
+                ))}
+                <Path d={geo.a.d} stroke="#1E6FE3" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                {geo.a.dots.map((d, i) => <Circle key={`a${i}`} cx={d.x} cy={d.y} r={3.5} fill="#1E6FE3" />)}
+                {geo.b ? <Path d={geo.b.d} stroke="#9333EA" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /> : null}
+                {geo.b ? geo.b.dots.map((d, i) => <Circle key={`b${i}`} cx={d.x} cy={d.y} r={3.5} fill="#9333EA" />) : null}
+                {geo.xLabels.map((l, i) => (
+                  <SvgText key={`x${i}`} x={l.x} y={geo.height - 8} fontSize="9" fill="#94A3B8" textAnchor="middle">{l.label}</SvgText>
+                ))}
+              </Svg>
+              <Text style={styles.chartCaption}>Daily average, last {series.length} day{series.length === 1 ? '' : 's'} with readings</Text>
+            </>
+          ) : (
+            <Text style={styles.emptyNote}>{detailLoading ? 'Loading readings…' : `No ${activeFilter} readings recorded for ${activeSenior.display_name} yet.`}</Text>
+          )}
         </View>
 
-        {/* Recent Readings Card */}
+        {/* Latest individual readings of the chosen vital */}
         <View style={styles.readingsCard}>
           <View style={styles.readingsHeader}>
             <Text style={styles.readingsTitle}>Recent Readings</Text>
+          </View>
+          {latest.length === 0 ? (
+            <Text style={styles.emptyNote}>Nothing to show yet.</Text>
+          ) : (
+            latest.map((r, i) => (
+              <View key={i} style={styles.readingRow}>
+                <Text style={styles.readingAt}>{r.at}</Text>
+                <Text style={styles.readingValue}>{r.text}</Text>
+              </View>
+            ))
+          )}
+        </View>
+
+        {/* Overall risk for this senior */}
+        <View style={styles.readingsCard}>
+          <View style={styles.readingsHeader}>
+            <Text style={styles.readingsTitle}>Risk score</Text>
             <TouchableOpacity onPress={onViewDetails} activeOpacity={0.7}>
-              <Text style={styles.viewDetailsText}>View details</Text>
+              <Text style={styles.viewDetailsText}>Why?</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.gaugeRow}>
-            {/* Circular Gauge */}
             <View style={styles.gaugeWrapper}>
               <Svg width="90" height="90" viewBox="0 0 100 100">
+                <Circle cx="50" cy="50" r="38" fill="none" stroke="#F1F5F9" strokeWidth="8" />
                 <Circle
                   cx="50"
                   cy="50"
                   r="38"
                   fill="none"
-                  stroke="#F1F5F9"
+                  stroke={palette.stroke}
                   strokeWidth="8"
-                />
-                <Circle
-                  cx="50"
-                  cy="50"
-                  r="38"
-                  fill="none"
-                  stroke="#FB923C"
-                  strokeWidth="8"
-                  strokeDasharray="238.76"
-                  strokeDashoffset="76.4"
+                  strokeDasharray={GAUGE_LENGTH}
+                  strokeDashoffset={GAUGE_LENGTH * (1 - Math.min(100, Math.max(0, activeSenior.risk_score)) / 100)}
                   strokeLinecap="round"
                   transform="rotate(-90 50 50)"
                 />
               </Svg>
               <View style={styles.gaugeInner}>
-                <Text style={styles.gaugeValue}>68</Text>
+                <Text style={styles.gaugeValue}>{activeSenior.risk_score}</Text>
                 <Text style={styles.gaugeDenominator}>/100</Text>
               </View>
             </View>
 
-            {/* Trend info */}
             <View style={styles.gaugeInfo}>
-              <View style={styles.moderateBadge}>
-                <Text style={styles.moderateBadgeText}>Moderate</Text>
+              <View style={[styles.moderateBadge, { backgroundColor: palette.bg }]}>
+                <Text style={[styles.moderateBadgeText, { color: palette.fg }]}>{levelLabel(activeSenior.risk_level)}</Text>
               </View>
-              <View style={styles.trendRow}>
-                <TrendingUp size={15} color="#0A7360" />
-                <Text style={styles.trendLabel}>12% from last week</Text>
-              </View>
+              {trend ? (
+                <View style={styles.trendRow}>
+                  {trend.delta > 0 ? <TrendingUp size={15} color="#DC2626" /> : <TrendingDown size={15} color="#0A7360" />}
+                  <Text style={styles.trendLabel}>{trend.text}</Text>
+                </View>
+              ) : null}
             </View>
           </View>
         </View>
@@ -213,6 +200,11 @@ export const HealthTrendsScreen: React.FC<Props> = ({ onBack, onViewDetails }) =
 };
 
 const styles = StyleSheet.create({
+  chartCaption: { fontSize: 11, color: '#94A3B8', marginTop: 4 },
+  emptyNote: { fontSize: 13, color: '#64748B', paddingVertical: 14 },
+  readingRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 9, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
+  readingAt: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  readingValue: { fontSize: 14, color: '#0F172A', fontWeight: '800' },
   container: {
     flex: 1,
     backgroundColor: '#F8FAF9',

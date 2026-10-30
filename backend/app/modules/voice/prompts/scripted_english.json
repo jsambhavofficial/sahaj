@@ -1,0 +1,16 @@
+{
+  "greeting": "Hello! I am calling from Samarth to see how you are doing today.",
+  "questions": [
+    "How are you feeling today?",
+    "How did you sleep last night?",
+    "Have you eaten today, and did you take your medicines on time?",
+    "Is anything bothering you, or is there something you would like to tell us?"
+  ],
+  "followup": "Last time you told us about how you were feeling. How are you feeling now?",
+  "acks": ["I see.", "Alright.", "Understood.", "Thank you for telling me."],
+  "goodbye": "Thank you so much, it was lovely talking to you. Please take care. Goodbye!",
+  "retry": "Sorry, I could not hear you properly. Could you please say that again?",
+  "urgent": "I have heard you. I am letting your coordinator know right now and they will call you very soon. If you feel worse, please call someone at home or dial 112.",
+  "fallback": "Sorry, there is a technical problem right now. Your coordinator will call you. Goodbye!",
+  "safe_fallback": "Please tell your care coordinator about this. They will call you."
+}

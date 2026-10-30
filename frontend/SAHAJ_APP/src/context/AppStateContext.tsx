@@ -1,277 +1,431 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { UserRole, Language, SeniorItem, MedicationItem, VitalsState } from '../types';
-import { coordinatorApi, seniorApi, authApi } from '../api/contract';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react';
+import { Alert } from 'react-native';
+import {
+  AuthStatus, DataStatus, Language, MedicationItem, SeniorItem, SessionUser, UserRole, VitalsState,
+} from '../types';
+import * as live from '../api/live';
+import { configureAuth } from '../api/http';
+import { clearSession, loadSession, saveSession, saveTokens } from '../api/session';
+import {
+  NO_SENIOR, ZERO_VITALS, avatarColorOf, initialsOf, messageOf,
+  type RiskPoint, type SeniorProfile, type VitalDto,
+} from '../api/mappers';
+
+// Calls ring real phones and are recorded, and the server may be running with a stand-in
+// telephony provider. Off by default: the call screen then only simulates a call.
+const REAL_CALLS = process.env.EXPO_PUBLIC_ENABLE_REAL_CALLS === 'true';
 
 interface AppContextType {
+  // Who is signed in
+  authStatus: AuthStatus;
+  authError: string | null;
+  user: SessionUser | null;
   role: UserRole | null;
+  /** The role picked on the welcome screen, before signing in. */
+  pendingRole: UserRole | null;
+  setPendingRole: (role: UserRole | null) => void;
+  loginCoordinator: (email: string, password: string) => Promise<boolean>;
+  loginSenior: (pairingCode: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  /** Kept for the old "Change Role" button: null signs out, a role starts sign-in for that role. */
   setRole: (role: UserRole | null) => void;
+
+  // Loading real data
+  dataStatus: DataStatus;
+  dataError: string | null;
+  refreshData: () => Promise<void>;
+
   language: Language;
   setLanguage: (lang: Language) => void;
   activeScreen: string;
   setActiveScreen: (screen: string) => void;
 
-  // Seniors Data
+  // Seniors
   seniorsList: SeniorItem[];
+  /** Everyone in the coordinator's caseload (the ranked list can be shorter). */
+  caseloadTotal: number;
   activeSenior: SeniorItem;
+  /** Detail of the active senior, for the overview and trend screens. null until loaded. */
+  seniorProfile: SeniorProfile | null;
+  riskHistory: RiskPoint[];
+  readings: VitalDto[];
+  lastCall: live.LastCall | null;
+  detailLoading: boolean;
   setActiveSeniorById: (id: string) => void;
+  createPairingCode: () => Promise<{ pairing_code: string; expires_in: number }>;
 
-  // Medications
+  // Medications (one item per dose)
   medications: MedicationItem[];
   confirmMedication: (id: string) => Promise<void>;
-  sendMedicationReminder: (id: string) => void;
-  removeMedication: (id: string) => void;
 
   // Vitals
   vitals: VitalsState;
   updateVitals: (newVitals: Partial<VitalsState>) => Promise<void>;
 
-  // Call & Alert State
+  // Call & alert state
   activeCall: { active: boolean; recipient: string; message: string } | null;
   startCall: (recipientName: string, seniorId?: string) => Promise<void>;
   endCall: () => void;
 
   alertResolved: boolean;
-  markAlertActionTaken: () => Promise<void>;
+  markAlertActionTaken: () => Promise<boolean>;
 
-  // Daily Checkin submission
   checkInStatus: string | null;
-  submitQuickCheckIn: (feeling: string) => Promise<void>;
+  submitQuickCheckIn: (feeling: string) => Promise<boolean>;
 }
-
-const defaultSeniors: SeniorItem[] = [
-  {
-    senior_id: 'SL03234',
-    display_name: 'Ramesh Kumar',
-    age: 78,
-    gender: 'Male',
-    city: 'Bengaluru',
-    preferred_language: 'hindi',
-    risk_score: 92,
-    risk_level: 'HIGH',
-    avatarInitials: 'RK',
-    avatarColor: '#2B6CB0',
-    reasons: [
-      'BP increased from 128/82 to 148/96 (≥ 20 mmHg ↑)',
-      'Missed 2 medication doses (anti-hypertensive)',
-      'Call notes mention "chest heaviness" (3 days ago)',
-    ],
-    suggested_action: 'Call senior now and request repeat BP reading.',
-  },
-  {
-    senior_id: 'SL0187',
-    display_name: 'Shanti Devi',
-    age: 72,
-    gender: 'Female',
-    city: 'New Delhi',
-    preferred_language: 'hinglish',
-    risk_score: 68,
-    risk_level: 'MODERATE',
-    avatarInitials: 'SC',
-    avatarColor: '#4F46E5',
-    reasons: ['Steps averaged 54% of baseline for 3 days', 'Pending afternoon Lisinopril dose'],
-    suggested_action: 'Call and check on dizziness and medication adherence.',
-  },
-  {
-    senior_id: 'SL0271',
-    display_name: 'Mohan Patel',
-    age: 81,
-    gender: 'Male',
-    city: 'Ahmedabad',
-    preferred_language: 'hindi',
-    risk_score: 64,
-    risk_level: 'MODERATE',
-    avatarInitials: 'MP',
-    avatarColor: '#2B6CB0',
-    reasons: ['Mild sugar fluctuation after evening meal'],
-    suggested_action: 'Remind caregiver about low sugar diet.',
-  },
-  {
-    senior_id: 'SL0312',
-    display_name: 'Pushpa Dutra',
-    age: 69,
-    gender: 'Female',
-    city: 'Kolkata',
-    preferred_language: 'hinglish',
-    risk_score: 58,
-    risk_level: 'MODERATE',
-    avatarInitials: 'PD',
-    avatarColor: '#4F46E5',
-    reasons: ['Sleep duration decreased to 5.2 hours'],
-    suggested_action: 'Review evening routine on next scheduled check-in.',
-  },
-];
-
-const defaultMedications: MedicationItem[] = [
-  {
-    medication_id: 'MED_01',
-    drug_name: 'Metformin',
-    dosage: '500 mg',
-    scheduled_at: '2026-10-11T08:00:00+05:30',
-    time_slot: 'Morning (8:00 AM)',
-    status: 'taken',
-    indication: 'Type 2 Diabetes',
-  },
-  {
-    medication_id: 'MED_02',
-    drug_name: 'Lisinopril',
-    dosage: '10 mg',
-    scheduled_at: '2026-10-11T14:00:00+05:30',
-    time_slot: 'Afternoon (2:00 PM)',
-    status: 'pending',
-    indication: 'Hypertension',
-  },
-  {
-    medication_id: 'MED_03',
-    drug_name: 'Aspirin',
-    dosage: '81 mg',
-    scheduled_at: '2026-10-11T20:00:00+05:30',
-    time_slot: 'Evening (8:00 PM)',
-    status: 'pending',
-    indication: 'Cardioprotection',
-  },
-];
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
-  const [role, setRole] = useState<UserRole | null>(null);
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('booting');
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [pendingRole, setPendingRole] = useState<UserRole | null>(null);
   const [language, setLanguage] = useState<Language>('hi');
   const [activeScreen, setActiveScreen] = useState<string>('welcome');
 
-  const [seniorsList, setSeniorsList] = useState<SeniorItem[]>(defaultSeniors);
-  const [activeSenior, setActiveSenior] = useState<SeniorItem>(defaultSeniors[1]); // Shanti Devi by default
-  const [medications, setMedications] = useState<MedicationItem[]>(defaultMedications);
-  const [vitals, setVitals] = useState<VitalsState>({
-    bpSystolic: 120,
-    bpDiastolic: 80,
-    sugar: 110,
-    spo2: 97,
-    pulse: 72,
-    weight: 62,
-  });
+  const [dataStatus, setDataStatus] = useState<DataStatus>('idle');
+  const [dataError, setDataError] = useState<string | null>(null);
+  const [seniorsList, setSeniorsList] = useState<SeniorItem[]>([]);
+  const [caseloadTotal, setCaseloadTotal] = useState(0);
+  const [activeSenior, setActiveSenior] = useState<SeniorItem>(NO_SENIOR);
+  const [seniorProfile, setSeniorProfile] = useState<SeniorProfile | null>(null);
+  const [riskHistory, setRiskHistory] = useState<RiskPoint[]>([]);
+  const [readings, setReadings] = useState<VitalDto[]>([]);
+  const [lastCall, setLastCall] = useState<live.LastCall | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [medications, setMedications] = useState<MedicationItem[]>([]);
+  const [vitals, setVitals] = useState<VitalsState>(ZERO_VITALS);
 
   const [activeCall, setActiveCall] = useState<{ active: boolean; recipient: string; message: string } | null>(null);
   const [alertResolved, setAlertResolved] = useState<boolean>(false);
   const [checkInStatus, setCheckInStatus] = useState<string | null>(null);
 
-  // Initial fetch from contract
-  useEffect(() => {
-    (async () => {
+  const tokens = useRef<{ access: string | null; refresh: string | null }>({ access: null, refresh: null });
+  const deviceToken = useRef<string | null>(null);
+  const reportDate = useRef<string>('');
+  const detailRequest = useRef(0); // ignore a slow reply for a senior the coordinator has already left
+
+  const role: UserRole | null = user && (user.role === 'coordinator' || user.role === 'senior') ? user.role : null;
+
+  // ---- sessions ------------------------------------------------------------------------------------
+  const clearDetail = useCallback(() => {
+    setMedications([]);
+    setVitals(ZERO_VITALS);
+    setSeniorProfile(null);
+    setRiskHistory([]);
+    setReadings([]);
+    setLastCall(null);
+  }, []);
+
+  const resetData = useCallback(() => {
+    clearDetail();
+    setCaseloadTotal(0);
+    setDetailLoading(false);
+    setSeniorsList([]);
+    setActiveSenior(NO_SENIOR);
+    setDataStatus('idle');
+    setDataError(null);
+    setAlertResolved(false);
+    setCheckInStatus(null);
+    setActiveCall(null);
+  }, [clearDetail]);
+
+  // ---- data ----------------------------------------------------------------------------------------
+  const loadSeniorDetail = useCallback(async (seniorId: string, date: string) => {
+    const ticket = ++detailRequest.current;
+    clearDetail();
+    setDetailLoading(true);
+    try {
+      const d = await live.fetchSeniorDetail(seniorId, date);
+      if (ticket !== detailRequest.current) return;
+      setMedications(d.medications);
+      setVitals(d.vitals);
+      setSeniorProfile(d.profile);
+      setRiskHistory(d.riskHistory);
+      setReadings(d.readings);
+      setLastCall(d.lastCall);
+      setDetailLoading(false);
+    } catch (e) {
+      if (ticket !== detailRequest.current) return;
+      setDetailLoading(false);
+      setDataError(messageOf(e));
+      setDataStatus('error');
+    }
+  }, [clearDetail]);
+
+  const loadData = useCallback(
+    async (u: SessionUser, keepSeniorId?: string) => {
+      setDataStatus('loading');
+      setDataError(null);
       try {
-        const priority = await coordinatorApi.getTodayPriority();
-        if (priority && priority.items) {
-          // map server items if present
+        if (u.role === 'coordinator') {
+          const today = await live.fetchToday();
+          reportDate.current = today.date;
+          setSeniorsList(today.seniors);
+          setCaseloadTotal(today.caseloadTotal);
+          // a refresh keeps the senior the coordinator is looking at, if they are still on the list
+          const shown = today.seniors.find((s) => s.senior_id === keepSeniorId) ?? today.seniors[0];
+          setActiveSenior(shown ?? NO_SENIOR);
+          if (!keepSeniorId) setAlertResolved(false);
+          if (shown) await loadSeniorDetail(shown.senior_id, today.date);
+          else clearDetail();
+        } else {
+          const home = await live.fetchHome();
+          const me: SeniorItem = {
+            ...NO_SENIOR,
+            senior_id: u.external_ref ?? '',
+            display_name: home.greeting || u.display_name,
+            preferred_language: home.language,
+            avatarInitials: initialsOf(home.greeting || u.display_name),
+            avatarColor: avatarColorOf(u.external_ref ?? u.id),
+          };
+          setActiveSenior(me);
+          setSeniorsList([me]);
+          clearDetail();
+          setMedications(home.medications);
+          setLanguage(home.language === 'english' ? 'en' : 'hi');
         }
+        setDataStatus((s) => (s === 'error' ? s : 'ready'));
       } catch (e) {
-        // gracefully silent
+        setDataError(messageOf(e));
+        setDataStatus('error');
+      }
+    },
+    [loadSeniorDetail, clearDetail]
+  );
+
+  const signOut = useCallback(
+    async (message: string | null = null) => {
+      tokens.current = { access: null, refresh: null };
+      deviceToken.current = null;
+      await clearSession();
+      resetData();
+      setUser(null);
+      setPendingRole(null);
+      setAuthError(message);
+      setAuthStatus('signedOut');
+    },
+    [resetData]
+  );
+  const signOutRef = useRef(signOut);
+  useEffect(() => {
+    signOutRef.current = signOut;
+  }, [signOut]);
+  const userRef = useRef<SessionUser | null>(null);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  const adopt = useCallback(async (r: live.LoginResult) => {
+    tokens.current = { access: r.access_token, refresh: r.refresh_token ?? null };
+    if (r.device_token) deviceToken.current = r.device_token;
+    await saveSession({
+      accessToken: r.access_token,
+      refreshToken: r.refresh_token ?? null,
+      user: r.user,
+      deviceToken: deviceToken.current,
+    });
+    setUser(r.user);
+    setAuthError(null);
+    setAuthStatus('signedIn');
+    void loadData(r.user);
+  }, [loadData]);
+
+  // Wire the HTTP client to the current tokens, and restore a saved session on launch.
+  useEffect(() => {
+    configureAuth({
+      getTokens: () => tokens.current,
+      setTokens: (access, refresh) => {
+        tokens.current = { access, refresh };
+        void saveTokens(access, refresh);
+      },
+      renew: async () => {
+        const seniorId = userRef.current?.external_ref;
+        if (!deviceToken.current || !seniorId) return false;
+        try {
+          const r = await live.loginWithDevice(seniorId, deviceToken.current);
+          tokens.current = { access: r.access_token, refresh: r.refresh_token ?? null };
+          await saveTokens(r.access_token, r.refresh_token ?? null);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      onExpired: () => void signOutRef.current('Your session has expired. Please sign in again.'),
+    });
+    let cancelled = false;
+    (async () => {
+      const saved = await loadSession();
+      if (cancelled) return;
+      if (saved) {
+        tokens.current = { access: saved.accessToken, refresh: saved.refreshToken };
+        deviceToken.current = saved.deviceToken ?? null;
+        setUser(saved.user);
+        setAuthStatus('signedIn');
+        void loadData(saved.user);
+      } else {
+        setAuthStatus('signedOut');
       }
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+      configureAuth(null);
+    };
+  }, [loadData]);
+
+  const loginCoordinator = useCallback(
+    async (email: string, password: string) => {
+      setAuthStatus('signingIn');
+      setAuthError(null);
+      try {
+        const r = await live.loginWithPassword(email, password);
+        if (r.user.role !== 'coordinator') {
+          setAuthStatus('signedOut');
+          setAuthError(
+            r.user.role === 'senior'
+              ? 'This is a senior account. Choose "Senior" and use your pairing code.'
+              : 'This app is for care coordinators and seniors. Organization managers sign in on the web portal.'
+          );
+          return false;
+        }
+        await adopt(r);
+        return true;
+      } catch (e) {
+        setAuthStatus('signedOut');
+        setAuthError(messageOf(e));
+        return false;
+      }
+    },
+    [adopt]
+  );
+
+  const loginSenior = useCallback(
+    async (pairingCode: string) => {
+      setAuthStatus('signingIn');
+      setAuthError(null);
+      try {
+        await adopt(await live.pairWithCode(pairingCode));
+        return true;
+      } catch (e) {
+        setAuthStatus('signedOut');
+        setAuthError(messageOf(e));
+        return false;
+      }
+    },
+    [adopt]
+  );
+
+  const logout = useCallback(() => signOut(null), [signOut]);
+
+  const setRole = (next: UserRole | null) => {
+    if (next === null) void logout();
+    else setPendingRole(next);
+  };
+
+  const refreshData = useCallback(async () => {
+    if (user) await loadData(user, activeSenior.senior_id || undefined);
+  }, [user, loadData, activeSenior.senior_id]);
 
   const setActiveSeniorById = (id: string) => {
     const found = seniorsList.find((s) => s.senior_id === id);
-    if (found) {
-      setActiveSenior(found);
+    if (!found) return;
+    setActiveSenior(found);
+    setAlertResolved(false);
+    if (role === 'coordinator') void loadSeniorDetail(found.senior_id, reportDate.current);
+  };
+
+  const createPairingCode = () => {
+    if (!activeSenior.senior_id) return Promise.reject(new Error('Choose a senior first.'));
+    return live.createPairingCode(activeSenior.senior_id);
+  };
+
+  // ---- actions ---------------------------------------------------------------------------------------
+  const confirmMedication = async (doseId: string) => {
+    if (role !== 'senior') {
+      Alert.alert('Only the senior can do this', 'A dose is marked as taken from the senior\'s own phone.');
+      return;
+    }
+    const before = medications;
+    setMedications((prev) => prev.map((m) => (m.medication_id === doseId ? { ...m, status: 'taken' } : m)));
+    try {
+      await live.confirmDose(doseId);
+    } catch (e) {
+      setMedications(before);
+      Alert.alert('Could not save', messageOf(e));
     }
   };
 
-  const confirmMedication = async (medId: string) => {
-    setMedications((prev) =>
-      prev.map((m) => (m.medication_id === medId ? { ...m, status: 'taken' } : m))
-    );
+  const updateVitals = async (changed: Partial<VitalsState>) => {
+    const before = vitals;
+    setVitals((prev) => ({ ...prev, ...changed }));
     try {
-      await seniorApi.confirmMedication(medId);
+      await live.postVitals(changed);
     } catch (e) {
-      // optimistic update maintained
-    }
-  };
-
-  const sendMedicationReminder = (medId: string) => {
-    alert('Reminder sent to senior for pending medication!');
-  };
-
-  const removeMedication = (medId: string) => {
-    setMedications((prev) => prev.filter((m) => m.medication_id !== medId));
-  };
-
-  const updateVitals = async (newVitals: Partial<VitalsState>) => {
-    setVitals((prev) => ({ ...prev, ...newVitals }));
-    try {
-      if (newVitals.bpSystolic) {
-        await seniorApi.postVitals('blood_pressure_systolic', newVitals.bpSystolic, 'mmHg');
-      }
-      if (newVitals.sugar) {
-        await seniorApi.postVitals('blood_glucose', newVitals.sugar, 'mg/dL');
-      }
-    } catch (e) {
-      // handled
+      setVitals(before);
+      Alert.alert('Could not save', messageOf(e));
     }
   };
 
   const startCall = async (recipientName: string, seniorId?: string) => {
-    setActiveCall({
-      active: true,
-      recipient: recipientName,
-      message: 'Connecting phone bridge (recorded session)...',
-    });
+    if (!REAL_CALLS) {
+      setActiveCall({ active: true, recipient: recipientName, message: 'Demo mode: no real call is placed.' });
+      return;
+    }
+    setActiveCall({ active: true, recipient: recipientName, message: 'Connecting phone bridge (recorded session)...' });
     try {
-      if (role === 'coordinator') {
-        await coordinatorApi.connectCall(seniorId || activeSenior.senior_id, 'coordinator');
-      } else {
-        await seniorApi.callCoordinator();
-      }
+      if (role === 'coordinator') await live.startCoordinatorCall(seniorId || activeSenior.senior_id);
+      else await live.startSeniorCall();
     } catch (e) {
-      // mock connected call
+      setActiveCall(null);
+      Alert.alert('Could not start the call', messageOf(e));
     }
   };
 
-  const endCall = () => {
-    setActiveCall(null);
-  };
+  const endCall = () => setActiveCall(null);
 
-  const markAlertActionTaken = async () => {
-    setAlertResolved(true);
+  const markAlertActionTaken = async (): Promise<boolean> => {
+    const alertId = activeSenior.alert_id;
+    if (!alertId) {
+      Alert.alert('No open alert', `${activeSenior.display_name} has no open alert right now.`);
+      return false;
+    }
     try {
-      await coordinatorApi.resolveAlert('ALT_00123', 'Coordinator followed up with senior.');
+      await live.resolveAlertWithFeedback(alertId, 'Coordinator followed up with the senior.');
+      await refreshData();
+      setAlertResolved(true);
+      return true;
     } catch (e) {
-      // handled
+      Alert.alert('Could not resolve the alert', messageOf(e));
+      return false;
     }
   };
 
-  const submitQuickCheckIn = async (feeling: string) => {
-    setCheckInStatus(`Submitted: "${feeling}"`);
+  const submitQuickCheckIn = async (feeling: string): Promise<boolean> => {
     try {
-      await seniorApi.postReport(`Feeling: ${feeling}`, language === 'hi' ? 'hindi' : 'english');
+      await live.postReport(`Feeling: ${feeling}`, language === 'hi' ? 'hindi' : 'english');
+      setCheckInStatus(`Submitted: "${feeling}"`);
+      return true;
     } catch (e) {
-      // handled
+      setCheckInStatus(null);
+      Alert.alert('Could not send', messageOf(e));
+      return false;
     }
   };
 
   return (
     <AppContext.Provider
       value={{
-        role,
-        setRole,
-        language,
-        setLanguage,
-        activeScreen,
-        setActiveScreen,
-        seniorsList,
-        activeSenior,
-        setActiveSeniorById,
-        medications,
-        confirmMedication,
-        sendMedicationReminder,
-        removeMedication,
-        vitals,
-        updateVitals,
-        activeCall,
-        startCall,
-        endCall,
-        alertResolved,
-        markAlertActionTaken,
-        checkInStatus,
-        submitQuickCheckIn,
+        authStatus, authError, user, role, pendingRole, setPendingRole, loginCoordinator, loginSenior, logout, setRole,
+        dataStatus, dataError, refreshData,
+        language, setLanguage, activeScreen, setActiveScreen,
+        seniorsList, caseloadTotal, activeSenior, seniorProfile, riskHistory, readings, lastCall, detailLoading,
+        setActiveSeniorById, createPairingCode,
+        medications, confirmMedication,
+        vitals, updateVitals,
+        activeCall, startCall, endCall,
+        alertResolved, markAlertActionTaken,
+        checkInStatus, submitQuickCheckIn,
       }}
     >
       {children}

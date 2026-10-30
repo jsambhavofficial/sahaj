@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   View,
   StyleSheet,
-  SafeAreaView,
-  Platform,
-  useWindowDimensions,
+  Share,
   Text,
   TouchableOpacity,
   Modal,
@@ -14,6 +13,7 @@ import { useAppState } from '../context/AppStateContext';
 
 // Screens
 import { WelcomeScreen } from '../screens/WelcomeScreen';
+import { LoginScreen } from '../screens/LoginScreen';
 
 // Coordinator Screens
 import { CoordinatorDashboard } from '../screens/coordinator/CoordinatorDashboard';
@@ -35,7 +35,16 @@ import { Phone, PhoneOff, UserCheck, User, RefreshCw } from 'lucide-react-native
 export default function AppEntry() {
   const {
     role,
-    setRole,
+    pendingRole,
+    setPendingRole,
+    authStatus,
+    user,
+    logout,
+    dataStatus,
+    dataError,
+    refreshData,
+    seniorsList,
+    createPairingCode,
     activeSenior,
     setActiveSeniorById,
     activeCall,
@@ -45,7 +54,6 @@ export default function AppEntry() {
   } = useAppState();
 
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
 
   // Coordinator Navigation Sub-state
   const [coordTab, setCoordTab] = useState<CoordinatorTab>('home');
@@ -54,10 +62,76 @@ export default function AppEntry() {
   // Senior Navigation Sub-state
   const [seniorTab, setSeniorTab] = useState<SeniorTab>('home');
 
-  // 1. Welcome Screen (First when app opens)
-  if (!role) {
-    return <WelcomeScreen onSelectRole={(selectedRole) => setRole(selectedRole)} />;
+  // A coordinator can show a code that pairs a senior's phone with this app
+  const [pairing, setPairing] = useState<{ code: string; minutes: number } | null>(null);
+  const [pairingError, setPairingError] = useState<string | null>(null);
+
+  const sharePairingCode = async () => {
+    if (!pairing) return;
+    try {
+      await Share.share({
+        message: `Sahaj pairing code for ${activeSenior.display_name} (valid ${pairing.minutes} minutes, works once):\n\n${pairing.code}`,
+      });
+    } catch {
+      /* the share sheet was dismissed or is unavailable */
+    }
+  };
+
+  const showPairingCode = async () => {
+    setPairing(null);
+    setPairingError(null);
+    try {
+      const r = await createPairingCode();
+      setPairing({ code: r.pairing_code, minutes: Math.max(1, Math.round(r.expires_in / 60)) });
+    } catch (e) {
+      setPairingError(e instanceof Error ? e.message : 'Could not create a code.');
+    }
+  };
+
+  // 1. Restoring a saved session, then Welcome -> sign in
+  if (authStatus === 'booting') {
+    return (
+      <View style={styles.bootScreen}>
+        <ActivityIndicator size="large" color="#0D6B58" />
+      </View>
+    );
   }
+  if (!role) {
+    if (!pendingRole) {
+      return <WelcomeScreen onSelectRole={(selectedRole) => setPendingRole(selectedRole)} />;
+    }
+    return <LoginScreen role={pendingRole} onBack={() => setPendingRole(null)} />;
+  }
+
+  // Shown under the role banner while real data loads, fails, or there is nothing to show
+  const renderDataStatus = () => {
+    if (dataStatus === 'loading') {
+      return (
+        <View style={styles.statusRow}>
+          <ActivityIndicator size="small" color="#0D6B58" />
+          <Text style={styles.statusText}>Loading your latest data…</Text>
+        </View>
+      );
+    }
+    if (dataStatus === 'error') {
+      return (
+        <View style={[styles.statusRow, styles.statusError]}>
+          <Text style={[styles.statusText, { color: '#B91C1C', flex: 1 }]}>{dataError ?? 'Could not load your data.'}</Text>
+          <TouchableOpacity onPress={() => void refreshData()} style={styles.retryBtn} accessibilityRole="button">
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    if (dataStatus === 'ready' && role === 'coordinator' && seniorsList.length === 0) {
+      return (
+        <View style={styles.statusRow}>
+          <Text style={styles.statusText}>No seniors are assigned to you yet.</Text>
+        </View>
+      );
+    }
+    return null;
+  };
 
   // 2. Active Call In-Progress Overlay (Simulating Live Bridge)
   const renderActiveCallModal = () => {
@@ -70,11 +144,9 @@ export default function AppEntry() {
             <View style={styles.callPulsingIcon}>
               <Phone size={36} color="#FFFFFF" />
             </View>
-            <Text style={styles.callTitle}>Live Care Call</Text>
+            <Text style={styles.callTitle}>Care Call</Text>
             <Text style={styles.callRecipient}>{activeCall.recipient}</Text>
-            <Text style={styles.callNotice}>
-              ● Recorded session • Audio bridge active
-            </Text>
+            <Text style={styles.callNotice}>{activeCall.message}</Text>
 
             <TouchableOpacity
               style={styles.endCallButton}
@@ -148,17 +220,39 @@ export default function AppEntry() {
             <View style={styles.profileAvatarBox}>
               <UserCheck size={36} color="#0D6B58" />
             </View>
-            <Text style={styles.profileName}>Neha Sharma</Text>
-            <Text style={styles.profileRole}>Care Coordinator • Bengaluru</Text>
+            <Text style={styles.profileName}>{user?.display_name ?? 'Care Coordinator'}</Text>
+            <Text style={styles.profileRole}>
+              Care Coordinator{user?.city ? ` • ${user.city}` : ''}
+            </Text>
+            {user?.email ? <Text style={styles.profileRole}>{user.email}</Text> : null}
           </View>
+
+          {activeSenior.senior_id ? (
+            <View style={styles.pairBox}>
+              <Text style={styles.pairTitle}>{`Pair ${activeSenior.display_name}'s phone`}</Text>
+              <Text style={styles.pairHelp}>Make a one-time code and send it to the senior. They choose Senior in the app and paste it in.</Text>
+              <TouchableOpacity style={styles.pairBtn} onPress={() => void showPairingCode()} activeOpacity={0.85} accessibilityRole="button">
+                <Text style={styles.pairBtnText}>Show pairing code</Text>
+              </TouchableOpacity>
+              {pairing ? (
+                <View style={styles.pairResult}>
+                  <Text style={styles.pairHelp}>Code ready. It works once, for {pairing.minutes} minutes.</Text>
+                  <TouchableOpacity style={styles.pairBtn} onPress={() => void sharePairingCode()} activeOpacity={0.85} accessibilityRole="button">
+                    <Text style={styles.pairBtnText}>Share code (WhatsApp, SMS…)</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+              {pairingError ? <Text style={[styles.pairHelp, { color: '#B91C1C' }]}>{pairingError}</Text> : null}
+            </View>
+          ) : null}
 
           <TouchableOpacity
             style={styles.switchRoleCard}
-            onPress={() => setRole(null)}
+            onPress={() => void logout()}
             activeOpacity={0.8}
           >
             <RefreshCw size={20} color="#0D6B58" />
-            <Text style={styles.switchRoleCardText}>Switch / Re-select Role</Text>
+            <Text style={styles.switchRoleCardText}>Sign out</Text>
           </TouchableOpacity>
         </View>
       );
@@ -173,13 +267,14 @@ export default function AppEntry() {
             <Text style={styles.roleTagText}>Care Coordinator Mode</Text>
           </View>
           <TouchableOpacity
-            onPress={() => setRole(null)}
+            onPress={() => void logout()}
             style={styles.switchRoleBtn}
             activeOpacity={0.7}
           >
-            <Text style={styles.switchRoleText}>Change Role</Text>
+            <Text style={styles.switchRoleText}>Sign out</Text>
           </TouchableOpacity>
         </View>
+        {renderDataStatus()}
 
         <View style={styles.screenContainer}>{mainContent}</View>
 
@@ -237,19 +332,20 @@ export default function AppEntry() {
         <View style={styles.roleTag}>
           <User size={14} color="#008774" />
           <Text style={[styles.roleTagText, { color: '#008774' }]}>
-            Senior Mode (Shanti Devi)
+            Senior Mode{activeSenior.senior_id ? ` (${activeSenior.display_name})` : ''}
           </Text>
         </View>
         <TouchableOpacity
-          onPress={() => setRole(null)}
+          onPress={() => void logout()}
           style={[styles.switchRoleBtn, { borderColor: '#A7F3D0' }]}
           activeOpacity={0.7}
         >
           <Text style={[styles.switchRoleText, { color: '#008774' }]}>
-            Change Role
+            Sign out
           </Text>
         </TouchableOpacity>
       </View>
+      {renderDataStatus()}
 
       <View style={styles.screenContainer}>{seniorContent}</View>
 
@@ -310,6 +406,30 @@ const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
   },
+  bootScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F4FBF8',
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#F8FAFC',
+  },
+  statusError: { backgroundColor: '#FEF2F2' },
+  statusText: { fontSize: 12.5, fontWeight: '600', color: '#475569' },
+  retryBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#FECACA' },
+  retryText: { fontSize: 12.5, fontWeight: '800', color: '#B91C1C' },
+  pairBox: { width: '100%', maxWidth: 360, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, gap: 8, borderWidth: 1, borderColor: '#D1FAE5' },
+  pairTitle: { fontSize: 15, fontWeight: '800', color: '#0F172A' },
+  pairHelp: { fontSize: 12.5, color: '#64748B', lineHeight: 18 },
+  pairBtn: { backgroundColor: '#0D6B58', borderRadius: 14, paddingVertical: 12, alignItems: 'center' },
+  pairBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  pairResult: { gap: 8, paddingTop: 4 },
   profileContainer: {
     flex: 1,
     backgroundColor: '#F8FAFC',

@@ -5,17 +5,16 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Image,
 } from 'react-native';
 import { useAppState } from '../../context/AppStateContext';
 import { SeniorItem } from '../../types';
+import { greetingFor, initialsOf, levelPalette, riskGroupOf, type RiskGroup } from '../../api/mappers';
 import {
   Users,
   Bell,
   AlertTriangle,
   RotateCw,
   ChevronRight,
-  ShieldAlert,
 } from 'lucide-react-native';
 
 interface Props {
@@ -24,14 +23,14 @@ interface Props {
 }
 
 export const CoordinatorDashboard: React.FC<Props> = ({ onSelectSenior, onOpenCallNotes }) => {
-  const { seniorsList } = useAppState();
-  const [activeTab, setActiveTab] = useState<'critical' | 'moderate' | 'low'>('critical');
+  const { seniorsList, caseloadTotal, user } = useAppState();
+  const [activeTab, setActiveTab] = useState<'all' | RiskGroup>('all');
 
-  const filteredSeniors = seniorsList.filter((s) => {
-    if (activeTab === 'critical') return s.risk_score >= 80;
-    if (activeTab === 'moderate') return s.risk_score >= 50 && s.risk_score < 80;
-    return s.risk_score < 50;
-  });
+  const countOf = (g: RiskGroup) => seniorsList.filter((s) => riskGroupOf(s.risk_level) === g).length;
+  const openAlerts = seniorsList.filter((s) => s.alert_id).length;
+  const aiCallsDone = seniorsList.filter((s) => s.ai_call_done).length;
+  const filteredSeniors =
+    activeTab === 'all' ? seniorsList : seniorsList.filter((s) => riskGroupOf(s.risk_level) === activeTab);
 
   return (
     <ScrollView
@@ -42,24 +41,19 @@ export const CoordinatorDashboard: React.FC<Props> = ({ onSelectSenior, onOpenCa
       {/* Top Header */}
       <View style={styles.header}>
         <View style={styles.userProfile}>
-          <View style={styles.avatarContainer}>
-            <Image
-              source={{
-                uri: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-              }}
-              style={styles.avatarImage}
-            />
+          <View style={[styles.avatarContainer, { backgroundColor: '#D1FAE5', alignItems: 'center', justifyContent: 'center' }]}>
+            <Text style={{ fontSize: 17, fontWeight: '800', color: '#0D6B58' }}>{initialsOf(user?.display_name ?? '')}</Text>
           </View>
           <View>
-            <Text style={styles.greetingText}>Good Morning,</Text>
-            <Text style={styles.userName}>Neha Sharma</Text>
+            <Text style={styles.greetingText}>{greetingFor(new Date().getHours())},</Text>
+            <Text style={styles.userName}>{user?.display_name ?? 'Care Coordinator'}</Text>
             <Text style={styles.userRole}>Care Coordinator</Text>
           </View>
         </View>
 
         <TouchableOpacity style={styles.bellButton} activeOpacity={0.7}>
           <Bell size={22} color="#334155" />
-          <View style={styles.badgeDot} />
+          {openAlerts > 0 && <View style={styles.badgeDot} />}
         </TouchableOpacity>
       </View>
 
@@ -71,7 +65,7 @@ export const CoordinatorDashboard: React.FC<Props> = ({ onSelectSenior, onOpenCa
             <Users size={16} color="#0E7A68" />
           </View>
           <Text style={styles.metricLabel}>Total{'\n'}Seniors</Text>
-          <Text style={[styles.metricValue, { color: '#0E7A68' }]}>48</Text>
+          <Text style={[styles.metricValue, { color: '#0E7A68' }]}>{caseloadTotal}</Text>
         </View>
 
         {/* Critical Alerts */}
@@ -87,7 +81,7 @@ export const CoordinatorDashboard: React.FC<Props> = ({ onSelectSenior, onOpenCa
             <Bell size={16} color="#E03A3A" />
           </View>
           <Text style={styles.metricLabel}>Critical{'\n'}Alerts</Text>
-          <Text style={[styles.metricValue, { color: '#E03A3A' }]}>6</Text>
+          <Text style={[styles.metricValue, { color: '#E03A3A' }]}>{countOf('critical')}</Text>
         </TouchableOpacity>
 
         {/* Moderate Risk */}
@@ -100,7 +94,7 @@ export const CoordinatorDashboard: React.FC<Props> = ({ onSelectSenior, onOpenCa
             <AlertTriangle size={16} color="#D97706" />
           </View>
           <Text style={styles.metricLabel}>Moderate{'\n'}Risk</Text>
-          <Text style={[styles.metricValue, { color: '#D97706' }]}>12</Text>
+          <Text style={[styles.metricValue, { color: '#D97706' }]}>{countOf('moderate')}</Text>
         </TouchableOpacity>
 
         {/* Follow-up */}
@@ -108,8 +102,8 @@ export const CoordinatorDashboard: React.FC<Props> = ({ onSelectSenior, onOpenCa
           <View style={[styles.iconCircle, { backgroundColor: '#EDE7FD' }]}>
             <RotateCw size={16} color="#6366F1" />
           </View>
-          <Text style={styles.metricLabel}>Follow-up{'\n'}in-progress</Text>
-          <Text style={[styles.metricValue, { color: '#6366F1' }]}>8</Text>
+          <Text style={styles.metricLabel}>AI calls{'\n'}done</Text>
+          <Text style={[styles.metricValue, { color: '#6366F1' }]}>{aiCallsDone}</Text>
         </View>
       </View>
 
@@ -117,7 +111,7 @@ export const CoordinatorDashboard: React.FC<Props> = ({ onSelectSenior, onOpenCa
       <View style={styles.queueSection}>
         <View style={styles.queueHeader}>
           <Text style={styles.queueTitle}>Priority Queue</Text>
-          <TouchableOpacity activeOpacity={0.7}>
+          <TouchableOpacity activeOpacity={0.7} onPress={() => setActiveTab('all')}>
             <Text style={styles.viewAllText}>View all</Text>
           </TouchableOpacity>
         </View>
@@ -138,7 +132,7 @@ export const CoordinatorDashboard: React.FC<Props> = ({ onSelectSenior, onOpenCa
                 activeTab === 'critical' ? styles.tabTextActive : styles.tabTextCritical,
               ]}
             >
-              Critical 6
+              {`Critical ${countOf('critical')}`}
             </Text>
           </TouchableOpacity>
 
@@ -156,7 +150,7 @@ export const CoordinatorDashboard: React.FC<Props> = ({ onSelectSenior, onOpenCa
                 activeTab === 'moderate' ? styles.tabTextActive : styles.tabTextModerate,
               ]}
             >
-              Moderate 12
+              {`Moderate ${countOf('moderate')}`}
             </Text>
           </TouchableOpacity>
 
@@ -174,15 +168,18 @@ export const CoordinatorDashboard: React.FC<Props> = ({ onSelectSenior, onOpenCa
                 activeTab === 'low' ? styles.tabTextActive : styles.tabTextLow,
               ]}
             >
-              Low 30
+              {`Low ${countOf('low')}`}
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* Seniors List */}
         <View style={styles.seniorsList}>
-          {(filteredSeniors.length > 0 ? filteredSeniors : seniorsList).map((senior) => {
-            const isCritical = senior.risk_score >= 80;
+          {filteredSeniors.length === 0 && seniorsList.length > 0 ? (
+            <Text style={styles.viewAllText}>Nobody in this group right now.</Text>
+          ) : null}
+          {filteredSeniors.map((senior) => {
+            const palette = levelPalette(senior.risk_level);
             return (
               <TouchableOpacity
                 key={senior.senior_id}
@@ -194,13 +191,13 @@ export const CoordinatorDashboard: React.FC<Props> = ({ onSelectSenior, onOpenCa
                   <View
                     style={[
                       styles.avatarBadge,
-                      { backgroundColor: isCritical ? '#E0EDFA' : '#E3E8FC' },
+                      { backgroundColor: palette.bg },
                     ]}
                   >
                     <Text
                       style={[
                         styles.avatarBadgeText,
-                        { color: isCritical ? '#2B6CB0' : '#4F46E5' },
+                        { color: palette.fg },
                       ]}
                     >
                       {senior.avatarInitials}
@@ -218,13 +215,13 @@ export const CoordinatorDashboard: React.FC<Props> = ({ onSelectSenior, onOpenCa
                   <View
                     style={[
                       styles.scoreCircle,
-                      { backgroundColor: isCritical ? '#FCE8E9' : '#FEF3C7' },
+                      { backgroundColor: palette.bg },
                     ]}
                   >
                     <Text
                       style={[
                         styles.scoreText,
-                        { color: isCritical ? '#E03A3A' : '#D97706' },
+                        { color: palette.fg },
                       ]}
                     >
                       {senior.risk_score}

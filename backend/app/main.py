@@ -1,26 +1,48 @@
 """FastAPI application entrypoint."""
 
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api import health
+from app.api.v1.router import api_router
 from app.core.config import get_settings
-from app.modules.checkins import checkins_router
-from app.modules.voice import voice_router
-from app.modules.risk import risk_router
+from app.core.exceptions import register_exception_handlers
+from app.core.logging import configure_logging
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    from app.jobs.scheduler import start_scheduler, stop_scheduler  # no-op unless SCHEDULER_ENABLED
+    start_scheduler()
+    try:
+        yield
+    finally:
+        stop_scheduler()
 
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title=settings.app_name, version="3.0.0")
+    settings.validate_for_runtime()
+    configure_logging(settings.environment)
 
-    @app.get("/health")
-    def health():
-        return {"status": "healthy", "environment": settings.environment}
-
-    # Mount module routers
-    app.include_router(voice_router, prefix="/api/v1")
-    app.include_router(checkins_router, prefix="/api/v1")
-    app.include_router(risk_router, prefix="/api/v1")
-
+    app = FastAPI(
+        title=settings.app_name,
+        version="3.0.0",
+        lifespan=lifespan,
+        description="Backend for SamarthCare AI: coordinator, senior and ops APIs.",
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origin_list,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    register_exception_handlers(app)
+    app.include_router(health.router)
+    app.include_router(api_router, prefix="/api/v1")
     return app
 
 

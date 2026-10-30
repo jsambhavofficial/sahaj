@@ -42,7 +42,7 @@ export const SeniorHomeScreen: React.FC<Props> = ({
     } else {
       Alert.alert(
         'Voice Note',
-        'Record a message for your Care Coordinator: "नमस्ते नेहा जी, आज मेरी तबियत ठीक लग रही है।"'
+        'Voice notes are coming soon. For now, use "Call Care Coordinator" or the daily check-in.'
       );
     }
   };
@@ -148,7 +148,7 @@ export const SeniorHomeScreen: React.FC<Props> = ({
           <TouchableOpacity
             style={styles.callCoordinatorBtn}
             onPress={() => {
-              startCall('Neha Sharma (Care Coordinator)');
+              startCall('Your Care Coordinator');
               onStartCall();
             }}
             activeOpacity={0.88}

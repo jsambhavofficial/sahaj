@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { useAppState } from '../../context/AppStateContext';
 import { BotanicalDecor } from '../../components/common/BotanicalDecor';
@@ -15,9 +14,6 @@ import {
   Bell,
   CheckCircle2,
   Clock,
-  Trash2,
-  ChevronRight,
-  ShieldCheck,
 } from 'lucide-react-native';
 
 interface Props {
@@ -25,27 +21,7 @@ interface Props {
 }
 
 export const MedicationManagementScreen: React.FC<Props> = ({ onBack }) => {
-  const { medications, confirmMedication, sendMedicationReminder, removeMedication } =
-    useAppState();
-
-  const handleSendReminder = () => {
-    sendMedicationReminder('MED_02');
-  };
-
-  const handleRemoveMedication = () => {
-    Alert.alert(
-      'Remove Medication',
-      'Are you sure you want to remove this medication from senior schedule?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => removeMedication('MED_03'),
-        },
-      ]
-    );
-  };
+  const { medications, activeSenior } = useAppState();
 
   return (
     <View style={styles.container}>
@@ -75,14 +51,8 @@ export const MedicationManagementScreen: React.FC<Props> = ({ onBack }) => {
               <Bell size={18} color="#0A6356" />
             </View>
             <Text style={styles.bannerText}>
-              Manage medication reminders and schedule for this senior
+              {activeSenior.senior_id ? `Today's doses for ${activeSenior.display_name}` : "Today's doses"}, and whether each one was taken
             </Text>
-            <ChevronRight size={16} color="#94A3B8" />
-          </View>
-          <View style={styles.bannerBottom}>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text style={styles.viewHistoryLink}>View history</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -93,6 +63,7 @@ export const MedicationManagementScreen: React.FC<Props> = ({ onBack }) => {
           <View style={styles.medList}>
             {medications.map((med) => {
               const isTaken = med.status === 'taken';
+              const isMissed = med.status === 'missed';
               return (
                 <View key={med.medication_id} style={styles.medCard}>
                   <View
@@ -115,58 +86,40 @@ export const MedicationManagementScreen: React.FC<Props> = ({ onBack }) => {
                     <Text style={styles.medTime}>{med.time_slot}</Text>
                   </View>
 
-                  <TouchableOpacity
+                  <View
                     style={[
                       styles.statusPill,
                       isTaken ? styles.pillTaken : styles.pillPending,
                     ]}
-                    onPress={() => {
-                      if (!isTaken) confirmMedication(med.medication_id);
-                    }}
-                    activeOpacity={0.8}
                   >
                     <Text
                       style={[
                         styles.statusPillText,
                         isTaken ? styles.textTaken : styles.textPending,
+                        isMissed && { color: '#B91C1C' },
                       ]}
                     >
-                      {isTaken ? 'Taken' : 'Pending'}
+                      {isTaken ? 'Taken' : isMissed ? 'Missed' : 'Pending'}
                     </Text>
-                  </TouchableOpacity>
+                  </View>
                 </View>
               );
             })}
           </View>
+          {medications.length === 0 ? (
+            <Text style={styles.medTime}>No medicines are scheduled for this senior.</Text>
+          ) : null}
         </View>
 
-        {/* Action Buttons Group */}
-        <View style={styles.actionButtonsGroup}>
-          {/* Primary Action: Send Reminder */}
-          <TouchableOpacity
-            style={styles.sendReminderBtn}
-            onPress={handleSendReminder}
-            activeOpacity={0.88}
-          >
-            <Bell size={20} color="#FFFFFF" />
-            <View>
-              <Text style={styles.btnMainTitle}>Send Reminder</Text>
-              <Text style={styles.btnSubtitle}>Notify senior about pending medications</Text>
+        <View style={styles.footerNoteCard}>
+          <View style={styles.footerLeft}>
+            <View style={styles.checkCircle}>
+              <Bell size={14} color="#059669" />
             </View>
-          </TouchableOpacity>
-
-          {/* Secondary Danger Action: Remove Medication */}
-          <TouchableOpacity
-            style={styles.removeMedBtn}
-            onPress={handleRemoveMedication}
-            activeOpacity={0.88}
-          >
-            <Trash2 size={18} color="#EF4444" />
-            <View>
-              <Text style={styles.removeTitle}>Remove Medication</Text>
-              <Text style={styles.removeSubtitle}>Take off from senior's schedule</Text>
-            </View>
-          </TouchableOpacity>
+            <Text style={styles.footerText}>
+              The senior is reminded automatically at every dose time. If a dose is overdue, call them.
+            </Text>
+          </View>
         </View>
 
         {/* Footer Status Card */}
@@ -176,12 +129,9 @@ export const MedicationManagementScreen: React.FC<Props> = ({ onBack }) => {
               <CheckCircle2 size={14} color="#059669" />
             </View>
             <Text style={styles.footerText}>
-              Medication status is updated by the senior or caregiver.
+              A dose is marked taken by the senior in their own app, or recorded after a coordinator call.
             </Text>
           </View>
-          <TouchableOpacity activeOpacity={0.7}>
-            <Text style={styles.footerHistoryLink}>View history</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>

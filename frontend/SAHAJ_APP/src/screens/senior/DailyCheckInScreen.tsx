@@ -10,7 +10,6 @@ import {
 import { useAppState } from '../../context/AppStateContext';
 import { BotanicalDecor } from '../../components/common/BotanicalDecor';
 import { RobotAvatar } from '../../components/illustrations/RobotAvatar';
-import Svg, { Path } from 'react-native-svg';
 import {
   ChevronLeft,
   Bot,
@@ -27,7 +26,7 @@ interface Props {
 }
 
 export const DailyCheckInScreen: React.FC<Props> = ({ onBack, onCallStarted }) => {
-  const { submitQuickCheckIn, startCall } = useAppState();
+  const { submitQuickCheckIn, startCall, activeSenior } = useAppState();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   const handleStartCall = () => {
@@ -37,8 +36,9 @@ export const DailyCheckInScreen: React.FC<Props> = ({ onBack, onCallStarted }) =
 
   const handleOptionPress = async (feeling: string) => {
     setSelectedOption(feeling);
-    await submitQuickCheckIn(feeling);
-    Alert.alert('Response Recorded', `Thank you Shanti ji! We noted that "${feeling}". Your Care Coordinator Neha has been notified.`);
+    const sent = await submitQuickCheckIn(feeling);
+    if (sent) Alert.alert('Response Recorded', `Thank you ${activeSenior.display_name}. We noted that "${feeling}" and saved your message.`);
+    else setSelectedOption(null);
   };
 
   return (
@@ -77,10 +77,10 @@ export const DailyCheckInScreen: React.FC<Props> = ({ onBack, onCallStarted }) =
             <RobotAvatar size={100} />
           </View>
 
-          <Text style={styles.greetingTitle}>Hi Shanti ji,</Text>
+          <Text style={styles.greetingTitle}>Hi {activeSenior.display_name},</Text>
           <Text style={styles.greetingSubtitle}>
-            I'm your SAHAJ assistant.{'\n'}
-            Let's check how you're feeling today.
+            I&apos;m your SAHAJ assistant.{'\n'}
+            Let&apos;s check how you&apos;re feeling today.
           </Text>
         </View>
 

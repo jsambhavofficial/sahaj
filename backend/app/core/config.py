@@ -1,8 +1,12 @@
 """Application settings, loaded from environment / .env."""
 
+from datetime import date
 from functools import lru_cache
-from typing import Optional
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_INSECURE_JWT_SECRETS = {"", "change-me"}
 
 
 class Settings(BaseSettings):
@@ -11,25 +15,86 @@ class Settings(BaseSettings):
     app_name: str = "SamarthCare AI"
     environment: str = "development"
     database_url: str = "sqlite:///./samarth.db"
+
+    # Auth
     jwt_secret: str = "change-me"
-    bhashini_api_key: str = ""
+    jwt_algorithm: str = "HS256"
+    access_token_minutes: int = 60
+    refresh_token_days: int = 14
+    auth_rate_limit_per_minute: int = 20  # per IP per auth endpoint; 0 disables
+    pairing_code_minutes: int = 15
 
-    # Pluggable LLM Provider Settings
-    llm_provider: str = "gemini"  # "gemini", "openai", "groq", "anthropic", "ollama", "mock"
-    llm_model: Optional[str] = None
-    llm_api_key: str = ""
-    llm_base_url: Optional[str] = None
+    # Browser origins allowed to call the API (ops dashboard); comma separated in env.
+    cors_origins: str = "http://localhost:3000,http://localhost:5173"
 
-    # Provider-specific keys
-    gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.0-flash"
-    openai_api_key: str = ""
-    groq_api_key: str = ""
-    anthropic_api_key: str = ""
+    # Demo clock: the dataset ends before the real "today". Empty means use the real date.
+    demo_today: date | None = None
 
+    # Which RiskScorer implementation to use (see app/modules/risk/service.get_scorer).
+    risk_scorer: str = "heuristic"
+
+    # Public URL of this service, used for provider webhooks.
+    public_base_url: str = ""
+
+    # Telephony (Exotel)
+    exotel_api_key: str = ""
+    exotel_api_token: str = ""
+    exotel_account_sid: str = ""
+    exotel_subdomain: str = "api.exotel.com"
+    exotel_caller_id: str = ""
+    exotel_webhook_secret: str = ""
+
+    # External providers; "stub" runs with no accounts.
+    stt_provider: str = "stub"
+    tts_provider: str = "stub"
+    llm_provider: str = "stub"
+    telephony_provider: str = "stub"
+    push_provider: str = "stub"
+    storage_provider: str = "stub"
+    bhashini_api_key: str = ""  # the portal's "Udyat key" (sent as ulcaApiKey)
+    bhashini_user_id: str = ""
+    bhashini_inference_key: str = ""
+    bhashini_tts_model: str = "ai4bharat"  # or "iitm" (Bhashini/IITM/TTS, male voice only)
     aws_region: str = "ap-south-1"
+    bedrock_model_id: str = ""
+    supabase_url: str = ""
+    supabase_service_key: str = ""
+    storage_bucket: str = ""
+    fcm_credentials_json: str = ""
+
+    # Background jobs
+    scheduler_enabled: bool = False
+    reminder_grace_minutes: int = 90
+
+    @field_validator("public_base_url")
+    @classmethod
+    def _strip_trailing_slash(cls, v: str) -> str:
+        return v.strip().rstrip("/")
+
+    @field_validator("demo_today", mode="before")
+    @classmethod
+    def _empty_demo_today(cls, v):
+        return None if v in ("", None) else v
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def is_production(self) -> bool:
+        return self.environment.lower() == "production"
+
+    def validate_for_runtime(self) -> None:
+        """Fail fast on unsafe production configuration."""
+        if self.is_production and self.jwt_secret in _INSECURE_JWT_SECRETS:
+            raise RuntimeError("JWT_SECRET must be set to a long random value in production")
 
 
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def today() -> date:
+    """The 'current' date for date-based endpoints: DEMO_TODAY if set, else the real date."""
+    return get_settings().demo_today or date.today()

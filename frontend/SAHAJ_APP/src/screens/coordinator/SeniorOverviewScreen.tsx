@@ -5,11 +5,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Image,
 } from 'react-native';
 import { useAppState } from '../../context/AppStateContext';
 import { SeniorItem } from '../../types';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
+import { levelLabel, levelPalette, riskTrend } from '../../api/mappers';
 import {
   ChevronLeft,
   MoreVertical,
@@ -17,9 +17,9 @@ import {
   ShieldAlert,
   Home,
   Activity,
-  ShieldCheck,
   ChevronRight,
   TrendingUp,
+  TrendingDown,
 } from 'lucide-react-native';
 
 interface Props {
@@ -33,8 +33,13 @@ export const SeniorOverviewScreen: React.FC<Props> = ({
   onBack,
   onNavigateTab,
 }) => {
-  const { activeSenior, startCall, vitals } = useAppState();
+  const { activeSenior, startCall, seniorProfile, riskHistory, detailLoading } = useAppState();
   const currentSenior = senior || activeSenior;
+  const palette = levelPalette(currentSenior.risk_level);
+  const trend = riskTrend(riskHistory);
+  const baseline = seniorProfile?.baseline;
+  const dash = (v: number | null | undefined, digits = 0) => (v === null || v === undefined ? '—' : v.toFixed(digits));
+  const GAUGE_LENGTH = 94.25; // circumference of the r=15 ring
   const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'medications'>('overview');
 
   const handleTabPress = (tab: 'overview' | 'trends' | 'medications') => {
@@ -61,18 +66,13 @@ export const SeniorOverviewScreen: React.FC<Props> = ({
         {/* Profile Header Section */}
         <View style={styles.profileHeader}>
           {/* Avatar with gradient ring */}
-          <View style={styles.avatarRing}>
-            <Image
-              source={{
-                uri: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80',
-              }}
-              style={styles.avatarImg}
-            />
+          <View style={[styles.avatarRing, { backgroundColor: currentSenior.avatarColor, alignItems: 'center', justifyContent: 'center' }]}>
+            <Text style={{ fontSize: 30, fontWeight: '800', color: '#FFFFFF' }}>{currentSenior.avatarInitials}</Text>
           </View>
 
           <Text style={styles.seniorName}>{currentSenior.display_name}</Text>
           <Text style={styles.demographics}>
-            {currentSenior.age} years • {currentSenior.gender || 'Female'} • ID: {currentSenior.senior_id}
+            {[currentSenior.age ? `${currentSenior.age} years` : null, seniorProfile?.gender, `ID: ${currentSenior.senior_id}`].filter(Boolean).join(' • ')}
           </Text>
 
           {/* Quick Actions Row */}
@@ -87,8 +87,8 @@ export const SeniorOverviewScreen: React.FC<Props> = ({
             </TouchableOpacity>
 
             <View style={styles.riskBadge}>
-              <ShieldAlert size={14} color="#E05432" />
-              <Text style={styles.riskBadgeText}>{currentSenior.risk_level} Risk</Text>
+              <ShieldAlert size={14} color={palette.fg} />
+              <Text style={[styles.riskBadgeText, { color: palette.fg }]}>{levelLabel(currentSenior.risk_level)} risk</Text>
             </View>
           </View>
         </View>
@@ -139,7 +139,7 @@ export const SeniorOverviewScreen: React.FC<Props> = ({
                 <View style={[styles.infoIcon, { backgroundColor: '#FEE2E2' }]}>
                   <Home size={13} color="#EF4444" />
                 </View>
-                <Text style={styles.infoText}>Lives alone</Text>
+                <Text style={styles.infoText}>{seniorProfile?.living ?? (detailLoading ? 'Loading…' : '—')}</Text>
               </View>
               <ChevronRight size={14} color="#94A3B8" />
             </View>
@@ -150,19 +150,13 @@ export const SeniorOverviewScreen: React.FC<Props> = ({
                 <View style={[styles.infoIcon, { backgroundColor: '#FEE2E2' }]}>
                   <Activity size={13} color="#EF4444" />
                 </View>
-                <Text style={styles.infoText}>Hypertension, Type 2 Diabetes</Text>
+                <Text style={styles.infoText}>
+                  {seniorProfile
+                    ? seniorProfile.conditions.length > 0 ? seniorProfile.conditions.join(', ') : 'No chronic conditions recorded'
+                    : detailLoading ? 'Loading…' : '—'}
+                </Text>
               </View>
               <ChevronRight size={14} color="#94A3B8" />
-            </View>
-
-            {/* Allergies */}
-            <View style={styles.infoRow}>
-              <View style={styles.infoLeft}>
-                <View style={[styles.infoIcon, { backgroundColor: '#FEE2E2' }]}>
-                  <ShieldCheck size={13} color="#EF4444" />
-                </View>
-                <Text style={styles.infoText}>Allergies: None known</Text>
-              </View>
             </View>
           </View>
         </View>
@@ -174,26 +168,26 @@ export const SeniorOverviewScreen: React.FC<Props> = ({
             <View style={styles.baselineBox}>
               <Text style={styles.baselineLabel}>BP</Text>
               <Text style={styles.baselineValue}>
-                {vitals.bpSystolic}/{vitals.bpDiastolic}
+                {baseline ? `${dash(baseline.sbp)}/${dash(baseline.dbp)}` : '—'}
               </Text>
               <Text style={styles.baselineUnit}>mmHg</Text>
             </View>
 
             <View style={styles.baselineBox}>
               <Text style={styles.baselineLabel}>SUGAR</Text>
-              <Text style={styles.baselineValue}>{vitals.sugar}</Text>
+              <Text style={styles.baselineValue}>{dash(baseline?.sugar)}</Text>
               <Text style={styles.baselineUnit}>mg/dL</Text>
             </View>
 
             <View style={styles.baselineBox}>
               <Text style={styles.baselineLabel}>SPO2</Text>
-              <Text style={styles.baselineValue}>{vitals.spo2}%</Text>
+              <Text style={styles.baselineValue}>{baseline?.spo2 == null ? '—' : `${dash(baseline.spo2)}%`}</Text>
               <Text style={styles.baselineUnit}>-</Text>
             </View>
 
             <View style={styles.baselineBox}>
               <Text style={styles.baselineLabel}>WEIGHT</Text>
-              <Text style={styles.baselineValue}>{vitals.weight}</Text>
+              <Text style={styles.baselineValue}>{dash(baseline?.weight, 1)}</Text>
               <Text style={styles.baselineUnit}>kg</Text>
             </View>
           </View>
@@ -217,7 +211,7 @@ export const SeniorOverviewScreen: React.FC<Props> = ({
                   cy="18"
                   r="15"
                   fill="none"
-                  stroke="#FEF3C7"
+                  stroke={palette.bg}
                   strokeWidth="3.5"
                 />
                 <Circle
@@ -225,9 +219,9 @@ export const SeniorOverviewScreen: React.FC<Props> = ({
                   cy="18"
                   r="15"
                   fill="none"
-                  stroke="#EA6A29"
+                  stroke={palette.stroke}
                   strokeWidth="3.5"
-                  strokeDasharray="68, 100"
+                  strokeDasharray={`${(Math.min(100, Math.max(0, currentSenior.risk_score)) / 100) * GAUGE_LENGTH}, ${GAUGE_LENGTH}`}
                   strokeLinecap="round"
                   transform="rotate(-90 18 18)"
                 />
@@ -239,14 +233,16 @@ export const SeniorOverviewScreen: React.FC<Props> = ({
             </View>
 
             <View style={styles.riskMeta}>
-              <View style={styles.moderatePill}>
-                <Text style={styles.moderatePillText}>Moderate</Text>
+              <View style={[styles.moderatePill, { backgroundColor: palette.bg }]}>
+                <Text style={[styles.moderatePillText, { color: palette.fg }]}>{levelLabel(currentSenior.risk_level)}</Text>
               </View>
 
-              <View style={styles.trendRow}>
-                <TrendingUp size={14} color="#16A34A" />
-                <Text style={styles.trendText}>12% from last week</Text>
-              </View>
+              {trend ? (
+                <View style={styles.trendRow}>
+                  {trend.delta > 0 ? <TrendingUp size={14} color="#DC2626" /> : <TrendingDown size={14} color="#16A34A" />}
+                  <Text style={styles.trendText}>{trend.text}</Text>
+                </View>
+              ) : null}
             </View>
           </View>
         </View>

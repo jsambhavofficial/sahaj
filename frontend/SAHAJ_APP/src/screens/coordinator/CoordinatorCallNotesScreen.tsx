@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,17 +8,12 @@ import {
   Alert,
 } from 'react-native';
 import { useAppState } from '../../context/AppStateContext';
+import { formatWhen, levelLabel, levelPalette } from '../../api/mappers';
 import {
   ChevronLeft,
   MoreVertical,
   AlertTriangle,
-  Activity,
-  Pill,
-  HeartPulse,
   Phone,
-  Home,
-  Calendar,
-  Building2,
   ChevronRight,
   CheckCircle2,
 } from 'lucide-react-native';
@@ -29,13 +24,14 @@ interface Props {
 }
 
 export const CoordinatorCallNotesScreen: React.FC<Props> = ({ onBack, onCallSenior }) => {
-  const { alertResolved, markAlertActionTaken, activeSenior, startCall } = useAppState();
-  const [marked, setMarked] = useState(alertResolved);
+  const { alertResolved, markAlertActionTaken, activeSenior, startCall, lastCall } = useAppState();
+  const palette = levelPalette(activeSenior.risk_level);
+  const reasons = activeSenior.reasons ?? [];
+  const canResolve = Boolean(activeSenior.alert_id) && !alertResolved;
 
   const handleActionTaken = async () => {
-    await markAlertActionTaken();
-    setMarked(true);
-    Alert.alert('Action Logged', 'Follow-up action has been recorded in the audit trail.');
+    const resolved = await markAlertActionTaken();
+    if (resolved) Alert.alert('Alert resolved', 'The alert was resolved and your follow-up was recorded.');
   };
 
   const handleCallNow = () => {
@@ -63,78 +59,70 @@ export const CoordinatorCallNotesScreen: React.FC<Props> = ({ onBack, onCallSeni
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Score & Alert Card */}
+        {/* Score & alert status: the senior's real score and level */}
         <View style={styles.scoreAlertCard}>
           <View style={styles.cardLeft}>
             <View style={styles.scoreCircle}>
-              <Text style={styles.scoreValue}>92</Text>
+              <Text style={[styles.scoreValue, { color: palette.fg }]}>{activeSenior.risk_score}</Text>
             </View>
 
             <View style={styles.scoreMeta}>
-              <Text style={styles.lastCallText}>Last call – 27 Apr, 5:42 PM</Text>
-              <View style={styles.criticalPill}>
-                <AlertTriangle size={12} color="#EF4444" />
-                <Text style={styles.criticalPillText}>Critical</Text>
+              <Text style={styles.lastCallText}>
+                {lastCall?.startedAt ? `Last call – ${formatWhen(lastCall.startedAt)}` : 'No calls recorded yet'}
+              </Text>
+              <View style={[styles.criticalPill, { backgroundColor: palette.bg }]}>
+                <AlertTriangle size={12} color={palette.fg} />
+                <Text style={[styles.criticalPillText, { color: palette.fg }]}>{levelLabel(activeSenior.risk_level)}</Text>
               </View>
             </View>
           </View>
 
           <View style={styles.completedBadge}>
-            <Text style={styles.completedText}>Completed</Text>
+            <Text style={styles.completedText}>
+              {alertResolved ? 'Resolved' : activeSenior.alert_id ? 'Open alert' : 'No open alert'}
+            </Text>
           </View>
         </View>
 
-        {/* Why this alert? Section */}
+        {/* Why this senior is on the list: the system's own reasons */}
         <View style={styles.card}>
           <Text style={styles.sectionHeading}>Why this alert?</Text>
 
           <View style={styles.reasonList}>
-            {/* Reason 1 */}
-            <View style={styles.reasonRow}>
-              <View style={styles.reasonIconCircle}>
-                <Activity size={14} color="#EF4444" />
-              </View>
-              <View style={styles.reasonTextWrapper}>
-                <Text style={styles.reasonMain}>
-                  BP increased from <Text style={styles.boldText}>128/82</Text> to{' '}
-                  <Text style={styles.boldText}>148/96</Text>
-                </Text>
-                <Text style={styles.reasonSub}>(≥ 20 mmHg ↑)</Text>
-              </View>
-            </View>
-
-            {/* Reason 2 */}
-            <View style={styles.reasonRow}>
-              <View style={styles.reasonIconCircle}>
-                <Pill size={14} color="#EF4444" />
-              </View>
-              <View style={styles.reasonTextWrapper}>
-                <Text style={styles.reasonMain}>Missed 2 medication doses</Text>
-                <Text style={styles.reasonSub}>(anti-hypertensive)</Text>
-              </View>
-            </View>
-
-            {/* Reason 3 */}
-            <View style={styles.reasonRow}>
-              <View style={styles.reasonIconCircle}>
-                <HeartPulse size={14} color="#EF4444" />
-              </View>
-              <View style={styles.reasonTextWrapper}>
-                <Text style={styles.reasonMain}>Call notes mention "chest heaviness"</Text>
-                <Text style={styles.reasonSub}>(3 days ago)</Text>
-              </View>
-            </View>
+            {reasons.length === 0 ? (
+              <Text style={styles.reasonSub}>Nothing unusual in the recent data.</Text>
+            ) : (
+              reasons.map((reason, i) => (
+                <View key={i} style={styles.reasonRow}>
+                  <View style={styles.reasonIconCircle}>
+                    <AlertTriangle size={14} color="#EF4444" />
+                  </View>
+                  <View style={styles.reasonTextWrapper}>
+                    <Text style={styles.reasonMain}>{reason}</Text>
+                  </View>
+                </View>
+              ))
+            )}
           </View>
         </View>
 
-        {/* Recommended Action Section */}
+        {lastCall?.summary ? (
+          <View style={styles.card}>
+            <Text style={styles.sectionHeading}>Last call</Text>
+            <Text style={styles.reasonMain}>{lastCall.summary}</Text>
+          </View>
+        ) : null}
+
+        {/* Recommended action: the suggestion the system made for this senior */}
         <View style={styles.card}>
           <Text style={styles.sectionHeading}>Recommended Action</Text>
+          <Text style={[styles.reasonMain, { marginBottom: 8 }]}>
+            {activeSenior.suggested_action ?? 'Keep up routine monitoring.'}
+          </Text>
 
           <View style={styles.actionItemsList}>
-            {/* Action 1: Call senior now */}
             <TouchableOpacity
-              style={styles.actionRow}
+              style={[styles.actionRow, { borderBottomWidth: 0 }]}
               onPress={handleCallNow}
               activeOpacity={0.7}
             >
@@ -146,67 +134,23 @@ export const CoordinatorCallNotesScreen: React.FC<Props> = ({ onBack, onCallSeni
               </View>
               <ChevronRight size={16} color="#94A3B8" />
             </TouchableOpacity>
-
-            {/* Action 2: Schedule home visit */}
-            <TouchableOpacity
-              style={styles.actionRow}
-              onPress={() => Alert.alert('Schedule Home Visit', 'Visit request dispatched to field nurse.')}
-              activeOpacity={0.7}
-            >
-              <View style={styles.actionRowLeft}>
-                <View style={[styles.actionIconCircle, { backgroundColor: '#EEF2FF' }]}>
-                  <Home size={14} color="#6366F1" />
-                </View>
-                <Text style={styles.actionTitle}>Schedule home visit</Text>
-              </View>
-              <ChevronRight size={16} color="#94A3B8" />
-            </TouchableOpacity>
-
-            {/* Action 3: Request repeat BP reading */}
-            <TouchableOpacity
-              style={styles.actionRow}
-              onPress={() => Alert.alert('BP Reading', 'Notification sent to senior app to re-measure vitals.')}
-              activeOpacity={0.7}
-            >
-              <View style={styles.actionRowLeft}>
-                <View style={[styles.actionIconCircle, { backgroundColor: '#EEF2FF' }]}>
-                  <Calendar size={14} color="#6366F1" />
-                </View>
-                <Text style={styles.actionTitle}>Request repeat BP reading</Text>
-              </View>
-              <ChevronRight size={16} color="#94A3B8" />
-            </TouchableOpacity>
-
-            {/* Action 4: Arrange medical review */}
-            <TouchableOpacity
-              style={[styles.actionRow, { borderBottomWidth: 0 }]}
-              onPress={() => Alert.alert('Medical Review', 'Case summary forwarded to consulting physician.')}
-              activeOpacity={0.7}
-            >
-              <View style={styles.actionRowLeft}>
-                <View style={[styles.actionIconCircle, { backgroundColor: '#EEF2FF' }]}>
-                  <Building2 size={14} color="#6366F1" />
-                </View>
-                <Text style={styles.actionTitle}>Arrange medical review</Text>
-              </View>
-              <ChevronRight size={16} color="#94A3B8" />
-            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Primary Action Button */}
+        {/* Resolves the alert on the server and records that the coordinator followed up */}
         <TouchableOpacity
-          style={[styles.primaryActionBtn, marked && styles.primaryActionBtnDone]}
+          style={[styles.primaryActionBtn, alertResolved && styles.primaryActionBtnDone, !canResolve && !alertResolved && { opacity: 0.5 }]}
           onPress={handleActionTaken}
+          disabled={!canResolve}
           activeOpacity={0.88}
         >
-          {marked ? (
+          {alertResolved ? (
             <View style={styles.btnRow}>
               <CheckCircle2 size={18} color="#FFFFFF" />
-              <Text style={styles.primaryActionBtnText}>Action Taken ✓</Text>
+              <Text style={styles.primaryActionBtnText}>Alert resolved ✓</Text>
             </View>
           ) : (
-            <Text style={styles.primaryActionBtnText}>Mark as Action Taken</Text>
+            <Text style={styles.primaryActionBtnText}>{canResolve ? 'Mark as Action Taken' : 'No open alert to resolve'}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

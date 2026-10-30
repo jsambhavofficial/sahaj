@@ -1,0 +1,16 @@
+{
+  "greeting": "Namaste ji! Main Samarth ki taraf se bol rahi hoon. Bas aapka haal-chaal jaanna chahti thi.",
+  "questions": [
+    "Aaj aapki tabiyat kaisi hai?",
+    "Kal raat aapki neend kaisi rahi?",
+    "Aaj khaana khaya aapne? Aur dawaiyan time par li?",
+    "Koi baat hai jo aapko pareshaan kar rahi ho, ya kuch batana chahein?"
+  ],
+  "followup": "Pichhli baar aapne apni tabiyat ke baare mein kuch bataya tha. Ab kaisa lag raha hai?",
+  "acks": ["Achha ji.", "Theek hai ji.", "Samajh gayi.", "Ji, shukriya."],
+  "goodbye": "Bahut shukriya ji, aapse baat karke achha laga. Apna dhyan rakhiye. Namaste!",
+  "retry": "Maaf kijiye, mujhe theek se sunai nahi diya. Kya aap dobara bol sakte hain?",
+  "urgent": "Aapki baat maine sun li hai. Main abhi aapke coordinator ko bata rahi hoon, woh aapko jaldi phone karenge. Agar takleef zyada ho to ghar mein kisi ko bulaiye ya 112 par phone kijiye.",
+  "fallback": "Maaf kijiye, abhi kuch technical dikkat aa gayi hai. Aapke coordinator aapko phone karenge. Namaste!",
+  "safe_fallback": "Yeh baat aap apne coordinator se zaroor kahiye, woh aapko phone karenge."
+}
