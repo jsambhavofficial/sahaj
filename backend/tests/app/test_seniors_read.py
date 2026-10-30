@@ -322,6 +322,28 @@ def test_calls_list(client, world):
                           headers=H(client, world["c1"])).json()["items"]) == 1
 
 
+def test_calls_report_fields_and_kind_filter(client, world):
+    db = world["db"]
+    db.add(Call(kind="ai_agent", senior_id="S0001", provider="in_app", status="completed", started_at=at(),
+                language="hindi", sentiment="concerned", summary="Knee pain today",
+                call_insights={"questions_answered": 4, "questions_total": 5, "urgent": False,
+                               "end_reason": "finished", "cue_types": ["pain"],
+                               "process_call": {"internal": True}},
+                context_snapshot={"system_prompt": "secret"}))
+    db.add(Call(kind="phone_bridge", senior_id="S0001", provider="exotel", status="completed",
+                started_at=at(D - timedelta(days=1))))
+    db.commit()
+    h = H(client, world["c1"])
+    b = client.get(f"{API}/seniors/S0001/calls", params={"kind": "ai_agent"}, headers=h).json()
+    assert b["total"] == 1
+    item = b["items"][0]
+    assert item["sentiment"] == "concerned" and item["language"] == "hindi"
+    assert item["insights"] == {"questions_answered": 4, "questions_total": 5, "urgent": False,
+                                "end_reason": "finished", "cue_types": ["pain"]}
+    assert "context_snapshot" not in item
+    assert client.get(f"{API}/seniors/S0001/calls", params={"kind": "bogus"}, headers=h).status_code == 422
+
+
 def test_cues_use_source_time_and_filter(client, world):
     db = world["db"]
     call = Call(kind="ai_agent", senior_id="S0001", provider="in_app", status="completed",

@@ -100,8 +100,11 @@ def list_risk_history(db: Session, senior_id: str, date_from: date | None, date_
     return rows
 
 
-def list_calls(db: Session, senior_id: str, limit: int, offset: int) -> tuple[list[Call], int]:
+def list_calls(db: Session, senior_id: str, limit: int, offset: int,
+               kind: str | None = None) -> tuple[list[Call], int]:
     base = select(Call).where(Call.senior_id == senior_id)
+    if kind:
+        base = base.where(Call.kind == kind)
     total = db.scalar(select(func.count()).select_from(base.subquery())) or 0
     rows = list(db.scalars(base.order_by(Call.started_at.desc().nulls_last(), Call.id)
                            .limit(limit).offset(offset)))

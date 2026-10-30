@@ -78,6 +78,58 @@ export async function fetchSeniorDetail(seniorId: string, date: string): Promise
   };
 }
 
+export interface AiCallReport {
+  id: string;
+  startedAt: string | null;
+  status: string;
+  durationSec: number | null;
+  summary: string | null;
+  urgent: boolean;
+  sentiment: string | null;
+  questionsAnswered: number | null;
+  questionsTotal: number | null;
+  cueTypes: string[];
+}
+
+interface CallItemDto {
+  id: string;
+  started_at: string | null;
+  status: string;
+  duration_sec: number | null;
+  summary: string | null;
+  urgency_flag: boolean;
+  sentiment: string | null;
+  insights: { questions_answered?: number; questions_total?: number; cue_types?: string[] } | null;
+}
+
+/** The AI check-in calls for one senior, newest first. */
+export async function fetchAiCallReports(seniorId: string, limit = 20): Promise<AiCallReport[]> {
+  const page = await request<{ items: CallItemDto[] }>(`/seniors/${seniorId}/calls`, { query: { kind: 'ai_agent', limit } });
+  return page.items.map((c) => ({
+    id: c.id,
+    startedAt: c.started_at,
+    status: c.status,
+    durationSec: c.duration_sec,
+    summary: c.summary,
+    urgent: c.urgency_flag,
+    sentiment: c.sentiment,
+    questionsAnswered: c.insights?.questions_answered ?? null,
+    questionsTotal: c.insights?.questions_total ?? null,
+    cueTypes: c.insights?.cue_types ?? [],
+  }));
+}
+
+export interface CallTranscriptTurn {
+  index: number;
+  speaker: string;
+  text: string;
+}
+
+export async function fetchCallTranscript(callId: string): Promise<CallTranscriptTurn[]> {
+  const call = await request<{ turns: { turn_index: number; speaker: string; text: string }[] }>(`/calls/${callId}`);
+  return call.turns.map((t) => ({ index: t.turn_index, speaker: t.speaker, text: t.text }));
+}
+
 export const createPairingCode = (seniorId: string) =>
   request<{ pairing_code: string; expires_in: number }>('/auth/senior/pairing-code', { method: 'POST', body: { senior_id: seniorId } });
 

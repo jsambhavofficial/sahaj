@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,13 +6,17 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useAppState } from '../../context/AppStateContext';
 import { formatWhen, levelLabel, levelPalette } from '../../api/mappers';
+import * as live from '../../api/live';
 import {
   ChevronLeft,
   MoreVertical,
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
   CheckCircle2,
 } from 'lucide-react-native';
 
@@ -20,9 +24,120 @@ interface Props {
   onBack: () => void;
 }
 
+const SENTIMENT: Record<string, { bg: string; fg: string }> = {
+  positive: { bg: '#EAF7EE', fg: '#16A34A' },
+  neutral: { bg: '#F1F5F9', fg: '#475569' },
+  concerned: { bg: '#FEF3C7', fg: '#B45309' },
+  negative: { bg: '#FEE2E2', fg: '#DC2626' },
+};
+
+const label = (s: string) => s.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+
+const ReportCard: React.FC<{
+  report: live.AiCallReport;
+  open: boolean;
+  turns: live.CallTranscriptTurn[] | 'loading' | 'error' | undefined;
+  onToggle: () => void;
+}> = ({ report, open, turns, onToggle }) => {
+  const tone = report.sentiment ? SENTIMENT[report.sentiment.toLowerCase()] ?? SENTIMENT.neutral : null;
+  const answered =
+    report.questionsAnswered != null && report.questionsTotal != null
+      ? `Answered ${report.questionsAnswered} of ${report.questionsTotal} questions`
+      : null;
+  return (
+    <TouchableOpacity style={styles.card} onPress={onToggle} activeOpacity={0.85}>
+      <View style={styles.reportTop}>
+        <Text style={styles.reportDate}>{report.startedAt ? formatWhen(report.startedAt) : 'Date unknown'}</Text>
+        <View style={styles.badgeRow}>
+          {report.urgent ? (
+            <View style={[styles.badge, { backgroundColor: '#FEE2E2' }]}>
+              <Text style={[styles.badgeText, { color: '#DC2626' }]}>Urgent</Text>
+            </View>
+          ) : null}
+          {tone && report.sentiment ? (
+            <View style={[styles.badge, { backgroundColor: tone.bg }]}>
+              <Text style={[styles.badgeText, { color: tone.fg }]}>{label(report.sentiment)}</Text>
+            </View>
+          ) : null}
+          {open ? <ChevronUp size={16} color="#94A3B8" /> : <ChevronDown size={16} color="#94A3B8" />}
+        </View>
+      </View>
+
+      <Text style={styles.reasonMain}>
+        {report.summary ?? (report.status === 'completed' ? 'No summary was written.' : `Call ${label(report.status).toLowerCase()}.`)}
+      </Text>
+
+      {report.cueTypes.length > 0 ? (
+        <View style={styles.chipRow}>
+          {report.cueTypes.map((c) => (
+            <View key={c} style={styles.chip}>
+              <Text style={styles.chipText}>{label(c)}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {answered ? <Text style={styles.reasonSub}>{answered}</Text> : null}
+
+      {open ? (
+        <View style={styles.transcript}>
+          {turns === undefined || turns === 'loading' ? (
+            <ActivityIndicator color="#0D6B58" />
+          ) : turns === 'error' ? (
+            <Text style={styles.reasonSub}>Could not load the conversation.</Text>
+          ) : turns.length === 0 ? (
+            <Text style={styles.reasonSub}>No conversation was saved for this call.</Text>
+          ) : (
+            turns.map((t) => (
+              <View key={t.index} style={styles.turn}>
+                <Text style={styles.turnWho}>{t.speaker === 'agent' ? 'Sahaj assistant' : 'Senior'}</Text>
+                <Text style={styles.reasonMain}>{t.text}</Text>
+              </View>
+            ))
+          )}
+        </View>
+      ) : null}
+    </TouchableOpacity>
+  );
+};
+
 export const CoordinatorCallNotesScreen: React.FC<Props> = ({ onBack }) => {
   const { alertResolved, markAlertActionTaken, activeSenior, lastCall } = useAppState();
   const palette = levelPalette(activeSenior.risk_level);
+  const seniorId = activeSenior.senior_id;
+  // Results are tagged with the senior they belong to, so switching seniors shows the spinner, not stale data.
+  const [loaded, setLoaded] = useState<{ seniorId: string; reports: live.AiCallReport[]; error: boolean } | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [turnsById, setTurnsById] = useState<Record<string, live.CallTranscriptTurn[] | 'loading' | 'error'>>({});
+  const current = loaded?.seniorId === seniorId ? loaded : null;
+  const loading = current === null;
+  const error = current?.error ?? false;
+  const reports = current?.reports ?? [];
+
+  useEffect(() => {
+    let cancelled = false;
+    live
+      .fetchAiCallReports(seniorId)
+      .then((r) => !cancelled && setLoaded({ seniorId, reports: r, error: false }))
+      .catch(() => !cancelled && setLoaded({ seniorId, reports: [], error: true }));
+    return () => {
+      cancelled = true;
+    };
+  }, [seniorId]);
+
+  const toggle = (id: string) => {
+    if (openId === id) {
+      setOpenId(null);
+      return;
+    }
+    setOpenId(id);
+    if (turnsById[id] && turnsById[id] !== 'error') return;
+    setTurnsById((m) => ({ ...m, [id]: 'loading' }));
+    live
+      .fetchCallTranscript(id)
+      .then((t) => setTurnsById((m) => ({ ...m, [id]: t })))
+      .catch(() => setTurnsById((m) => ({ ...m, [id]: 'error' })));
+  };
   const canResolve = Boolean(activeSenior.alert_id) && !alertResolved;
 
   const handleActionTaken = async () => {
@@ -72,12 +187,28 @@ export const CoordinatorCallNotesScreen: React.FC<Props> = ({ onBack }) => {
           </View>
         </View>
 
-        {lastCall?.summary ? (
+        <Text style={styles.listHeading}>AI check-in calls</Text>
+        {loading ? (
+          <ActivityIndicator color="#0D6B58" style={{ marginVertical: 24 }} />
+        ) : error ? (
           <View style={styles.card}>
-            <Text style={styles.sectionHeading}>Last call</Text>
-            <Text style={styles.reasonMain}>{lastCall.summary}</Text>
+            <Text style={styles.reasonMain}>Could not load the call reports.</Text>
           </View>
-        ) : null}
+        ) : reports.length === 0 ? (
+          <View style={styles.card}>
+            <Text style={styles.reasonMain}>No AI check-in calls yet for this senior.</Text>
+          </View>
+        ) : (
+          reports.map((r) => (
+            <ReportCard
+              key={r.id}
+              report={r}
+              open={openId === r.id}
+              turns={turnsById[r.id]}
+              onToggle={() => toggle(r.id)}
+            />
+          ))
+        )}
 
         {/* Resolves the alert on the server and records that the coordinator followed up */}
         <TouchableOpacity
@@ -214,17 +345,39 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  sectionHeading: {
-    fontSize: 14,
+  listHeading: {
+    fontSize: 15,
     fontWeight: '800',
     color: '#0F172A',
-    marginBottom: 12,
+    marginTop: 4,
+    marginBottom: 10,
   },
+  reportTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  reportDate: { fontSize: 13, fontWeight: '800', color: '#0F172A' },
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
+  badgeText: { fontSize: 11, fontWeight: '700' },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+  chip: { backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
+  chipText: { fontSize: 11, fontWeight: '600', color: '#475569' },
+  transcript: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9', gap: 10 },
+  turn: { gap: 2 },
+  turnWho: { fontSize: 11, fontWeight: '700', color: '#0D6B58' },
   reasonMain: {
     fontSize: 13,
     color: '#334155',
     lineHeight: 18,
     fontWeight: '500',
+  },
+  reasonSub: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 1,
   },
   primaryActionBtn: {
     backgroundColor: '#0D6B58',
