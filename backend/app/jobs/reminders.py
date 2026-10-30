@@ -13,6 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.modules.checkins.models import Checkin
 from app.modules.medications.models import MedicationEvent, MedicationSchedule
 from app.modules.notifications import repository as notif_repo
 from app.modules.notifications import service as notif
@@ -139,6 +140,32 @@ def create_checkin_prompts(db: Session, on_date: date) -> int:
     return created
 
 
+def create_missed_checkin_alerts(db: Session, on_date: date, now: datetime) -> int:
+    """Tell the coordinator when a senior's check-in time passed (plus grace) with no check-in recorded."""
+    grace = timedelta(minutes=get_settings().reminder_grace_minutes)
+    day, created = _DAYS[on_date.weekday()], 0
+    for senior in db.scalars(select(Senior).where(Senior.is_active.is_(True),
+                                                  Senior.coordinator_id.is_not(None))):
+        if senior.checkin_preferred_hour is None or day not in _checkin_days(senior):
+            continue
+        start = datetime.combine(on_date, time(int(senior.checkin_preferred_hour)), tzinfo=IST)
+        due = start + grace
+        if due > now:
+            continue
+        done = db.scalar(select(Checkin.checkin_id).where(
+            Checkin.senior_id == senior.senior_id, Checkin.at >= _utc(start),
+            Checkin.channel != "missed_call").limit(1))
+        if done:
+            continue
+        if notif.notify(db, senior.coordinator_id, "missed_checkin", "Missed check-in",
+                        "A senior on your list has not checked in today.",
+                        data={"senior_id": senior.senior_id, "date": on_date.isoformat(),
+                              "url": "/caretaker"},
+                        scheduled_for=due, commit=False):
+            created += 1
+    return created
+
+
 def run(db: Session, on_date: date, now: datetime | None = None) -> dict:
     now = now or datetime.now(IST)
     result = {
@@ -146,6 +173,7 @@ def run(db: Session, on_date: date, now: datetime | None = None) -> dict:
         "medication_reminders": create_medication_reminders(db, on_date),
         "unconfirmed_doses_recorded": record_unconfirmed_doses(db, on_date, now),
         "checkin_prompts": create_checkin_prompts(db, on_date),
+        "missed_checkin_alerts": create_missed_checkin_alerts(db, on_date, now),
     }
     db.commit()
     return result

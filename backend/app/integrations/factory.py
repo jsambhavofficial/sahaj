@@ -80,5 +80,10 @@ def get_storage() -> StorageProvider:
 def get_push() -> PushProvider:
     s = get_settings()
     if s.push_provider == "fcm" or s.fcm_credentials_json:
-        return FCMPushProvider()
+        fcm = FCMPushProvider()
+        if fcm.is_configured:
+            return fcm
+        logging.getLogger(__name__).warning(
+            "FCM is requested but the service-account credentials could not be loaded "
+            "(check FCM_CREDENTIALS_JSON); using the stub push provider")
     return StubPush()

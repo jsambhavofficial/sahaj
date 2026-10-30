@@ -66,6 +66,14 @@ def due_pending(db: Session, now: datetime, limit: int) -> list[Notification]:
                            .order_by(Notification.scheduled_for).limit(limit)).all())
 
 
+def due_pending_for_user(db: Session, user_id: uuid.UUID, now: datetime) -> list[Notification]:
+    return list(db.scalars(select(Notification)
+                           .where(Notification.user_id == user_id,
+                                  Notification.delivery_status == "pending",
+                                  Notification.scheduled_for <= now)
+                           .order_by(Notification.scheduled_for)).all())
+
+
 def active_devices(db: Session, user_id: uuid.UUID) -> list[DeviceToken]:
     return list(db.scalars(select(DeviceToken).where(DeviceToken.user_id == user_id,
                                                       DeviceToken.revoked_at.is_(None))).all())

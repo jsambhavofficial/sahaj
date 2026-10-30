@@ -23,6 +23,7 @@ import {
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import { registerWebPushToken } from "@/services/fcm";
+import { PushEnableButton } from "./PushEnableButton";
 import { useState, useEffect } from "react";
 
 export const Navbar: React.FC = () => {
@@ -191,6 +192,7 @@ export const Navbar: React.FC = () => {
                 )}
               </Link>
             )}
+            {isAuthenticated && <PushEnableButton />}
             {isAuthenticated && user ? (
               <div className="flex items-center gap-2.5">
                 <div className="hidden sm:flex flex-col items-end">

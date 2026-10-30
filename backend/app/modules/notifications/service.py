@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AppError, NotFound
+from app.integrations.base import PushTransientError
 from app.integrations.factory import get_push
 from app.integrations.masking import mask
 from app.modules.auth.models import User
@@ -234,17 +235,17 @@ def notify(
 
     sched_time = (_aware(scheduled_for) or datetime.now(timezone.utc)).astimezone(timezone.utc)
 
-    # Duplicate prevention: Avoid duplicate notifications of same kind & key within the same hour
-    recent_existing = repository.find_notifications(db, user_id, kind, sched_time)
-    if recent_existing:
-        log.info("Duplicate notification suppressed for user %s, kind '%s' at %s", user_id, kind, sched_time)
-        return recent_existing[0]
-
     clean_data = {
         str(k): str(v)
         for k, v in (data or {}).items()
         if k in DATA_KEYS and v is not None and len(str(v)) <= 128
     }
+
+    # Duplicate prevention: same user, kind, time and payload (two doses at one time are not duplicates)
+    for existing in repository.find_notifications(db, user_id, kind, sched_time):
+        if (existing.data or {}) == clean_data:
+            log.info("Duplicate notification suppressed for user %s, kind '%s' at %s", user_id, kind, sched_time)
+            return existing
 
     n = repository.add_notification(
         db,
@@ -269,42 +270,41 @@ def notify(
     return n
 
 
+def _deliver(push, n: Notification, devices: list[DeviceToken], now: datetime) -> bool:
+    """Push one notification to every device. Leaves it pending if only transient errors occurred."""
+    title, _ = mask(n.title)
+    body, _ = mask(n.body)
+    data = {k: str(v) for k, v in (n.data or {}).items()}
+    ok = transient = False
+    for d in devices:
+        try:
+            accepted = push.send(d.token, title, body, data)
+        except PushTransientError:
+            transient = True
+            log.warning("Push for notification %s hit a transient error; will retry", n.id, exc_info=True)
+            continue
+        except Exception:
+            log.warning("Push provider error for notification %s", n.id, exc_info=True)
+            continue
+        if accepted:
+            ok = True
+        else:
+            d.revoked_at = now
+    if ok:
+        n.delivery_status, n.sent_at = "sent", now
+    elif not transient:
+        n.delivery_status = "failed"
+    return ok
+
+
 def send_pending_for_user(db: Session, user_id: uuid.UUID) -> int:
     """Immediately dispatch pending due notifications for a specific user."""
     now = datetime.now(timezone.utc)
-    push, sent = get_push(), 0
     devices = repository.active_devices(db, user_id)
     if not devices:
         return 0
-
-    pending = (
-        db.query(Notification)
-        .filter(
-            Notification.user_id == user_id,
-            Notification.delivery_status == "pending",
-            Notification.scheduled_for <= now,
-        )
-        .all()
-    )
-
-    for n in pending:
-        title, _ = mask(n.title)
-        body, _ = mask(n.body)
-        ok = False
-        for d in devices:
-            try:
-                accepted = push.send(d.token, title, body, {k: str(v) for k, v in (n.data or {}).items()})
-            except Exception:
-                log.warning("FCM provider delivery error for notification %s", n.id, exc_info=True)
-                continue
-            if accepted:
-                ok = True
-            else:
-                d.revoked_at = now
-        n.delivery_status = "sent" if ok else "failed"
-        if ok:
-            n.sent_at = now
-            sent += 1
+    push = get_push()
+    sent = sum(_deliver(push, n, devices, now) for n in repository.due_pending_for_user(db, user_id, now))
     db.commit()
     return sent
 
@@ -321,22 +321,7 @@ def send_pending(db: Session, now: datetime | None = None, limit: int = 500) -> 
         if not devices:
             n.delivery_status = "skipped"
             continue
-        title, _ = mask(n.title)
-        body, _ = mask(n.body)
-        ok = False
-        for d in devices:
-            try:
-                accepted = push.send(d.token, title, body, {k: str(v) for k, v in (n.data or {}).items()})
-            except Exception:
-                log.warning("Push provider error for notification %s", n.id, exc_info=True)
-                continue
-            if accepted:
-                ok = True
-            else:
-                d.revoked_at = now
-        n.delivery_status = "sent" if ok else "failed"
-        if ok:
-            n.sent_at, sent = now, sent + 1
+        sent += _deliver(push, n, devices, now)
     db.commit()
     return sent
 

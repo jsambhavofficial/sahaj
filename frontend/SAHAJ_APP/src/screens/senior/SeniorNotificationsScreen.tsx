@@ -18,8 +18,6 @@ import {
   Bell,
   Check,
   CheckCheck,
-  Clock,
-  Shield,
 } from 'lucide-react-native';
 import {
   getNotifications,
@@ -38,60 +36,23 @@ export const SeniorNotificationsScreen: React.FC<Props> = ({ onBack }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
-  const loadNotifications = async () => {
-    setLoading(true);
-    try {
-      const res = await getNotifications(false);
-      if (res && res.items && res.items.length > 0) {
-        setNotifications(res.items);
-      } else {
-        // Fallback default Hindi notifications
-        setNotifications([
-          {
-            id: 'n_01',
-            kind: 'daily_wellbeing',
-            title: 'नमस्ते जी!',
-            body: 'आज अपना हाल-चाल बताना न भूलें।',
-            scheduled_for: new Date().toISOString(),
-            read_at: null,
-          },
-          {
-            id: 'n_02',
-            kind: 'ai_saathi_reminder',
-            title: 'सहज साथी',
-            body: 'आपका सहज साथी आपसे बात करने के लिए तैयार है।',
-            scheduled_for: new Date(Date.now() - 3600000).toISOString(),
-            read_at: null,
-          },
-          {
-            id: 'n_03',
-            kind: 'caretaker_visit_reminder',
-            title: 'केयरटेकर मुलाकात',
-            body: 'आज आपके केयरटेकर आपसे मिलने आने वाले हैं।',
-            scheduled_for: new Date(Date.now() - 7200000).toISOString(),
-            read_at: new Date().toISOString(),
-          },
-        ]);
-      }
-    } catch {
-      // Offline fallback
-      setNotifications([
-        {
-          id: 'n_01',
-          kind: 'daily_wellbeing',
-          title: 'नमस्ते जी!',
-          body: 'आज अपना हाल-चाल बताना न भूलें।',
-          scheduled_for: new Date().toISOString(),
-          read_at: null,
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    loadNotifications();
+    let cancelled = false;
+    getNotifications(false)
+      .then((res) => {
+        if (!cancelled) setNotifications(res.items ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleMarkRead = async (id: string) => {
@@ -121,15 +82,15 @@ export const SeniorNotificationsScreen: React.FC<Props> = ({ onBack }) => {
           bg: '#FFF1F2',
           tag: 'हाल-चाल',
         };
-      case 'ai_saathi_reminder':
+      case 'ai_saathi':
         return {
           icon: Sparkles,
           color: '#D97706',
           bg: '#FEF3C7',
           tag: 'सहज साथी',
         };
-      case 'caretaker_visit_reminder':
-      case 'visit_completed':
+      case 'caretaker_visit':
+      case 'care_update':
         return {
           icon: Calendar,
           color: '#0D9488',
@@ -137,6 +98,7 @@ export const SeniorNotificationsScreen: React.FC<Props> = ({ onBack }) => {
           tag: 'केयरटेकर',
         };
       case 'medication_reminder':
+      case 'appointment_reminder':
         return {
           icon: Pill,
           color: '#2563EB',
@@ -220,6 +182,11 @@ export const SeniorNotificationsScreen: React.FC<Props> = ({ onBack }) => {
           </View>
         ) : (
           <View style={styles.cardList}>
+            {filteredNotifications.length === 0 && (
+              <Text style={styles.loadingText}>
+                {loadError ? 'सूचनाएँ नहीं आ सकीं। कृपया बाद में कोशिश करें।' : 'कोई सूचना नहीं है।'}
+              </Text>
+            )}
             {filteredNotifications.map((notif) => {
               const isUnread = !notif.read_at;
               const details = getKindDetails(notif.kind);

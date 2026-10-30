@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "573468282110",
+    "project_id": "sahaj-3eb4d",
+    "storage_bucket": "sahaj-3eb4d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:573468282110:android:fb05be65b1abb3fdf8e9af",
+        "android_client_info": {
+          "package_name": "com.sahaj.samarth"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCjF5eoD0jaDqa_vWRDkr02ROWGR4lzbIo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

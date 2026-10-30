@@ -15,7 +15,7 @@ import httpx
 import jwt
 
 from app.core.config import get_settings
-from app.integrations.base import PushProvider
+from app.integrations.base import PushProvider, PushTransientError
 
 logger = logging.getLogger(__name__)
 
@@ -139,8 +139,7 @@ class FCMPushProvider(PushProvider):
 
         access_token = self._get_access_token()
         if not access_token:
-            logger.warning("FCM access token unavailable. Falling back to queued delivery.")
-            return True
+            raise PushTransientError("FCM access token unavailable")
 
         project_id = self._parsed_creds["project_id"]
         url = FCM_SEND_URL.format(project_id=project_id)
@@ -164,7 +163,6 @@ class FCMPushProvider(PushProvider):
                         "sound": "default",
                         "notification_priority": "PRIORITY_HIGH",
                         "visibility": "PUBLIC",
-                        "click_action": click_url,
                     },
                 },
                 "webpush": {
@@ -205,13 +203,16 @@ class FCMPushProvider(PushProvider):
 
                 # Token invalidation codes in FCM v1
                 if resp.status_code in (400, 404):
-                    if any(code in error_body for code in ("UNREGISTERED", "INVALID_ARGUMENT", "NOT_FOUND")):
+                    bad_token = "UNREGISTERED" in error_body or "NOT_FOUND" in error_body or (
+                        "INVALID_ARGUMENT" in error_body and "registration token" in error_body.lower())
+                    if bad_token:
                         logger.info("Token %s is unregistered or invalid; marking for cleanup.", token[:12])
                         return False
 
-                # 5xx or rate limit: return True so we don't revoke a valid device token
-                return resp.status_code != 404
+                # 5xx, rate limit or auth trouble: keep the device token and retry later
+                raise PushTransientError(f"FCM HTTP {resp.status_code}")
+        except PushTransientError:
+            raise
         except Exception as exc:
-            logger.warning("Network error sending FCM push: %s", exc)
-            return True
+            raise PushTransientError(f"FCM network error: {exc}") from exc
 

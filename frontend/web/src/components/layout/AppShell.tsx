@@ -3,6 +3,8 @@
 import React, { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { Navbar } from "./Navbar";
+import { PushEnableButton } from "./PushEnableButton";
+import { useAuth } from "@/context/AuthContext";
 import { ToastContainer } from "../ui/ToastContainer";
 
 interface AppShellProps {
@@ -11,6 +13,7 @@ interface AppShellProps {
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const pathname = usePathname();
+  const { isAuthenticated } = useAuth();
   const isCityManagerPortal = pathname?.startsWith("/city-manager");
 
   // If in City Manager Command Centre or Login screen, render full-bleed without top Navbar / footer duplication
@@ -18,6 +21,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     return (
       <div className="min-h-screen text-slate-900 font-sans antialiased">
         {children}
+        {/* this portal has no top bar, so the push button floats */}
+        {isCityManagerPortal && isAuthenticated && (
+          <PushEnableButton floating />
+        )}
         <ToastContainer />
       </div>
     );

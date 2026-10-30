@@ -244,13 +244,15 @@ export interface AppNotificationItem {
 }
 
 export const getNotifications = (unreadOnly: boolean = false) =>
-  request<{ items: AppNotificationItem[]; total: number }>(/notifications?unread=);
+  request<{ items: AppNotificationItem[]; total: number }>('/notifications', {
+    query: { unread: unreadOnly ? 'true' : 'false' },
+  });
 
 export const markNotificationRead = (id: string) =>
-  request<{ ok: boolean }>(/notifications//read, { method: 'POST' });
+  request<void>(`/notifications/${id}/read`, { method: 'POST' });
 
 export const markAllNotificationsRead = () =>
-  request<{ ok: boolean; marked_count: number }>('/notifications/read-all', { method: 'POST' });
+  request<{ marked_read: number }>('/notifications/read-all', { method: 'POST' });
 
 export const registerMobileDevice = (token: string, platform: 'android' | 'ios' = 'android') =>
   request<{ id: string; platform: string }>('/devices', {

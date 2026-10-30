@@ -4,6 +4,7 @@ import {
   AuthStatus, DataStatus, Language, MedicationItem, SeniorItem, SessionUser, UserRole, VitalsState,
 } from '../types';
 import * as live from '../api/live';
+import { registerForPush, unregisterPush } from '../push/pushNotifications';
 import { configureAuth } from '../api/http';
 import { clearSession, loadSession, saveSession, saveTokens } from '../api/session';
 import {
@@ -206,6 +207,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = useCallback(
     async (message: string | null = null) => {
+      await unregisterPush();
       tokens.current = { access: null, refresh: null };
       deviceToken.current = null;
       await clearSession();
@@ -239,6 +241,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     setAuthError(null);
     setAuthStatus('signedIn');
     void loadData(r.user);
+    void registerForPush();
   }, [loadData]);
 
   // Wire the HTTP client to the current tokens, and restore a saved session on launch.
@@ -273,6 +276,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         setUser(saved.user);
         setAuthStatus('signedIn');
         void loadData(saved.user);
+        void registerForPush();
       } else {
         setAuthStatus('signedOut');
       }

@@ -14,19 +14,28 @@ export interface PushRegistrationResult {
   error?: string;
 }
 
-/**
- * Convert URL-safe base64 string to Uint8Array for PushManager subscription.
- */
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = window.atob(base64);
-  const buffer = new ArrayBuffer(rawData.length);
-  const outputArray = new Uint8Array(buffer);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+
+/** Real FCM registration token from the Firebase SDK (what the backend's FCM sender needs). */
+async function getFcmToken(registration: ServiceWorkerRegistration | null): Promise<string | null> {
+  const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+  if (!registration || !vapidKey || !firebaseConfig.apiKey || !firebaseConfig.appId) return null;
+  try {
+    const { initializeApp, getApps, getApp } = await import("firebase/app");
+    const { getMessaging, getToken, isSupported } = await import("firebase/messaging");
+    if (!(await isSupported())) return null;
+    const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    return (await getToken(getMessaging(app), { vapidKey, serviceWorkerRegistration: registration })) || null;
+  } catch (err) {
+    console.warn("[Push] Could not get an FCM token:", err);
+    return null;
   }
-  return outputArray;
 }
 
 /**
@@ -76,36 +85,11 @@ export async function registerWebPushToken(): Promise<PushRegistrationResult> {
     // Register service worker
     const swRegistration = await registerServiceWorker();
 
-    let token = localStorage.getItem(FCM_TOKEN_STORAGE_KEY);
-    const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
-
-    // If VAPID public key is configured, create or get standard Web Push subscription
-    if (swRegistration && "pushManager" in swRegistration && vapidKey) {
-      try {
-        let subscription = await swRegistration.pushManager.getSubscription();
-        if (!subscription) {
-          const applicationServerKey = urlBase64ToUint8Array(vapidKey);
-          subscription = await swRegistration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: applicationServerKey as unknown as BufferSource,
-          });
-        }
-        if (subscription) {
-          const jsonSub = subscription.toJSON();
-          // Use endpoint or full serialized subscription token
-          token = jsonSub.endpoint || JSON.stringify(jsonSub);
-          localStorage.setItem(FCM_TOKEN_STORAGE_KEY, token);
-        }
-      } catch (e) {
-        console.warn("[Push] VAPID subscription failed, fallback to client token:", e);
-      }
-    }
-
+    const token = await getFcmToken(swRegistration);
     if (!token) {
-      // Fallback unique web client device token
-      token = `web_fcm_${Math.random().toString(36).substring(2, 15)}_${Date.now()}`;
-      localStorage.setItem(FCM_TOKEN_STORAGE_KEY, token);
+      return { supported: true, permission: "granted", error: "Push is not configured for this browser (missing Firebase settings)." };
     }
+    localStorage.setItem(FCM_TOKEN_STORAGE_KEY, token);
 
     // Register token with backend
     try {

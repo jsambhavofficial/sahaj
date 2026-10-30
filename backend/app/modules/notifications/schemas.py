@@ -49,7 +49,7 @@ class NotificationPreferencesOut(BaseModel):
 
 
 class NotificationTestRequest(BaseModel):
-    kind: str = "daily_wellbeing"
+    kind: str | None = None
     title: str | None = None
     body: str | None = None
     data: dict = Field(default_factory=dict)

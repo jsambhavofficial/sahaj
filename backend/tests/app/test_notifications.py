@@ -220,3 +220,32 @@ def test_test_notification_endpoint(client, db_session):
     body = r.json()
     assert body["title"] == "Test Title"
     assert body["kind"] == "wellbeing_concern"
+
+
+def test_transient_push_error_keeps_notification_pending(client, db_session, monkeypatch):
+    from app.integrations.base import PushTransientError
+    from app.modules.notifications.models import DeviceToken
+
+    class Flaky:
+        def __init__(self):
+            self.fail = True
+
+        def send(self, token, title, body, data):
+            if self.fail:
+                raise PushTransientError("FCM HTTP 503")
+            return True
+
+    flaky = Flaky()
+    monkeypatch.setattr(service, "get_push", lambda: flaky)
+    u = make_user(db_session, "coordinator")
+    db_session.add(DeviceToken(user_id=u.id, platform="android", token="tok_12345678"))
+    n = service.notify(db_session, u.id, "escalation", "Escalation", "Review now", commit=True)
+
+    assert service.send_pending(db_session) == 0
+    db_session.refresh(n)
+    assert n.delivery_status == "pending"          # retried on the next tick
+
+    flaky.fail = False
+    assert service.send_pending(db_session) == 1
+    db_session.refresh(n)
+    assert n.delivery_status == "sent"

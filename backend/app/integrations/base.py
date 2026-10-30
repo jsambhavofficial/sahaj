@@ -59,6 +59,13 @@ class StorageProvider(Protocol):
     def delete(self, path: str) -> None: ...
 
 
+class PushTransientError(Exception):
+    """The push could not be attempted or confirmed (network, auth, 5xx, rate limit). Retry later."""
+
+
 class PushProvider(Protocol):
     def send(self, token: str, title: str, body: str, data: dict[str, str]) -> bool:
-        """True if the push was accepted. Title and body must already be generic (no PII)."""
+        """True if the push was accepted, False if the token is dead (it gets revoked).
+
+        Raises PushTransientError for a temporary failure so the notification stays pending.
+        Title and body must already be generic (no PII)."""
