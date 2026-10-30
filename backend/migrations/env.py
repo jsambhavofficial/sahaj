@@ -21,7 +21,9 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    engine = create_engine(get_settings().database_url, poolclass=pool.NullPool)
+    url = get_settings().database_url
+    connect_args = {"connect_timeout": 10} if not url.startswith("sqlite") else {}
+    engine = create_engine(url, poolclass=pool.NullPool, connect_args=connect_args)
     with engine.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
         with context.begin_transaction():

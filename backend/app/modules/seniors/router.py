@@ -17,7 +17,7 @@ from app.modules.risk import service as risk_service
 from app.modules.seniors import service
 from app.modules.seniors.schemas import (
     FamilyInteractionOut, MemoryItemOut, RiskHistoryItem, SeniorCallPage, SeniorDetail,
-    LegacySeniorPage, SeniorListPage,
+    LegacySeniorPage, SeniorListPage, SeniorRiskDetailResponse,
 )
 from app.modules.vitals.router import router as vitals_router
 
@@ -68,6 +68,20 @@ def list_seniors(
 @router.get("/seniors/{senior_id}", response_model=SeniorDetail, summary="Senior detail")
 def senior_detail(senior_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return service.get_senior_detail(db, user, senior_id)
+
+
+@router.get("/seniors/{senior_id}/risk-details", response_model=SeniorRiskDetailResponse,
+            summary="Comprehensive risk score breakdown, primary driver summary, and suggested action")
+def senior_risk_details(
+    senior_id: str,
+    on_date: date | None = Query(None, alias="date", description="Risk date; default demo date"),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    scope.require_senior_access(db, user, senior_id)
+    target_date = on_date or today()
+    from app.modules.risk.alert_explainer import get_senior_risk_detail
+    return get_senior_risk_detail(db, senior_id, target_date)
 
 
 @router.get("/seniors/{senior_id}/risk-history", response_model=list[RiskHistoryItem],

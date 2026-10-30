@@ -1,96 +1,63 @@
-"""Scoring orchestration: score seniors, keep daily_risk_scores current, drive alerts and re-ranking."""
+"""Risk Scoring Service - wraps the Multimodal Risk Engine and DB orchestration."""
 
-from datetime import date
 import logging
-from pathlib import Path
-import sys
+from datetime import date
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.config import get_settings
 from app.core.exceptions import NotFound
-from app.modules.alerts import service as alert_service
-from app.modules.alerts.service import AlertChange
-from app.modules.risk import repository as repo
-from app.modules.risk.models import DailyRiskScore
 from app.modules.risk.schemas import RiskCalculationRequest, RiskCalculationResponse
-from app.modules.risk.scorer import HeuristicScorer, MultimodalScorer, RiskScorer, ScoreResult
 from app.modules.seniors.models import Senior
+from ml.src.risk_engine.multimodal_risk_calculator import MultimodalRiskCalculator, RiskCalculationResult
+from ml.src.risk_engine.risk_score_calculation import calculate_cohort_risk, calculate_senior_risk
 
-# Ensure backend and backend/ml are on sys.path
-_backend_dir = Path(__file__).resolve().parents[3]
-_ml_dir = _backend_dir / "ml"
-for _p in (_backend_dir, _ml_dir):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-
-try:
-    from ml.src.risk_engine.risk_score_calculation import (
-        MultimodalRiskCalculator,
-        RiskCalculationResult,
-        calculate_cohort_risk,
-        calculate_senior_risk,
-    )
-except ImportError:
-    from src.risk_engine.risk_score_calculation import (
-        MultimodalRiskCalculator,
-        RiskCalculationResult,
-        calculate_cohort_risk,
-        calculate_senior_risk,
-    )
-
-logger = logging.getLogger("risk_service")
-
-SCORERS: dict[str, type] = {
-    "multimodal": MultimodalScorer,
-    "heuristic": HeuristicScorer,
-}
-BATCH_SIZE = 50
+logger = logging.getLogger(__name__)
 
 
-def get_scorer() -> RiskScorer:
-    """The scorer named by settings.risk_scorer; register another class in SCORERS to plug it in."""
-    name = get_settings().risk_scorer
-    if name not in SCORERS:
-        raise ValueError(f"Unknown risk scorer '{name}' (known: {', '.join(sorted(SCORERS))})")
-    return SCORERS[name]()
+def score_and_alert(db: Session, senior_ids: list[str], on_date: date, commit: bool = True):
+    """Run multimodal risk scoring for given seniors, persist DailyRiskScore records,
+    and generate/update open Alerts.
 
+    Also generates LLM-powered primary driver summaries and suggested actions
+    for the top 5% highest-risk seniors, persisting them into context_repo."""
+    from app.modules.risk import repository as repo
+    from app.modules.risk.alert_explainer import explain_and_persist_top_risk_alerts
 
-def _score_many(scorer, db: Session, ids: list[str], on_date: date) -> dict[str, ScoreResult]:
-    if hasattr(scorer, "score_many"):
-        return scorer.score_many(db, ids, on_date)
-    return {sid: scorer.score(db, sid, on_date) for sid in ids}
+    seniors = [db.get(Senior, sid) for sid in senior_ids]
+    valid_seniors = [s for s in seniors if s is not None]
+    if not valid_seniors:
+        return []
 
+    # Run cohort calculation for these seniors
+    summary = calculate_cohort_risk(db=db, on_date=on_date, senior_ids=[s.id for s in valid_seniors], commit=False)
 
-def score_senior(db: Session, senior_id: str, on_date: date, scorer: RiskScorer | None = None) -> DailyRiskScore:
-    """Score one senior for `on_date` and upsert the daily_risk_scores row (no alert handling)."""
-    if db.get(Senior, senior_id) is None:
-        raise NotFound("Senior not found")
-    scorer = scorer or get_scorer()
-    result = scorer.score(db, senior_id, on_date)
-    row = repo.upsert_score(db, repo.get_score(db, senior_id, on_date), senior_id, on_date, result.as_row())
-    db.commit()
-    return row
+    scored_results = summary.get("results", [])
 
+    # LLM explainability + context_repo persist for top 5% seniors
+    try:
+        explain_and_persist_top_risk_alerts(db, scored_results, on_date, top_percentile=0.05)
+    except Exception as exc:
+        logger.warning("Failed to generate top 5 percent risk alert explanations: %s", exc)
 
-def score_and_alert(db: Session, senior_ids: list[str], on_date: date,
-                    scorer: RiskScorer | None = None) -> dict[str, tuple[DailyRiskScore, AlertChange]]:
-    """Score a batch of seniors, upsert their scores and create/update/resolve alerts. Commits."""
-    scorer = scorer or get_scorer()
-    out: dict[str, tuple[DailyRiskScore, AlertChange]] = {}
-    for i in range(0, len(senior_ids), BATCH_SIZE):
-        ids = senior_ids[i:i + BATCH_SIZE]
-        results = _score_many(scorer, db, ids, on_date)
-        existing = repo.get_scores(db, ids, on_date)
-        rows = {sid: repo.upsert_score(db, existing.get(sid), sid, on_date, res.as_row())
-                for sid, res in results.items()}
-        db.flush()
-        seniors = {s.senior_id: s for s in db.scalars(select(Senior).where(Senior.senior_id.in_(ids)))}
-        ctx = alert_service.build_context(db, ids, on_date)
-        for sid in ids:
-            if sid in rows and sid in seniors:
-                out[sid] = (rows[sid], alert_service.apply_score(db, seniors[sid], rows[sid], on_date, ctx))
+    # Upsert alerts for each senior based on new risk score
+    out = []
+    for res in scored_results:
+        sid = res["senior_id"]
+        score = res["final_risk_score"]
+        level = res["risk_level"]
+        top_factors = res.get("top_factors", [])
+        driver = top_factors[0]["description"] if top_factors else "Multimodal risk elevated"
+        alert = repo.upsert_alert(
+            db=db,
+            senior_id=sid,
+            on_date=on_date,
+            risk_score=score,
+            risk_level=level,
+            primary_driver=driver,
+        )
+        out.append(alert)
+
+    if commit:
         db.commit()
     return out
 
@@ -131,7 +98,17 @@ class RiskScoringService:
             raise NotFound("Senior not found")
         res = calculate_senior_risk(db=db, senior_id=senior_id, on_date=on_date, commit=False)
         rescore_and_rerank(db, senior_id, on_date, reason="manual_rescore")
-        return RiskCalculationResponse(**res.to_dict())
+        resp_dict = res.to_dict()
+        try:
+            from app.modules.risk.alert_explainer import get_senior_risk_detail
+            detail = get_senior_risk_detail(db, senior_id, on_date)
+            resp_dict["is_top_5_percent"] = detail.get("is_top_5_percent", False)
+            resp_dict["primary_driver_summary"] = detail.get("primary_driver_summary")
+            resp_dict["suggested_action"] = detail.get("suggested_action")
+            resp_dict["action_type"] = detail.get("action_type")
+        except Exception:
+            pass
+        return RiskCalculationResponse(**resp_dict)
 
     def calculate_cohort_from_db(self, db: Session, on_date: date,
                                  senior_ids: list[str] | None = None) -> dict:

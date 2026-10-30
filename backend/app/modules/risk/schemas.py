@@ -85,3 +85,7 @@ class RiskCalculationResponse(BaseModel):
     safety_tripwire_triggered: bool
     data_quality_flags: List[str]
     calculation_timestamp: str
+    is_top_5_percent: bool = False
+    primary_driver_summary: Optional[str] = None
+    suggested_action: Optional[str] = None
+    action_type: Optional[str] = None
