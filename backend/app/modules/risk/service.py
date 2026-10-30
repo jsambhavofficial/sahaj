@@ -8,8 +8,12 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import NotFound
 from app.modules.risk.schemas import RiskCalculationRequest, RiskCalculationResponse
 from app.modules.seniors.models import Senior
-from ml.src.risk_engine.multimodal_risk_calculator import MultimodalRiskCalculator, RiskCalculationResult
-from ml.src.risk_engine.risk_score_calculation import calculate_cohort_risk, calculate_senior_risk
+from ml.src.risk_engine.risk_score_calculation import (
+    MultimodalRiskCalculator,
+    RiskCalculationResult,
+    calculate_cohort_risk,
+    calculate_senior_risk,
+)
 
 logger = logging.getLogger(__name__)
 
