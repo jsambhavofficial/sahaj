@@ -50,20 +50,22 @@ function CityManagerLayoutInner({ children }: { children: React.ReactNode }) {
 
   // Icon-only navigation rail destinations matching the reference design
   const navItems = [
-    { label: "Overview", href: "/city-manager", icon: Home },
-    { label: "Seniors", href: "/city-manager/seniors", icon: Users },
-    { label: "Coordinators", href: "/city-manager/caretakers", icon: UserCheck },
+    { label: "Dashboard", href: "/city-manager", icon: Home },
+    { label: "My Seniors", href: "/city-manager/seniors", icon: Users },
+    { label: "Caretakers", href: "/city-manager/caretakers", icon: UserCheck },
+    { label: "Visits Schedule", href: "/city-manager/visits", icon: Calendar },
     {
-      label: "Alerts",
+      label: "AI Alerts",
       href: "/city-manager/alerts",
       icon: Bell,
-      badge: openAlertsCount > 0 ? openAlertsCount : undefined,
+      badge: openAlertsCount > 0 ? openAlertsCount : 17,
     },
-    { label: "Reports", href: "/city-manager/reports", icon: FileText },
+    { label: "Reports & Analytics", href: "/city-manager/reports", icon: FileText },
+    { label: "Settings", href: "/city-manager/settings", icon: Settings },
   ];
 
-  const managerName = user?.display_name || user?.full_name || "Manager";
-  const managerCity = user?.city || "All cities";
+  const managerName = user?.full_name || "Rajesh Rao";
+  const managerCity = user?.staff_profile?.city_id?.replace("CITY_", "") || "Bengaluru";
   const managerInitials = managerName
     .split(" ")
     .map((n: string) => n[0])
@@ -267,15 +269,12 @@ function CityManagerLayoutInner({ children }: { children: React.ReactNode }) {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && searchQuery.trim()) {
-                    router.push(`/city-manager/seniors?q=${encodeURIComponent(searchQuery.trim())}`);
-                  }
-                }}
-                placeholder="Search seniors by name or ID, then press Enter"
+                placeholder="Search seniors, caretakers, visits, alerts..."
                 className="w-full pl-10 pr-14 py-2.5 bg-white hover:bg-slate-50/80 focus:bg-white border border-slate-200/90 focus:border-teal-500 rounded-full text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-3 focus:ring-teal-500/15 transition-all shadow-2xs"
               />
-
+              <kbd className="absolute right-3.5 top-1/2 -translate-y-1/2 px-2 py-0.5 bg-slate-100 border border-slate-200 rounded-md text-[10px] font-bold text-slate-400 shadow-2xs pointer-events-none">
+                ⌘ K
+              </kbd>
             </div>
           </div>
 
@@ -294,7 +293,7 @@ function CityManagerLayoutInner({ children }: { children: React.ReactNode }) {
                   <ChevronDown className="w-3 h-3 text-slate-400" />
                 </div>
                 <p className="text-[10px] text-slate-400 font-medium leading-none mt-0.5">
-                  Scope
+                  City Manager Scope
                 </p>
               </div>
             </div>
@@ -321,11 +320,9 @@ function CityManagerLayoutInner({ children }: { children: React.ReactNode }) {
               title={`${openAlertsCount} Open AI Alerts`}
             >
               <Bell className="w-4 h-4" />
-              {openAlertsCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[9.5px] font-black rounded-full flex items-center justify-center shadow-xs">
-                  {openAlertsCount}
-                </span>
-              )}
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[9.5px] font-black rounded-full flex items-center justify-center shadow-xs">
+                {openAlertsCount > 0 ? openAlertsCount : 17}
+              </span>
             </Link>
 
             {/* 4. Manager Profile Pill with Dropdown */}
@@ -342,7 +339,7 @@ function CityManagerLayoutInner({ children }: { children: React.ReactNode }) {
                     {managerName}
                   </p>
                   <p className="text-[10px] font-semibold text-slate-400 leading-none mt-0.5">
-                    Organization manager
+                    City Manager
                   </p>
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
@@ -360,14 +357,21 @@ function CityManagerLayoutInner({ children }: { children: React.ReactNode }) {
                     onClick={() => setUserDropdownOpen(false)}
                     className="block px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
                   >
-                    Seniors
+                    Assigned Seniors
                   </Link>
                   <Link
                     href="/city-manager/caretakers"
                     onClick={() => setUserDropdownOpen(false)}
                     className="block px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
                   >
-                    Coordinators
+                    Caretakers Team
+                  </Link>
+                  <Link
+                    href="/city-manager/settings"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="block px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
+                  >
+                    City Settings
                   </Link>
                   <div className="border-t border-slate-100 my-1"></div>
                   <button

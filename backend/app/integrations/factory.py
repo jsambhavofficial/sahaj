@@ -1,11 +1,14 @@
 """Chooses real or stub providers from settings. Stubs are the default everywhere."""
 
+import logging
 from functools import lru_cache
 
 from app.core.config import get_settings
 from app.integrations.base import LLMProvider, PushProvider, STTProvider, StorageProvider, TTSProvider, TelephonyProvider
 from app.integrations.bhashini.client import BhashiniClient, BhashiniSTT, BhashiniTTS
 from app.integrations.exotel.client import ExotelTelephony
+from app.integrations.gemini.client import GeminiLLM
+from app.integrations.sarvam.client import SarvamClient, SarvamSTT, SarvamTTS
 from app.integrations.storage import LocalStorage, SupabaseStorage
 from app.integrations.stub.providers import StubLLM, StubPush, StubSTT, StubTTS, StubTelephony
 
@@ -27,17 +30,35 @@ def _bhashini() -> BhashiniClient:
 
 
 @lru_cache
+def _sarvam() -> SarvamClient:
+    s = get_settings()
+    return SarvamClient(api_key=s.sarvam_api_key, stt_model=s.sarvam_stt_model,
+                        tts_model=s.sarvam_tts_model, tts_speaker=s.sarvam_tts_speaker)
+
+
+@lru_cache
 def get_stt() -> STTProvider:
-    return BhashiniSTT(_bhashini()) if get_settings().stt_provider == "bhashini" else StubSTT()
+    provider = get_settings().stt_provider
+    if provider == "bhashini":
+        return BhashiniSTT(_bhashini())
+    return SarvamSTT(_sarvam()) if provider == "sarvam" else StubSTT()
 
 
 @lru_cache
 def get_tts() -> TTSProvider:
-    return BhashiniTTS(_bhashini()) if get_settings().tts_provider == "bhashini" else StubTTS()
+    provider = get_settings().tts_provider
+    if provider == "bhashini":
+        return BhashiniTTS(_bhashini())
+    return SarvamTTS(_sarvam()) if provider == "sarvam" else StubTTS()
 
 
 @lru_cache
 def get_llm() -> LLMProvider:
+    s = get_settings()
+    if s.llm_provider == "gemini":
+        if s.gemini_api_key:
+            return GeminiLLM(api_key=s.gemini_api_key, model=s.gemini_model)
+        logging.getLogger(__name__).warning("LLM_PROVIDER=gemini but GEMINI_API_KEY is empty; using the stub LLM")
     return StubLLM()  # Bedrock is added when access arrives
 
 

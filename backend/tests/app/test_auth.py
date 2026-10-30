@@ -133,3 +133,62 @@ def test_login_is_rate_limited(client, db_session, monkeypatch):
     finally:
         get_settings.cache_clear()
     assert codes == [401, 401, 401, 429, 429]
+
+
+def _issue(client, headers, senior_id):
+    return client.post(f"{API}/auth/senior/pairing-code", json={"senior_id": senior_id}, headers=headers).json()
+
+
+def test_pairing_code_is_six_digits_and_tolerates_spaces(client, db_session):
+    coord = make_user(db_session, "coordinator")
+    senior, _ = make_senior(db_session, coord)
+    code = _issue(client, auth(client, coord.email), senior.senior_id)["pairing_code"]
+    assert len(code) == 6 and code.isdigit()
+    spaced = f"{code[:3]} {code[3:]}"
+    assert client.post(f"{API}/auth/senior/pair", json={"pairing_code": spaced}).status_code == 200
+
+
+def test_pairing_code_is_stored_hashed_not_in_clear(client, db_session):
+    from app.modules.auth.models import PairingCode
+    coord = make_user(db_session, "coordinator")
+    senior, _ = make_senior(db_session, coord)
+    code = _issue(client, auth(client, coord.email), senior.senior_id)["pairing_code"]
+    row = db_session.query(PairingCode).one()
+    assert code not in row.code_hash and row.senior_id == senior.senior_id and row.used_at is None
+
+
+def test_wrong_or_malformed_pairing_codes_are_rejected(client, db_session):
+    coord = make_user(db_session, "coordinator")
+    senior, _ = make_senior(db_session, coord)
+    code = _issue(client, auth(client, coord.email), senior.senior_id)["pairing_code"]
+    wrong = f"{(int(code) + 1) % 10**6:06d}"
+    for bad in (wrong, "12345", "abcdef", ""):
+        r = client.post(f"{API}/auth/senior/pair", json={"pairing_code": bad})
+        assert r.status_code == 401 and r.json()["error"]["code"] == "invalid_token"
+
+
+def test_issuing_a_new_code_cancels_the_old_one(client, db_session):
+    coord = make_user(db_session, "coordinator")
+    senior, _ = make_senior(db_session, coord)
+    headers = auth(client, coord.email)
+    first = _issue(client, headers, senior.senior_id)["pairing_code"]
+    second = _issue(client, headers, senior.senior_id)["pairing_code"]
+    assert client.post(f"{API}/auth/senior/pair", json={"pairing_code": first}).status_code == 409
+    assert client.post(f"{API}/auth/senior/pair", json={"pairing_code": second}).status_code == 200
+
+
+def test_expired_pairing_code_is_rejected(client, db_session):
+    from datetime import datetime, timedelta, timezone
+    from app.modules.auth.models import PairingCode
+    coord = make_user(db_session, "coordinator")
+    senior, _ = make_senior(db_session, coord)
+    code = _issue(client, auth(client, coord.email), senior.senior_id)["pairing_code"]
+    db_session.query(PairingCode).update({"expires_at": datetime.now(timezone.utc) - timedelta(minutes=1)})
+    db_session.commit()
+    r = client.post(f"{API}/auth/senior/pair", json={"pairing_code": code})
+    assert r.status_code == 401 and r.json()["error"]["code"] == "token_expired"
+
+
+def test_pairing_attempts_are_rate_limited(client, db_session):
+    codes = [client.post(f"{API}/auth/senior/pair", json={"pairing_code": "000000"}).status_code for _ in range(11)]
+    assert codes[:10] == [401] * 10 and codes[10] == 429

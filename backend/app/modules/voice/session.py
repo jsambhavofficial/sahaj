@@ -11,7 +11,7 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from app.core.config import today
+from app.core.config import get_settings, today
 from app.core.safety import guard_text
 from app.integrations import factory
 from app.modules.auth.audit import audit
@@ -63,7 +63,10 @@ class VoiceSession:
     def start(self, language: str | None) -> list[dict]:
         if self.call is not None:
             return [self._error("already_started", "The call has already started")]
-        self.language = language or self.senior.preferred_language or "hinglish"
+        chosen = language or self.senior.preferred_language or "hinglish"
+        # The voice engines read Devanagari properly but mangle Roman-letter Hindi, so a Hinglish senior is
+        # spoken to in Hindi script (they still reply in whatever mix they like; speech-to-text returns Devanagari).
+        self.language = "hindi" if chosen == "hinglish" else chosen
         self.stt, self.tts, self.llm = factory.get_stt(), factory.get_tts(), factory.get_llm()
         ctx = context_builder.build_context(self.db, self.senior, self.language, self.day,
                                             full_name=self.names[0] if self.names else None)
@@ -206,7 +209,7 @@ class VoiceSession:
         self._record("agent", text)
         events = [{"type": "agent_text", "text": text}]
         try:
-            wav = self.tts.synthesize(text, self.language)
+            wav = self.tts.synthesize(text, self.language, get_settings().voice_agent_gender)
         except Exception as e:
             log.warning("TTS failed: %s", type(e).__name__)
             raise ProviderFailure("tts_error", "Speech output is not available right now") from e
@@ -223,7 +226,7 @@ class VoiceSession:
         events.append({"type": "agent_text", "text": text})
         if failure.code != "tts_error":
             try:
-                wav = self.tts.synthesize(text, self.language)
+                wav = self.tts.synthesize(text, self.language, get_settings().voice_agent_gender)
                 events.append({"type": "agent_audio", "format": "wav", "base64": base64.b64encode(wav).decode()})
             except Exception:
                 pass

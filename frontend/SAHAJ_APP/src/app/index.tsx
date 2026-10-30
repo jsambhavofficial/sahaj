@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppState } from '../context/AppStateContext';
+import { formatPairingCode } from '../api/mappers';
 
 // Screens
 import { WelcomeScreen } from '../screens/WelcomeScreen';
@@ -26,6 +27,7 @@ import { CoordinatorBottomNav, CoordinatorTab } from '../components/common/Coord
 // Senior Screens
 import { SeniorHomeScreen } from '../screens/senior/SeniorHomeScreen';
 import { DailyCheckInScreen } from '../screens/senior/DailyCheckInScreen';
+import { VoiceCallScreen } from '../screens/senior/VoiceCallScreen';
 import { EnterVitalsScreen } from '../screens/senior/EnterVitalsScreen';
 import { SeniorNotificationsScreen } from '../screens/senior/SeniorNotificationsScreen';
 import { SeniorBottomNav, SeniorTab } from '../components/common/SeniorBottomNav';
@@ -70,7 +72,7 @@ export default function AppEntry() {
     if (!pairing) return;
     try {
       await Share.share({
-        message: `Sahaj pairing code for ${activeSenior.display_name} (valid ${pairing.minutes} minutes, works once):\n\n${pairing.code}`,
+        message: `Sahaj pairing code for ${activeSenior.display_name} (valid ${pairing.minutes} minutes, works once):\n\n${formatPairingCode(pairing.code)}`,
       });
     } catch {
       /* the share sheet was dismissed or is unavailable */
@@ -230,13 +232,14 @@ export default function AppEntry() {
           {activeSenior.senior_id ? (
             <View style={styles.pairBox}>
               <Text style={styles.pairTitle}>{`Pair ${activeSenior.display_name}'s phone`}</Text>
-              <Text style={styles.pairHelp}>Make a one-time code and send it to the senior. They choose Senior in the app and paste it in.</Text>
+              <Text style={styles.pairHelp}>Make a 6-digit code, then open the app on their phone, choose Senior and type the code in. It works once.</Text>
               <TouchableOpacity style={styles.pairBtn} onPress={() => void showPairingCode()} activeOpacity={0.85} accessibilityRole="button">
                 <Text style={styles.pairBtnText}>Show pairing code</Text>
               </TouchableOpacity>
               {pairing ? (
                 <View style={styles.pairResult}>
-                  <Text style={styles.pairHelp}>Code ready. It works once, for {pairing.minutes} minutes.</Text>
+                  <Text style={styles.pairCode} accessibilityLabel={`Pairing code ${pairing.code.split('').join(' ')}`}>{formatPairingCode(pairing.code)}</Text>
+                  <Text style={styles.pairHelp}>Works once, for {pairing.minutes} minutes. A new code cancels this one.</Text>
                   <TouchableOpacity style={styles.pairBtn} onPress={() => void sharePairingCode()} activeOpacity={0.85} accessibilityRole="button">
                     <Text style={styles.pairBtnText}>Share code (WhatsApp, SMS…)</Text>
                   </TouchableOpacity>
@@ -302,7 +305,9 @@ export default function AppEntry() {
       />
     );
   } else if (seniorTab === 'checkin') {
-    seniorContent = <DailyCheckInScreen onBack={() => setSeniorTab('home')} />;
+    seniorContent = <DailyCheckInScreen onBack={() => setSeniorTab('home')} onOpenAiCall={() => setSeniorTab('aicall')} />;
+  } else if (seniorTab === 'aicall') {
+    seniorContent = <VoiceCallScreen onBack={() => setSeniorTab('home')} />;
   } else if (seniorTab === 'vitals') {
     seniorContent = <EnterVitalsScreen onBack={() => setSeniorTab('home')} />;
   } else if (seniorTab === 'notifications') {
@@ -428,6 +433,7 @@ const styles = StyleSheet.create({
   pairTitle: { fontSize: 15, fontWeight: '800', color: '#0F172A' },
   pairHelp: { fontSize: 12.5, color: '#64748B', lineHeight: 18 },
   pairBtn: { backgroundColor: '#0D6B58', borderRadius: 14, paddingVertical: 12, alignItems: 'center' },
+  pairCode: { fontSize: 40, fontWeight: '800', letterSpacing: 6, color: '#0F172A', textAlign: 'center' },
   pairBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   pairResult: { gap: 8, paddingTop: 4 },
   profileContainer: {

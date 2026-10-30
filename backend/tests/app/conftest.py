@@ -27,8 +27,37 @@ def client(db_session):
 
 
 @pytest.fixture(autouse=True)
+def _ignore_demo_clock(monkeypatch):
+    """Tests run on the real calendar date, whatever DEMO_TODAY a developer set in backend/.env."""
+    from app.core.config import get_settings
+    monkeypatch.setenv("DEMO_TODAY", "")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
 def _reset_rate_limits():
     from app.core import ratelimit
     ratelimit.reset()
     yield
     ratelimit.reset()
+
+
+@pytest.fixture(autouse=True)
+def _use_stub_providers(monkeypatch):
+    """Tests never call real speech services, whatever STT_PROVIDER / TTS_PROVIDER a developer set in backend/.env."""
+    from app.core.config import get_settings
+    from app.integrations import factory
+
+    def clear():
+        get_settings.cache_clear()
+        for getter in (factory.get_stt, factory.get_tts, factory.get_llm):
+            getattr(getter, "cache_clear", lambda: None)()  # a test may have swapped the getter for a lambda
+
+    monkeypatch.setenv("STT_PROVIDER", "stub")
+    monkeypatch.setenv("TTS_PROVIDER", "stub")
+    monkeypatch.setenv("LLM_PROVIDER", "stub")
+    clear()
+    yield
+    clear()

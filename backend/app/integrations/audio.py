@@ -110,3 +110,17 @@ def audio_duration(audio: bytes) -> float:
     if seconds <= 0:
         raise ValueError("empty audio")
     return seconds
+
+
+def to_pcm16_wav(audio: bytes) -> bytes:
+    """Re-encode speech as plain 16-bit PCM WAV with a complete header (written to a file, because ffmpeg cannot
+    fill in the length when writing to a pipe). Bhashini returns 32-bit float WAV, which phones' players often
+    refuse. Returns the input unchanged if ffmpeg is missing or cannot read it."""
+    with tempfile.TemporaryDirectory() as tmp:
+        src, dst = Path(tmp) / "in", Path(tmp) / "out.wav"
+        src.write_bytes(audio)
+        try:
+            _run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-c:a", "pcm_s16le", str(dst)])
+            return dst.read_bytes() or audio
+        except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+            return audio

@@ -9,7 +9,7 @@ Working agreements and shell gotchas are in the root `CLAUDE.md`. Backend contra
 | Part | Where | Who uses it | State |
 |---|---|---|---|
 | API | `backend/app` (FastAPI, ~60 operations + a voice WebSocket) | all clients | Built and tested (338 tests in `tests/app`) |
-| Database | Supabase Postgres (project ref `whxutovolxcipdxugvhg`), Alembic head `0003` | the API only | 29 tables + 5 `v_ops_*` views, Row Level Security on, API roles revoked |
+| Database | Supabase Postgres (project ref `whxutovolxcipdxugvhg`), Alembic head `0004` | the API only | 29 tables + 5 `v_ops_*` views, Row Level Security on, API roles revoked |
 | Web portal | `frontend/web` (Next.js) | organization managers (`ops`, `admin`) | Overview, Seniors (+detail), Alerts, Coordinators, Reports on live `/ops` data. 118 tests. |
 | Mobile app | `frontend/SAHAJ_APP` (Expo) | coordinators and seniors | Real sign-in and real data on every screen. Not run on a device yet. |
 | Research code | `backend/ml` | teammate (Suhani) | Dataset generator and an older risk engine; its tests are stale |
@@ -32,7 +32,7 @@ Each from its own folder (use `cd` explicitly). Secrets live in `backend/.env` (
 All demo staff accounts share one password, the one on the web login page (also in `backend/.seed_credentials.txt`, gitignored).
 - Web (organization manager): `ops@demo.samarth.local`, `admin@demo.samarth.local`, and the user's `adityaalba11@gmail.com` (ops).
 - Mobile coordinator: `coord_001@demo.samarth.local` ... one per coordinator, and the user's `adityaalba27@gmail.com` (10 Bengaluru seniors, e.g. Mohan Singh S0094 is urgent).
-- Mobile senior: no password. A coordinator makes a one-time pairing code (profile tab), shares it, and the senior pastes it. The code is a ~200-character signed token.
+- Mobile senior: no password. A coordinator makes a 6-digit one-time pairing code (profile tab, valid 10 minutes, table `pairing_codes`, stored as a keyed hash) and the senior types it in; the phone then keeps a device token and never asks again. Pairing is limited to 10 attempts per minute per IP.
 - Family demo logins exist (`family.f0001@...`) but there is no family app.
 
 ## 4. Decisions already made
@@ -48,7 +48,7 @@ All demo staff accounts share one password, the one on the web login page (also 
 1. Nothing is deployed. Render still serves old code until the work is pushed and its env vars and start command (`uvicorn app.main:app`, root dir `backend`) are set.
 2. The ML part of the brief is not wired into the backend: no supervised or anomaly model, no precision/recall/days-early evaluation against the planted declines (brief deliverable 4). Suhani's vital-forecasting models sit in `backend/ml/models/vitals`, unused. Her risk-calculation backend modules (`voice`, `checkins`, `risk` services) were replaced by ours in the working tree; they are intact in commit `be5bf55` and her two test files `backend/tests/test_all_endpoints.py` and `test_risk_calculation.py` cannot run.
 3. Real LLM (Bedrock), real push (FCM), real telephony, in-app calling and the AI voice agent in the mobile app are not done. "Record Voice Note", "AI Call" and the dashboard bell are placeholders.
-4. Mobile: seniors cannot read their own vitals (no endpoint), so vitals show 0 until entered. Pairing codes are too long to type; short codes need a backend change.
+4. Mobile: seniors cannot read their own vitals (no endpoint), so vitals show 0 until entered.
 5. `backend/ml` tests: 16 of 59 fail since the dataset was replaced. `ml/README.md` describes the old layout. No 4-page write-up, citations or demo script yet.
 6. Managers cannot act on alerts in the web portal (coordinators resolve them in the app). Visit/calendar/document pages from the older design remain in `frontend/web` but are unreachable and have no backend.
 7. Several mobile "More" icons are inert.

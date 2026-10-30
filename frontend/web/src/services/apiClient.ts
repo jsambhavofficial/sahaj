@@ -1,4 +1,5 @@
 import { ApiError } from "../types/domain";
+import { isOperationalPath, operationalGet, operationalPost } from "./operationalAdapter";
 
 /**
  * Defensive HTTP Client for SamarthCare AI Backend.
@@ -103,6 +104,12 @@ export class ApiClient {
     endpoint: string,
     options?: RequestInit & { _isRetry?: boolean }
   ): Promise<T> {
+    if (isOperationalPath(endpoint)) {
+      const call = <R>(e: string, o?: RequestInit) => this.request<R>(e, o);
+      return options?.method === "POST"
+        ? operationalPost<T>(endpoint, options.body ? JSON.parse(String(options.body)) : undefined, call)
+        : operationalGet<T>(endpoint, call);
+    }
     const url = this.resolveUrl(endpoint);
 
     try {

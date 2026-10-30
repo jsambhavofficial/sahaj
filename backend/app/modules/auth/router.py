@@ -37,7 +37,7 @@ def pairing_code(body: PairingCodeRequest, user: User = Depends(require_role("co
     return PairingCodeResponse(pairing_code=code, expires_in=expires_in)
 
 
-@router.post("/senior/pair", dependencies=[Depends(limit("pair"))], response_model=PairResponse, summary="Senior device redeems a pairing code")
+@router.post("/senior/pair", dependencies=[Depends(limit("pair", per_minute=10))], response_model=PairResponse, summary="Senior device redeems a pairing code")
 def pair(body: PairRequest, db: Session = Depends(get_db)):
     return service.pair(db, body.pairing_code)
 

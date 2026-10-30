@@ -2,7 +2,7 @@
 
 from app.db.base import Base  # noqa: F401
 from app.modules.alerts.models import Alert, AlertEvent, AlertFeedback  # noqa: F401
-from app.modules.auth.models import AuditLog, FamilyLink, User  # noqa: F401
+from app.modules.auth.models import AuditLog, FamilyLink, PairingCode, User  # noqa: F401
 from app.modules.checkins.models import Checkin, NlpCue  # noqa: F401
 from app.modules.coordinators.models import PriorityList, PriorityListItem  # noqa: F401
 from app.modules.family.models import FamilyInteraction, WeeklyFamilySummary  # noqa: F401

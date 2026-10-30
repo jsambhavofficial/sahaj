@@ -180,3 +180,17 @@ def test_mono_recording_has_no_speaker_labels():
 
     segs = BhashiniSTT(FakeClient(), workers=1).transcribe(mono, "hindi")
     assert segs and all(s.speaker == "unknown" and s.channel is None for s in segs)
+
+
+def test_to_pcm16_wav_converts_float_wav_and_survives_garbage():
+    if not shutil.which("ffmpeg"):
+        pytest.skip("ffmpeg not installed")
+    from app.integrations.audio import to_pcm16_wav
+    float_wav = subprocess.run(
+        ["ffmpeg", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=0.5", "-c:a", "pcm_f32le",
+         "-f", "wav", "pipe:1"], check=True, capture_output=True).stdout
+    out = to_pcm16_wav(float_wav)
+    codec = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "stream=codec_name", "-of", "csv=p=0", "pipe:0"],
+                           input=out, capture_output=True).stdout.decode().strip()
+    assert codec == "pcm_s16le" and len(out) < len(float_wav)
+    assert to_pcm16_wav(b"not audio") == b"not audio"

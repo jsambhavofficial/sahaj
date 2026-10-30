@@ -440,3 +440,14 @@ export function chartGeometry(points: SeriesPoint[], width = 320, height = 170):
 export function greetingFor(hour: number): string {
   return hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 }
+
+/** Pairing codes are 6 digits; people type them with spaces or dashes, so keep only the digits (at most 6). */
+export function pairingDigits(raw: string): string {
+  return raw.replace(/\D/g, '').slice(0, 6);
+}
+
+/** "482915" -> "482 915", for reading out and for the input box. */
+export function formatPairingCode(raw: string): string {
+  const d = pairingDigits(raw);
+  return d.length > 3 ? `${d.slice(0, 3)} ${d.slice(3)}` : d;
+}

@@ -22,17 +22,15 @@ import {
 
 interface Props {
   onBack: () => void;
-  onCallStarted?: () => void;
+  /** Opens the live AI voice call screen. */
+  onOpenAiCall: () => void;
 }
 
-export const DailyCheckInScreen: React.FC<Props> = ({ onBack, onCallStarted }) => {
-  const { submitQuickCheckIn, startCall, activeSenior } = useAppState();
+export const DailyCheckInScreen: React.FC<Props> = ({ onBack, onOpenAiCall }) => {
+  const { submitQuickCheckIn, activeSenior } = useAppState();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
-  const handleStartCall = () => {
-    startCall('SAHAJ AI Voice Assistant');
-    if (onCallStarted) onCallStarted();
-  };
+  const handleStartCall = onOpenAiCall;
 
   const handleOptionPress = async (feeling: string) => {
     setSelectedOption(feeling);

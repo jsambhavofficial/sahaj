@@ -139,4 +139,6 @@ class BhashiniTTS:
         self.client = client
 
     def synthesize(self, text: str, language: str | None = "hindi", gender: str = "female") -> bytes:
-        return self.client.tts(text, language_code(language), gender)
+        from app.integrations.audio import to_pcm16_wav
+
+        return to_pcm16_wav(self.client.tts(text, language_code(language), gender))

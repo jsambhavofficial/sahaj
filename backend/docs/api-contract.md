@@ -80,8 +80,8 @@ Demo accounts: `coord_001@demo.samarth.local` … (one per coordinator), `ops@de
 → the `user` object above.
 
 ### Senior device pairing — LIVE
-1. Coordinator app: `POST /auth/senior/pairing-code` with `{ "senior_id": "S0001" }` (coordinator of that senior, or admin) → `{ "pairing_code": "<long signed string>", "expires_in": 900 }`. Show it as a QR code / deep link.
-2. Senior app: `POST /auth/senior/pair` with `{ "pairing_code": "…" }` → login body plus `{ "senior_id": "S0001", "device_token": "…" }`. Single use: a second redemption returns 409 `pairing_code_used`. Pairing again replaces the previous device.
+1. Coordinator app: `POST /auth/senior/pairing-code` with `{ "senior_id": "S0001" }` (coordinator of that senior, or admin) → `{ "pairing_code": "482915", "expires_in": 600 }`. A 6-digit code, valid 10 minutes, single use. Issuing a new one cancels the senior's earlier unused codes. Show it large; the coordinator reads it out or types it into the senior's phone.
+2. Senior app: `POST /auth/senior/pair` with `{ "pairing_code": "482915" }` (spaces and dashes are ignored; 10 attempts per minute per IP, then 429) → login body plus `{ "senior_id": "S0001", "device_token": "…" }`. Single use: a second redemption returns 409 `pairing_code_used`. Pairing again replaces the previous device.
 3. Later launches: `POST /auth/senior/login` with `{ "senior_id": "S0001", "device_token": "…" }` → login body.
 
 ### POST `/devices` — LIVE

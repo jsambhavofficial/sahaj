@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Heart, UserCheck } from 'lucide-react-native';
 import { useAppState } from '../context/AppStateContext';
+import { formatPairingCode, pairingDigits } from '../api/mappers';
 import type { UserRole } from '../types';
 
 interface Props {
@@ -31,11 +32,11 @@ export const LoginScreen: React.FC<Props> = ({ role, onBack }) => {
   const [code, setCode] = useState('');
 
   const isSenior = role === 'senior';
-  const canSubmit = !busy && (isSenior ? code.trim().length >= 20 : email.trim().length > 3 && password.length > 0);
+  const canSubmit = !busy && (isSenior ? pairingDigits(code).length === 6 : email.trim().length > 3 && password.length > 0);
 
   const submit = () => {
     if (!canSubmit) return;
-    if (isSenior) void loginSenior(code);
+    if (isSenior) void loginSenior(pairingDigits(code));
     else void loginCoordinator(email, password);
   };
 
@@ -57,24 +58,25 @@ export const LoginScreen: React.FC<Props> = ({ role, onBack }) => {
             <Text style={styles.title}>अपने फ़ोन को जोड़ें</Text>
             <Text style={styles.subtitle}>Connect your phone</Text>
             <Text style={styles.help}>
-              केयर कोऑर्डिनेटर से मिला कोड यहाँ पेस्ट करें।{'\n'}Your care coordinator will send you a pairing code. Paste it here.
+              केयर कोऑर्डिनेटर से मिला 6 अंकों का कोड यहाँ लिखें।{'\n'}Type the 6-digit code from your care coordinator.
             </Text>
 
             <Text style={styles.label}>पेयरिंग कोड / Pairing code</Text>
             <TextInput
               style={[styles.input, styles.codeInput]}
-              value={code}
-              onChangeText={setCode}
-              autoCapitalize="none"
+              value={formatPairingCode(code)}
+              onChangeText={(t) => setCode(pairingDigits(t))}
+              keyboardType="number-pad"
+              maxLength={7}
               autoCorrect={false}
               autoComplete="off"
-              multiline
-              placeholder="कोड पेस्ट करें / Paste the code"
-              placeholderTextColor="#94A3B8"
+              textContentType="oneTimeCode"
+              placeholder="000 000"
+              placeholderTextColor="#CBD5E1"
               editable={!busy}
               onSubmitEditing={submit}
               returnKeyType="go"
-              accessibilityLabel="Pairing code"
+              accessibilityLabel="6-digit pairing code"
             />
           </>
         ) : (
@@ -155,7 +157,7 @@ const styles = StyleSheet.create({
   help: { fontSize: 14, color: '#475569', textAlign: 'center', lineHeight: 21, marginTop: 6, marginBottom: 14 },
   label: { fontSize: 14, fontWeight: '700', color: '#0F172A', marginTop: 10, marginBottom: 6 },
   input: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#CBD5E1', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 17, color: '#0F172A', minHeight: 54 },
-  codeInput: { fontSize: 15, fontWeight: '600', minHeight: 96, textAlignVertical: 'top' },
+  codeInput: { fontSize: 36, fontWeight: '800', letterSpacing: 6, textAlign: 'center', minHeight: 72 },
   passwordRow: { flexDirection: 'row', alignItems: 'center' },
   passwordInput: { flex: 1 },
   showBtn: { position: 'absolute', right: 6, paddingHorizontal: 12, paddingVertical: 10 },

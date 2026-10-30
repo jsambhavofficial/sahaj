@@ -6,6 +6,7 @@ the safety guard, and replaced by the scripted line if the model fails or says s
 """
 
 import json
+import logging
 import re
 from functools import lru_cache
 from pathlib import Path
@@ -18,6 +19,7 @@ from app.modules.checkins.nlp import is_urgent
 from app.modules.voice.context_builder import render_context
 from app.modules.voice.schemas import CallContext, Stage, Turn
 
+log = logging.getLogger(__name__)
 PROMPT_DIR = Path(__file__).parent / "prompts"
 _MAX_REPLY_CHARS = 400
 
@@ -111,9 +113,13 @@ class LLMAgent:
 
     def say(self, stage: Stage, history: list[Turn]) -> str:
         masked_prompt, mapping = mask(self.build_user_prompt(stage, history), self.names)
-        reply = self.llm.complete(self.system, masked_prompt)
-        reply = " ".join((reply or "").split()).strip('"')[:_MAX_REPLY_CHARS]
         fallback_line = self.script.say(stage, history)
+        try:
+            reply = self.llm.complete(self.system, masked_prompt)
+        except Exception as e:  # a model outage must not end the call: use the scripted line
+            log.warning("LLM failed (%s); using the scripted line", type(e).__name__)
+            return fallback_line
+        reply = " ".join((reply or "").split()).strip('"')[:_MAX_REPLY_CHARS]
         if not reply:
             return fallback_line
         if violations(reply):

@@ -4,6 +4,7 @@
  */
 import { API_BASE_URL } from './contract';
 import { messageOf } from './mappers';
+import { tokenNeedsRefresh } from '../voice/protocol';
 
 export class ApiError extends Error {
   status: number;
@@ -82,6 +83,23 @@ async function refreshAccessToken(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * A usable access token for something that cannot retry on 401 (the voice WebSocket).
+ * Refreshes (or renews a paired phone's session) first if the current token is missing or about to expire.
+ */
+export async function ensureAccessToken(): Promise<string> {
+  const current = hooks?.getTokens().access;
+  if (current && !tokenNeedsRefresh(current)) return current;
+  refreshing = refreshing ?? refreshAccessToken().finally(() => { refreshing = null; });
+  const ok = (await refreshing) || Boolean(hooks?.renew && (await hooks.renew()));
+  const fresh = hooks?.getTokens().access;
+  if (!ok || !fresh) {
+    hooks?.onExpired();
+    throw new ApiError('Your session has expired. Please sign in again.', 401, 'session_expired');
+  }
+  return fresh;
 }
 
 export interface RequestOptions {

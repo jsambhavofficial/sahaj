@@ -52,3 +52,16 @@ class AuditLog(Base):
     senior_id: Mapped[str | None] = mapped_column(Text, index=True)
     detail: Mapped[dict] = mapped_column(JSONType, default=dict)
     at: Mapped[datetime] = created_at_col()
+
+
+class PairingCode(Base):
+    """A short code (6 digits) a coordinator reads out to pair a senior's phone. Only its keyed hash is stored."""
+    __tablename__ = "pairing_codes"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    senior_id: Mapped[str] = mapped_column(ForeignKey("seniors.senior_id"), index=True)
+    code_hash: Mapped[str] = mapped_column(Text, unique=True)
+    issued_by_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    expires_at: Mapped[datetime] = mapped_column(TZ)
+    used_at: Mapped[datetime | None] = mapped_column(TZ)
+    created_at: Mapped[datetime] = created_at_col()

@@ -9,7 +9,7 @@ import {
   Globe,
 } from 'lucide-react-native';
 
-export type SeniorTab = 'home' | 'checkin' | 'vitals' | 'notifications' | 'voicenote' | 'language';
+export type SeniorTab = 'home' | 'checkin' | 'vitals' | 'notifications' | 'voicenote' | 'language' | 'aicall';
 
 interface Props {
   currentTab: SeniorTab;

@@ -1,6 +1,7 @@
 import hmac
+import secrets
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
@@ -14,8 +15,6 @@ from app.modules.auth import repository, scope
 from app.modules.auth.audit import audit
 from app.modules.auth.models import User
 from app.modules.auth.schemas import PairResponse, TokenResponse, UserOut
-
-PAIR_TOKEN = "pair"
 
 
 def _issue(user: User) -> TokenResponse:
@@ -56,35 +55,54 @@ def get_user_from_access_token(db: Session, token: str) -> User:
     return _active_user(db, payload["sub"])
 
 
-def _hash_prefix(device_token_hash: str | None) -> str:
-    return (device_token_hash or "")[:16]
+CODE_DIGITS = 6
+
+
+def _code_hash(code: str) -> str:
+    """Keyed hash, so a leaked table is not a list of valid codes (a 6-digit code alone is trivially guessable)."""
+    return hmac.new(get_settings().jwt_secret.encode(), code.encode(), "sha256").hexdigest()
+
+
+def _clean_code(raw: str) -> str:
+    return "".join(ch for ch in raw if ch.isdigit())
 
 
 def create_pairing_code(db: Session, actor: User, senior_id: str) -> tuple[str, int]:
-    """A signed, short-lived, single-use code. Single use: it embeds the senior's current device
-    token hash prefix, which changes as soon as the code is redeemed."""
+    """A 6-digit, single-use, short-lived code. Issuing a new one cancels the senior's earlier unused codes."""
     scope.require_senior_access(db, actor, senior_id)
     if actor.role not in ("coordinator", "admin"):
         raise Forbidden("Only a coordinator can issue a pairing code")
-    contact = repository.get_senior_contact(db, senior_id)
+    now = datetime.now(timezone.utc)
     minutes = get_settings().pairing_code_minutes
-    code = create_token(senior_id, PAIR_TOKEN, timedelta(minutes=minutes),
-                        h=_hash_prefix(contact.device_token_hash if contact else None))
+    repository.expire_unused_pairing_codes(db, senior_id, now)
+    repository.delete_old_pairing_codes(db, now - timedelta(days=1))
+    while True:  # the hash is unique, so draw again on the (rare) clash with an existing row
+        code = f"{secrets.randbelow(10 ** CODE_DIGITS):0{CODE_DIGITS}d}"
+        if repository.get_pairing_code(db, _code_hash(code)) is None:
+            break
+    repository.add_pairing_code(db, senior_id=senior_id, code_hash=_code_hash(code),
+                                issued_by_user_id=actor.id, expires_at=now + timedelta(minutes=minutes))
     audit(db, actor, "issue_pairing_code", senior_id)
     db.commit()
     return code, minutes * 60
 
 
 def pair(db: Session, pairing_code: str) -> PairResponse:
-    payload = decode_token(pairing_code, PAIR_TOKEN)
-    senior_id = payload["sub"]
+    code = _clean_code(pairing_code)
+    row = repository.get_pairing_code(db, _code_hash(code)) if len(code) == CODE_DIGITS else None
+    if row is None:
+        raise Unauthorized("That code is not right. Please check it and try again.", code="invalid_token")
+    if row.used_at is not None:
+        raise Conflict("Pairing code already used", code="pairing_code_used")
+    if row.expires_at.replace(tzinfo=row.expires_at.tzinfo or timezone.utc) < datetime.now(timezone.utc):
+        raise Unauthorized("That code has expired. Ask your coordinator for a new one.", code="token_expired")
+    senior_id = row.senior_id
     contact = repository.get_senior_contact(db, senior_id)
     senior = repository.get_senior(db, senior_id)
     if contact is None or senior is None or senior.user_id is None:
         raise Unauthorized("Invalid pairing code", code="invalid_token")
-    if not hmac.compare_digest(payload.get("h", ""), _hash_prefix(contact.device_token_hash)):
-        raise Conflict("Pairing code already used", code="pairing_code_used")
     user = _active_user(db, senior.user_id)
+    row.used_at = datetime.now(timezone.utc)
     device_token = new_device_token()
     contact.device_token_hash = hash_device_token(device_token)
     audit(db, user, "senior_paired", senior_id)

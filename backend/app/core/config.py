@@ -1,5 +1,6 @@
 """Application settings, loaded from environment / .env."""
 
+import re
 from datetime import date
 from functools import lru_cache
 
@@ -21,11 +22,17 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_minutes: int = 60
     refresh_token_days: int = 14
+    db_pool_size: int = 3  # connections kept open per process
+    db_max_overflow: int = 2  # extra connections under load (3 + 2 = 5 at most)
     auth_rate_limit_per_minute: int = 20  # per IP per auth endpoint; 0 disables
-    pairing_code_minutes: int = 15
+    pairing_code_minutes: int = 10
 
     # Browser origins allowed to call the API (ops dashboard); comma separated in env.
-    cors_origins: str = "http://localhost:3000,http://localhost:5173"
+    # 8081 / 19006 are Expo's web dev servers. Add the deployed web portal's address here.
+    cors_origins: str = "http://localhost:3000,http://localhost:5173,http://localhost:8081,http://localhost:19006"
+    # Optional pattern for origins that change (preview deployments, a LAN address), e.g.
+    # https://.*\.vercel\.app. Tokens travel in the Authorization header, not cookies.
+    cors_origin_regex: str = ""
 
     # Demo clock: the dataset ends before the real "today". Empty means use the real date.
     demo_today: date | None = None
@@ -54,7 +61,14 @@ class Settings(BaseSettings):
     bhashini_api_key: str = ""  # the portal's "Udyat key" (sent as ulcaApiKey)
     bhashini_user_id: str = ""
     bhashini_inference_key: str = ""
+    voice_agent_gender: str = "male"  # the voice agent's voice; the scripted lines use matching grammar
     bhashini_tts_model: str = "ai4bharat"  # or "iitm" (Bhashini/IITM/TTS, male voice only)
+    sarvam_api_key: str = ""
+    sarvam_stt_model: str = "saaras:v4"
+    sarvam_tts_model: str = "bulbul:v4-flash"
+    sarvam_tts_speaker: str = ""  # empty = the model's default voice
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-3.8-flash"
     aws_region: str = "ap-south-1"
     bedrock_model_id: str = ""
     supabase_url: str = ""
@@ -75,6 +89,17 @@ class Settings(BaseSettings):
     @classmethod
     def _empty_demo_today(cls, v):
         return None if v in ("", None) else v
+
+    @field_validator("cors_origin_regex")
+    @classmethod
+    def _valid_cors_regex(cls, v: str) -> str:
+        v = v.strip()
+        if v:
+            try:
+                re.compile(v)
+            except re.error as exc:
+                raise ValueError(f"CORS_ORIGIN_REGEX is not a valid regular expression: {exc}") from exc
+        return v
 
     @property
     def cors_origin_list(self) -> list[str]:

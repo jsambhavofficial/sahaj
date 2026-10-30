@@ -37,7 +37,7 @@ class PairingCodeRequest(BaseModel):
 
 
 class PairingCodeResponse(BaseModel):
-    pairing_code: str = Field(description="Show as a QR code or deep link; single use")
+    pairing_code: str = Field(description="6 digits, read out or shown to the senior; single use")
     expires_in: int
 
 

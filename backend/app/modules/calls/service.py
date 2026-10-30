@@ -228,7 +228,11 @@ class CallService:
         names = [n for n in (contact.full_name if contact else None, coordinator.display_name if coordinator else None) if n]
         transcript = "\n".join(f"{s.speaker or 'speaker'}: {s.text}" for s in segments)
         masked, mapping = mask(transcript, names)  # only masked text leaves the system
-        return unmask(self.llm.complete(_SUMMARY_SYSTEM, masked), mapping)
+        try:
+            return unmask(self.llm.complete(_SUMMARY_SYSTEM, masked), mapping)
+        except Exception:  # a model outage must not stop the recording from being processed
+            logger.warning("Call summary model failed for call %s", call.id, exc_info=True)
+            return "The call was recorded and transcribed. An automatic summary was not available."
 
 
 def _missing(what: str, ident: str):

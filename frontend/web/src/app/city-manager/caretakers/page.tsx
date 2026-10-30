@@ -1,119 +1,238 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Search } from "lucide-react";
-import { getDataService } from "@/services";
-import { LoadingState } from "@/components/ui/LoadingState";
-import { ErrorState } from "@/components/ui/ErrorState";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { useAsync } from "@/lib/useAsync";
-import { formatDay } from "@/lib/opsFormat";
+import React, { useState, useEffect } from "react";
+import {
+  Users,
+  Search,
+  Filter,
+  RefreshCw,
+  AlertCircle,
+  Mail,
+  Shield,
+  Briefcase,
+  MapPin,
+  CheckCircle2,
+  Clock,
+  Phone,
+  Calendar,
+} from "lucide-react";
+import { defaultApiClient } from "@/services/apiClient";
+import { StaffDetail } from "@/types/api";
+import { useAuth } from "@/context/AuthContext";
 
-type SortKey = "open_alerts" | "caseload" | "calls" | "alerts_handled" | "display_name";
-
-interface DailyActivity {
-  day: string;
-  alert_actions: number;
-  calls: number;
-  messages_sent: number;
-}
-
-function Daily({ coordinatorId }: { coordinatorId: string }) {
-  const { data, loading, error } = useAsync(() => getDataService().getOpsCoordinatorDetail(coordinatorId), [coordinatorId]);
-  if (loading) return <p className="px-5 py-3 text-xs text-slate-500">Loading activity…</p>;
-  if (error) return <p className="px-5 py-3 text-xs text-rose-700">{error}</p>;
-  const days: DailyActivity[] = [...(data?.daily ?? [])].sort((a, b) => b.day.localeCompare(a.day)).slice(0, 14);
-  if (days.length === 0) return <p className="px-5 py-3 text-xs text-slate-500">No recorded activity yet.</p>;
-  return (
-    <table className="w-full text-xs">
-      <thead className="text-left text-[11px] uppercase tracking-wider text-slate-500">
-        <tr><th className="px-5 py-1.5">Day</th><th className="px-3 py-1.5 text-right">Alert actions</th><th className="px-3 py-1.5 text-right">Calls</th><th className="px-5 py-1.5 text-right">Messages</th></tr>
-      </thead>
-      <tbody className="divide-y divide-slate-100">
-        {days.map((d) => (
-          <tr key={d.day}><td className="px-5 py-1.5">{formatDay(d.day)}</td><td className="px-3 py-1.5 text-right">{d.alert_actions}</td><td className="px-3 py-1.5 text-right">{d.calls}</td><td className="px-5 py-1.5 text-right">{d.messages_sent}</td></tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
-
-export default function CoordinatorsPage() {
+export default function CityManagerCaretakersPage() {
+  const { user } = useAuth();
+  const [staffList, setStaffList] = useState<StaffDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [city, setCity] = useState("");
-  const [sort, setSort] = useState<SortKey>("open_alerts");
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [roleFilter, setRoleFilter] = useState("");
 
-  const { data, loading, error, reload } = useAsync(() => getDataService().getOpsCoordinators(), []);
+  const fetchStaff = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await defaultApiClient.get<StaffDetail[]>("/api/v1/operational/staff");
+      setStaffList(data);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load city caretaker team directory.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const cities = useMemo(() => Array.from(new Set((data ?? []).map((c) => c.city))).sort(), [data]);
-  const rows = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return (data ?? [])
-      .filter((c) => (!city || c.city === city) && (!q || c.display_name.toLowerCase().includes(q)))
-      .sort((a, b) => (sort === "display_name" ? a.display_name.localeCompare(b.display_name) : b[sort] - a[sort]));
-  }, [data, search, city, sort]);
+  useEffect(() => {
+    fetchStaff();
+  }, []);
 
-  const select = "bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600";
-  const totals = rows.reduce((t, c) => ({ caseload: t.caseload + c.caseload, open: t.open + c.open_alerts, calls: t.calls + c.calls }), { caseload: 0, open: 0, calls: 0 });
+  const cityName = user?.staff_profile?.city_id?.replace("CITY_", "") || "Assigned City";
+
+  const caretakers = staffList.filter((s) => {
+    const matchesSearch =
+      s.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      s.email.toLowerCase().includes(search.toLowerCase()) ||
+      (s.employee_code && s.employee_code.toLowerCase().includes(search.toLowerCase()));
+
+    const matchesRole = !roleFilter || s.role === roleFilter;
+
+    return matchesSearch && matchesRole;
+  });
+
+  const totalCaretakers = staffList.filter((s) => s.role === "CARETAKER").length;
+  const activeStaff = staffList.filter((s) => s.is_active).length;
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-black text-slate-900">Coordinators</h1>
-        <p className="text-sm text-slate-600 mt-1">Caseload and activity of every care coordinator.</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            <Users className="w-6 h-6 text-brand-600" />
+            {cityName} Caretaker Team Directory
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Care specialists and field staff operating under your municipal jurisdiction.
+          </p>
+        </div>
+
+        <button
+          onClick={fetchStaff}
+          className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs"
+        >
+          <RefreshCw className="w-3.5 h-3.5" /> Refresh Team
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+      {/* Info Notice on Phase 4 */}
+      <div className="bg-sky-50 border border-sky-200 rounded-xl p-4 flex items-start gap-3">
+        <Clock className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
+        <div className="text-xs text-sky-900 space-y-1">
+          <p className="font-semibold text-sky-950">
+            Phase 3 Municipal Oversight Scope
+          </p>
+          <p>
+            You are managing staff deployment and supervisory capacity for {cityName}. Daily visit scheduling, GPS-verified check-ins, and mobile field execution logging will activate in Phase 4 Caretaker Portal.
+          </p>
+        </div>
+      </div>
+
+      {/* Overview Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            Total Staff in City
+          </span>
+          <p className="text-2xl font-black text-slate-900 mt-1">{staffList.length}</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            Field Caretakers
+          </span>
+          <p className="text-2xl font-black text-brand-700 mt-1">{totalCaretakers}</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            Active Accounts
+          </span>
+          <p className="text-2xl font-black text-emerald-700 mt-1">{activeStaff}</p>
+        </div>
+      </div>
+
+      {/* Filters and Search */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="relative sm:col-span-2">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search coordinators…" className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-600" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by caretaker name, email, or employee code..."
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-2xs"
+          />
         </div>
-        <select value={city} onChange={(e) => setCity(e.target.value)} className={select} aria-label="City">
-          <option value="">All cities</option>
-          {cities.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={select} aria-label="Sort by">
-          <option value="open_alerts">Most open alerts</option>
-          <option value="caseload">Largest caseload</option>
-          <option value="calls">Most calls</option>
-          <option value="alerts_handled">Most alerts handled</option>
-          <option value="display_name">Name</option>
-        </select>
+
+        <div className="relative">
+          <Filter className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-2xs appearance-none"
+          >
+            <option value="">All Roles</option>
+            <option value="CARETAKER">Field Caretakers Only</option>
+            <option value="CITY_MANAGER">City Managers</option>
+          </select>
+        </div>
       </div>
 
-      {loading && !data ? <LoadingState message="Loading coordinators…" /> : error ? <ErrorState message={error} onRetry={reload} /> : rows.length === 0 ? <EmptyState title="No coordinators found" /> : (
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden">
-          <p className="px-5 pt-4 text-xs text-slate-500">{rows.length} coordinators · {totals.caseload} seniors · {totals.open} open alerts · {totals.calls} calls</p>
+      {/* Error Notice */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3 text-xs text-red-800">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+        {loading ? (
+          <div className="p-12 text-center text-xs text-slate-500">
+            <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-slate-400" />
+            Loading city caretaker team...
+          </div>
+        ) : caretakers.length === 0 ? (
+          <div className="p-12 text-center text-xs text-slate-500">
+            No caretakers or staff matching your query.
+          </div>
+        ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-xs mt-3">
-              <thead className="text-left text-[11px] uppercase tracking-wider text-slate-500 bg-slate-50">
-                <tr><th className="px-5 py-2">Coordinator</th><th className="px-3 py-2">City</th><th className="px-3 py-2 text-right">Caseload</th><th className="px-3 py-2 text-right">Open alerts</th><th className="px-3 py-2 text-right">Alerts handled</th><th className="px-3 py-2 text-right">Calls</th><th className="px-3 py-2 text-right">Messages</th><th className="px-5 py-2" /></tr>
+            <table className="w-full text-left text-xs text-slate-600">
+              <thead className="bg-slate-50/75 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[10px]">
+                <tr>
+                  <th className="px-4 py-3">Staff Member</th>
+                  <th className="px-4 py-3">Role</th>
+                  <th className="px-4 py-3">Employee Code</th>
+                  <th className="px-4 py-3">Specialization</th>
+                  <th className="px-4 py-3">Duty Status</th>
+                  <th className="px-4 py-3">Active Caseload</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {rows.map((c) => {
-                  const open = openId === c.coordinator_id;
-                  return (
-                    <React.Fragment key={c.coordinator_id}>
-                      <tr className="hover:bg-slate-50 cursor-pointer" onClick={() => setOpenId(open ? null : c.coordinator_id)}>
-                        <td className="px-5 py-2.5 font-bold text-slate-800">{c.display_name}</td>
-                        <td className="px-3 py-2.5">{c.city}</td>
-                        <td className="px-3 py-2.5 text-right">{c.caseload}</td>
-                        <td className="px-3 py-2.5 text-right font-bold">{c.open_alerts}</td>
-                        <td className="px-3 py-2.5 text-right">{c.alerts_handled}</td>
-                        <td className="px-3 py-2.5 text-right">{c.calls}</td>
-                        <td className="px-3 py-2.5 text-right">{c.messages_sent}</td>
-                        <td className="px-5 py-2.5 text-slate-400">{open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}</td>
-                      </tr>
-                      {open && <tr><td colSpan={8} className="bg-slate-50/60 pb-2"><Daily coordinatorId={c.coordinator_id} /></td></tr>}
-                    </React.Fragment>
-                  );
-                })}
+                {caretakers.map((member) => (
+                  <tr key={member.user_id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-4 py-3.5">
+                      <div className="font-semibold text-slate-900">{member.full_name}</div>
+                      <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                        <Mail className="w-3 h-3 text-slate-400" />
+                        {member.email}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                          member.role === "CARETAKER"
+                            ? "bg-purple-100 text-purple-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        {member.role.replace("_", " ")}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 font-mono text-[11px] text-slate-700">
+                      {member.employee_code || "N/A"}
+                    </td>
+                    <td className="px-4 py-3.5 text-slate-700">
+                      {member.specialization || "General Care"}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-800">
+                        {member.on_duty_status || "AVAILABLE"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-slate-700">
+                      <span className="font-semibold text-slate-900">
+                        {member.active_cases_count} active
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      {member.is_active ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                          <CheckCircle2 className="w-3 h-3" /> Active
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                          Inactive
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

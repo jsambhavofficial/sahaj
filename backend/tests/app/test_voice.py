@@ -143,19 +143,19 @@ def test_full_call_with_stubs(client, world):
     assert types[0] == "ready" and types[-1] == "call_end"
     assert types.count("transcript") == 4 and types.count("turn_done") == 5  # opening + 3 questions + goodbye
     first_text = next(e for e in events if e["type"] == "agent_text")["text"]
-    assert "Samarth" in first_text
+    assert "समर्थ" in first_text
     audio = next(e for e in events if e["type"] == "agent_audio")
     assert audio["format"] == "wav" and base64.b64decode(audio["base64"]).startswith(b"RIFF")
 
     db = world["db"]
     call = the_call(db)
     assert call.kind == "ai_agent" and call.provider == "in_app" and call.status == "completed"
-    assert call.language == "hinglish" and call.senior_id == world["senior"].senior_id
+    assert call.language == "hindi" and call.senior_id == world["senior"].senior_id
     assert call.coordinator_id == world["coord"].id and call.initiated_by_user_id == world["suser"].id
     assert call.ended_at and call.duration_sec is not None and not call.urgency_flag
     assert call.model_info["agent"] == "scripted"
     assert events[-1]["summary"] == call.summary and "Mentioned" in call.summary
-    assert call.context_snapshot["context"]["language"] == "hinglish"
+    assert call.context_snapshot["context"]["language"] == "hindi"
 
     turns = db.scalars(select(CallTurn).where(CallTurn.call_id == call.id).order_by(CallTurn.turn_index)).all()
     assert [t.turn_index for t in turns] == list(range(len(turns))) and len(turns) == 9
@@ -273,7 +273,7 @@ def test_silence_is_re_asked_then_skipped(client, world, monkeypatch):
         assert [e["type"] for e in first] == ["agent_text", "agent_audio", "turn_done"]  # retry, no transcript
         speak(ws)
         third = speak(ws)  # third silence: move to the next question
-        assert "neend" in third[0]["text"].lower()
+        assert "नींद" in third[0]["text"]
         ws.send_json({"type": "end_call"})
         until(ws, "call_end")
 
@@ -287,8 +287,8 @@ def test_urgent_phrases_flag_call_and_alert_coordinator(client, world, monkeypat
     use(monkeypatch, stt=FakeSTT(phrase))
     events = run_call(client, world)
     texts = [e["text"] for e in events if e["type"] == "agent_text"]
-    assert texts[-1] == agent_mod.load_phrases("hinglish")["urgent"]
-    assert "coordinator" in texts[-1] and events[-1]["type"] == "call_end"
+    assert texts[-1] == agent_mod.load_phrases("hindi")["urgent"]
+    assert "कोऑर्डिनेटर" in texts[-1] and events[-1]["type"] == "call_end"
     call = the_call(world["db"])
     assert call.urgency_flag is True and call.status == "completed" and call.sentiment == "concerned"
     assert [r[2] for r in rescores] == ["new_alert", "post_ai_call"]
@@ -303,7 +303,8 @@ def test_negated_urgent_words_do_not_trigger(client, world, monkeypatch, rescore
 
 
 # ------------------------------------------------------------------ provider failures
-@pytest.mark.parametrize("which,code", [("stt", "stt_error"), ("llm", "llm_error"), ("tts", "tts_error")])
+# An LLM outage is not in this list: the agent falls back to the scripted line instead (next test).
+@pytest.mark.parametrize("which,code", [("stt", "stt_error"), ("tts", "tts_error")])
 def test_provider_failure_degrades_gracefully(client, world, monkeypatch, which, code):
     stt = FakeSTT("theek hoon")
     llm, tts = RecordingLLM(), factory.get_tts()
@@ -328,21 +329,24 @@ def test_provider_failure_degrades_gracefully(client, world, monkeypatch, which,
     assert call.call_insights["end_reason"] == code
 
 
-def test_llm_failure_mid_call_keeps_what_was_said(client, world, monkeypatch):
+def test_llm_failure_mid_call_falls_back_to_the_scripted_questions(client, world, monkeypatch):
     calls = {"n": 0}
 
     def flaky(system, user):
         calls["n"] += 1
         if calls["n"] > 1:
-            raise RuntimeError("bedrock throttled")
+            raise RuntimeError("model throttled")
         return "Namaste ji, aaj kaisa lag raha hai?"
     use(monkeypatch, llm=RecordingLLM(flaky), stt=FakeSTT("mujhe chakkar aa raha hai"))
     with connect(client, world["token"]) as ws:
         start(ws)
-        events = speak(ws, until_types=("call_end",))
-    assert [e["type"] for e in events if e["type"] == "error"] == ["error"]
+        events = speak(ws)  # the model fails on this turn
+        assert events[-1]["type"] == "turn_done"  # the call goes on, with the scripted question
+        assert any(e["type"] == "agent_text" for e in events) and not [e for e in events if e["type"] == "error"]
+        ws.send_json({"type": "end_call"})
+        until(ws, "call_end")
     db = world["db"]
-    assert the_call(db).status == "failed"
+    assert the_call(db).status == "abandoned"  # hung up by the senior, not failed
     assert db.scalars(select(SeniorMemoryItem).where(SeniorMemoryItem.kind == "symptom")).one()
 
 
@@ -385,7 +389,7 @@ def test_unsafe_llm_reply_is_replaced(client, world, monkeypatch):
     events = run_call(client, world)
     texts = " ".join(e["text"] for e in events if e["type"] == "agent_text")
     assert "diabetes" not in texts and "Stop taking" not in texts
-    assert agent_mod.load_phrases("hinglish")["safe_fallback"] in texts
+    assert agent_mod.load_phrases("hindi")["safe_fallback"] in texts
     assert all(not violations(e["text"]) for e in events if e["type"] == "agent_text")
     summary = events[-1]["summary"]
     assert not violations(summary) and "diabetes" not in summary.lower()
@@ -441,7 +445,7 @@ def test_scripted_agent_follows_up_on_open_symptom(client, world, monkeypatch):
     run_call(client, world)
     ev = run_call(client, world)
     opening = next(e for e in ev if e["type"] == "agent_text")["text"]
-    assert opening.endswith(agent_mod.load_phrases("hinglish")["followup"])
+    assert opening.endswith(agent_mod.load_phrases("hindi")["followup"])
 
 
 def test_medicine_and_hobby_memory(client, world, monkeypatch):
