@@ -208,12 +208,7 @@ export default function AppEntry() {
       }
     } else if (coordTab === 'notes') {
       mainContent = (
-        <CoordinatorCallNotesScreen
-          onBack={() => setCoordTab('home')}
-          onCallSenior={() => {
-            // Handled by context
-          }}
-        />
+        <CoordinatorCallNotesScreen onBack={() => setCoordTab('home')} />
       );
     } else if (coordTab === 'profile') {
       mainContent = (

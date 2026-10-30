@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
   Animated,
+  Linking,
 } from 'react-native';
 import {
   useAudioRecorder,
@@ -50,8 +51,15 @@ export const SeniorHomeScreen: React.FC<Props> = ({
   onStartCall,
   onOpenCheckIn,
 }) => {
-  const { language, setLanguage, activeSenior, startCall, sendVoiceNote, logout } = useAppState();
+  const { language, setLanguage, activeSenior, coordinatorPhone, sendVoiceNote, logout } = useAppState();
   const [selectedLang, setSelectedLang] = useState<'hi' | 'en'>(language);
+
+  // Opens the phone's dialer with the assigned coordinator's number filled in; the senior presses call.
+  const callCoordinator = () => {
+    // The number comes from the database; the env value is only a fallback when none is on file.
+    const number = coordinatorPhone ?? process.env.EXPO_PUBLIC_DEFAULT_COORDINATOR_PHONE;
+    if (number) void Linking.openURL(`tel:${number.replace(/\s+/g, '')}`);
+  };
 
   // Live Audio Recording States
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
@@ -320,10 +328,7 @@ export const SeniorHomeScreen: React.FC<Props> = ({
           {/* 1. Big ORANGE Button: Call Care Coordinator */}
           <TouchableOpacity
             style={styles.callCoordinatorBtn}
-            onPress={() => {
-              startCall('Your Care Coordinator');
-              onStartCall();
-            }}
+            onPress={callCoordinator}
             activeOpacity={0.88}
             accessibilityRole="button"
             accessibilityLabel="Call Care Coordinator"

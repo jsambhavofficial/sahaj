@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.core.config import today
 from app.core.exceptions import AppError, NotFound
 from app.modules.auth.models import User
-from app.modules.me.schemas import (ConfirmOut, HomeOut, MedicationToday, NextCheckin, ReportOut, VitalIn,
+from app.modules.me.schemas import (ConfirmOut, CoordinatorContact, HomeOut, MedicationToday, NextCheckin, ReportOut, VitalIn,
                                     VitalOut)
 from app.modules.medications.models import MedicationEvent, MedicationSchedule
 from app.modules.messages import repository as message_repo
@@ -127,6 +127,16 @@ def next_checkin(senior: Senior, day: date) -> NextCheckin | None:
     return None
 
 
+def coordinator_contact(db: Session, senior: Senior) -> CoordinatorContact | None:
+    coordinator = db.get(User, senior.coordinator_id) if senior.coordinator_id else None
+    if coordinator is None:
+        return None
+    phone = (coordinator.phone or "").strip()
+    # seeded placeholder numbers are not dialable
+    return CoordinatorContact(display_name=coordinator.display_name,
+                              phone=None if not phone or phone.startswith("+910000") else phone)
+
+
 def home(db: Session, user: User, day: date | None) -> HomeOut:
     senior = own_senior(db, user)
     day = day or today()
@@ -137,7 +147,7 @@ def home(db: Session, user: User, day: date | None) -> HomeOut:
         last_out = message_service.to_out(last, users, user)
     return HomeOut(greeting_name=greeting_name(db, senior), language=senior.preferred_language, date=day,
                    medications_today=medications_today(db, senior, day), last_message=last_out,
-                   next_checkin=next_checkin(senior, day))
+                   next_checkin=next_checkin(senior, day), coordinator=coordinator_contact(db, senior))
 
 
 # ---- confirming a dose -------------------------------------------------------------------------
@@ -170,7 +180,7 @@ def confirm_medication(db: Session, user: User, medication_id: str, scheduled_at
 
 
 # ---- vitals and reports ------------------------------------------------------------------------
-def add_vital(db: Session, user: User, body: VitalIn) -> VitalOut:
+def add_vital(db: Session, user: User, body: VitalIn, rescore: bool = True) -> VitalOut:
     senior = own_senior(db, user)
     units, ranges = VITAL_RULES[body.measurement_type]
     unit = body.unit or units[0]
@@ -188,7 +198,8 @@ def add_vital(db: Session, user: User, body: VitalIn) -> VitalOut:
                   context="self_reported", source="senior_app", quality_status="valid")
     db.add(vital)
     db.commit()
-    vitals_service.safe_rescore(db, senior.senior_id, measured_at.astimezone(IST).date())
+    if rescore:
+        message_service.safe_rescore(db, senior.senior_id, reason="manual_refresh")
     return VitalOut(measurement_id=vital.measurement_id, measured_at=_utc(vital.measured_at),
                     measurement_type=vital.measurement_type, value=float(vital.value), unit=unit,
                     source=vital.source, quality_status=vital.quality_status)

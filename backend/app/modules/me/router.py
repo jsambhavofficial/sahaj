@@ -41,8 +41,11 @@ def get_my_vitals(type: MeasurementType | None = None,
 
 
 @router.post("/vitals", response_model=VitalOut, status_code=201)
-def add_vital(body: VitalIn, db: Session = Depends(get_db), user: User = Depends(senior_only)):
-    return service.add_vital(db, user, body)
+def add_vital(body: VitalIn, rescore: bool = Query(True, description="Re-score the senior after saving; send false "
+                                                  "on all but the last reading of a batch"),
+              db: Session = Depends(get_db), user: User = Depends(senior_only)):
+    """Stores a self-reported reading and, unless `rescore=false`, refreshes today's risk score and alert."""
+    return service.add_vital(db, user, body, rescore=rescore)
 
 
 @router.post("/report", response_model=ReportOut, status_code=201)

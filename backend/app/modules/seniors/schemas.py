@@ -78,6 +78,9 @@ class SeniorCallItem(BaseModel):
     recording_expires_at: datetime | None = None
     summary: str | None = None
     urgency_flag: bool = False
+    language: str | None = None
+    sentiment: str | None = None
+    insights: dict | None = None  # questions answered/total, urgent, end reason, cue types
 
 
 class SeniorCallPage(BaseModel):

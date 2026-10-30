@@ -97,8 +97,9 @@ def calculate_senior_risk(
 @router.get("/seniors/{senior_id}/calls", response_model=SeniorCallPage,
             summary="Calls with this senior (without turns)")
 def senior_calls(senior_id: str, limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0),
+                 kind: Literal["ai_agent", "phone_bridge"] | None = None,
                  user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    items, total = service.calls(db, user, senior_id, limit, offset)
+    items, total = service.calls(db, user, senior_id, limit, offset, kind)
     return {"items": items, "total": total, "limit": limit, "offset": offset}
 
 

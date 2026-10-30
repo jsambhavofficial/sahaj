@@ -15,7 +15,7 @@ export interface EndpointOptions {
   marginDb: number;
 }
 
-export const DEFAULT_ENDPOINT: EndpointOptions = { silenceMs: 5000, noSpeechMs: 9000, maxMs: 20000, calibrateMs: 500, marginDb: 12 };
+export const DEFAULT_ENDPOINT: EndpointOptions = { silenceMs: 2000, noSpeechMs: 9000, maxMs: 20000, calibrateMs: 500, marginDb: 12 };
 
 export type Decision = 'listen' | 'send';
 

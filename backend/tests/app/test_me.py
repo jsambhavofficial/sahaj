@@ -260,3 +260,25 @@ def test_me_messages_thread_and_isolation(client, world):
     assert client.get(f"{API}/seniors/S9001/messages", headers=world["SH2"]).status_code == 403
     assert client.post(f"{API}/seniors/S9001/messages", json={"body": "x"}, headers=world["SH2"]).status_code == 403
     assert client.post(f"{API}/me/messages", json={"body": ""}, headers=world["SH"]).status_code == 422
+
+
+def test_home_includes_coordinator_contact(client, world, db_session):
+    body = client.get(f"{API}/me/home", headers=world["SH"]).json()
+    assert body["coordinator"]["display_name"] == world["coord"].display_name
+    assert body["coordinator"]["phone"] is None or not body["coordinator"]["phone"].startswith("+910000")
+    world["coord"].phone = "+919812345678"
+    db_session.commit()
+    assert client.get(f"{API}/me/home", headers=world["SH"]).json()["coordinator"]["phone"] == "+919812345678"
+    world["coord"].phone = "+910000000001"  # seeded placeholder: not dialable
+    db_session.commit()
+    assert client.get(f"{API}/me/home", headers=world["SH"]).json()["coordinator"]["phone"] is None
+
+
+def test_vital_triggers_rescore_unless_deferred(client, world, monkeypatch):
+    calls = []
+    monkeypatch.setattr(msg_service, "safe_rescore", lambda db, sid, *a, **k: calls.append(sid))
+    body = {"measurement_type": "spo2", "value": 97}
+    assert client.post(f"{API}/me/vitals?rescore=false", json=body, headers=world["SH"]).status_code == 201
+    assert calls == []
+    assert client.post(f"{API}/me/vitals", json=body, headers=world["SH"]).status_code == 201
+    assert calls == ["S9001"]

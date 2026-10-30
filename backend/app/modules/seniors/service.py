@@ -128,16 +128,27 @@ def risk_history(db: Session, user: User, senior_id: str, date_from, date_to, li
     return rows
 
 
-def calls(db: Session, user: User, senior_id: str, limit: int, offset: int):
+_INSIGHT_KEYS = ("questions_answered", "questions_total", "urgent", "end_reason", "cue_types")
+
+
+def _public_insights(raw: dict | None) -> dict | None:
+    """Only the report fields; the raw pipeline output and prompt context stay server side."""
+    if not raw:
+        return None
+    return {k: raw[k] for k in _INSIGHT_KEYS if k in raw}
+
+
+def calls(db: Session, user: User, senior_id: str, limit: int, offset: int, kind: str | None = None):
     require_staff(user)
     scope.require_senior_access(db, user, senior_id)
-    rows, total = repository.list_calls(db, senior_id, limit, offset)
+    rows, total = repository.list_calls(db, senior_id, limit, offset, kind)
     items = [{
         "id": c.id, "senior_id": c.senior_id, "kind": c.kind, "status": c.status,
         "transcript_status": c.transcript_status, "started_at": c.started_at,
         "ended_at": c.ended_at, "duration_sec": c.duration_sec,
         "recording_stored": bool(c.recording_path), "recording_expires_at": c.recording_expires_at,
         "summary": c.summary, "urgency_flag": bool(c.urgency_flag),
+        "language": c.language, "sentiment": c.sentiment, "insights": _public_insights(c.call_insights),
     } for c in rows]
     audit_read(db, user, "view_calls", senior_id)
     return items, total

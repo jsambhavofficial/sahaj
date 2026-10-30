@@ -22,6 +22,11 @@ class NextCheckin(BaseModel):
     kind: str = "ai_call"
 
 
+class CoordinatorContact(BaseModel):
+    display_name: str
+    phone: str | None = None
+
+
 class HomeOut(BaseModel):
     greeting_name: str | None
     language: str
@@ -29,6 +34,7 @@ class HomeOut(BaseModel):
     medications_today: list[MedicationToday]
     last_message: MessageOut | None
     next_checkin: NextCheckin | None
+    coordinator: CoordinatorContact | None = None
 
 
 class ConfirmIn(BaseModel):
