@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
@@ -18,13 +19,10 @@ import {
   useAudioPlayerStatus,
 } from 'expo-audio';
 import { useAppState } from '../../context/AppStateContext';
-import { BotanicalDecor } from '../../components/common/BotanicalDecor';
-import Svg, { Ellipse, Path, Circle, Rect } from 'react-native-svg';
 import {
   Phone,
   Mic,
-  ChevronDown,
-  Settings,
+  Globe,
   Square,
   Play,
   Pause,
@@ -34,7 +32,11 @@ import {
   CheckCircle2,
   X,
   Volume2,
+  LogOut,
 } from 'lucide-react-native';
+
+const SENIOR_AVATAR = require('../../../assets/senior_avatar.jpg');
+const SAHAJ_LOGO = require('../../../assets/sahaj_hero.png');
 
 interface Props {
   onStartCall: () => void;
@@ -48,7 +50,7 @@ export const SeniorHomeScreen: React.FC<Props> = ({
   onStartCall,
   onOpenCheckIn,
 }) => {
-  const { language, setLanguage, activeSenior, startCall, sendVoiceNote } = useAppState();
+  const { language, setLanguage, activeSenior, startCall, sendVoiceNote, logout } = useAppState();
   const [selectedLang, setSelectedLang] = useState<'hi' | 'en'>(language);
 
   // Live Audio Recording States
@@ -272,106 +274,50 @@ export const SeniorHomeScreen: React.FC<Props> = ({
 
   return (
     <View style={styles.container}>
-      {/* Decorative Botanical Flora */}
-      <BotanicalDecor position="top-right" variant="mint" style={styles.decorTR} />
-      <BotanicalDecor position="bottom-left" variant="lavender" style={styles.decorBL} />
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        bounces={false}
       >
-        {/* Brand Header */}
-        <View style={styles.brandHeader}>
-          {/* SAHAJ Lotus Emblem */}
-          <View style={styles.logoSquare}>
-            <Svg width="36" height="36" viewBox="0 0 100 100">
-              <Ellipse cx="50" cy="40" rx="9" ry="18" fill="#5F67E8" />
-              <Path
-                d="M43 45C33 37 18 42 22 62C32 63 41 57 45 47C44.3 46.3 43.6 45.6 43 45Z"
-                fill="#758AF0"
-                opacity={0.9}
-              />
-              <Path
-                d="M57 45C67 37 82 42 78 62C68 63 59 57 55 47C55.7 46.3 56.4 45.6 57 45Z"
-                fill="#758AF0"
-                opacity={0.9}
-              />
-              <Path
-                d="M38 61C24 62 18 78 35 83C46 80 47 69 40 62L38 61Z"
-                fill="#8E9EFA"
-                opacity={0.75}
-              />
-              <Path
-                d="M62 61C76 62 82 78 65 83C54 80 53 69 60 62L62 61Z"
-                fill="#8E9EFA"
-                opacity={0.75}
-              />
-              <Circle cx="50" cy="68" r="7" fill="#4340CA" />
-            </Svg>
-          </View>
-          <Text style={styles.brandTitle}>SAHAJ</Text>
-        </View>
-
-        {/* Greeting Profile Card */}
-        <View style={styles.greetingCard}>
-          {/* Senior Woman Avatar Illustration */}
-          <View style={styles.avatarWrapper}>
-            <Svg width="74" height="74" viewBox="0 0 120 120">
-              <Circle cx="60" cy="60" r="60" fill="#FEEFD5" />
-              {/* Hair bun */}
-              <Ellipse cx="60" cy="46" rx="34" ry="32" fill="#E2E8F0" />
-              <Circle cx="60" cy="24" r="14" fill="#CBD5E1" />
-              {/* Face */}
-              <Ellipse cx="60" cy="54" rx="22" ry="24" fill="#FAD4B2" />
-              {/* Saree */}
-              <Path d="M25 120 C 30 85, 55 82, 60 120 Z" fill="#F59E0B" />
-              <Path d="M42 90 Q 60 102 98 120 L 20 120 Z" fill="#D97706" />
-              {/* Neck */}
-              <Rect x="53" y="72" width="14" height="12" rx="3" fill="#F5C096" />
-              {/* Bindi */}
-              <Circle cx="60" cy="45" r="2.2" fill="#DC2626" />
-              {/* Smile */}
-              <Path
-                d="M54 62 Q 60 67 66 62"
-                fill="none"
-                stroke="#B45309"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-              {/* Eyes */}
-              <Path
-                d="M48 51 Q 52 49 55 52"
-                fill="none"
-                stroke="#475569"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-              <Path
-                d="M65 52 Q 68 49 72 51"
-                fill="none"
-                stroke="#475569"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-              {/* Earrings */}
-              <Circle cx="38" cy="56" r="2.5" fill="#F59E0B" />
-              <Circle cx="82" cy="56" r="2.5" fill="#F59E0B" />
-            </Svg>
+        {/* Top Section: Brand Header & Greeting Profile Card */}
+        <View style={styles.topSection}>
+          {/* Brand Header */}
+          <View style={styles.brandHeader}>
+            <Image source={SAHAJ_LOGO} style={styles.brandLogo} resizeMode="contain" />
+            <TouchableOpacity
+              style={styles.bellBtn}
+              onPress={() => void logout()}
+              activeOpacity={0.7}
+              accessibilityLabel="Log out"
+            >
+              <LogOut size={26} color="#008774" />
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.greetingTextContainer}>
-            <Text style={styles.helloText}>
-              {selectedLang === 'hi' ? 'नमस्ते' : 'Hello'}, {activeSenior.display_name}
-            </Text>
-            <Text style={styles.feelingQuestion}>
-              {selectedLang === 'hi' ? 'आज आप कैसा महसूस कर रहे हैं?' : 'How are you feeling today?'}
-            </Text>
+          {/* Greeting Profile Card */}
+          <View style={styles.greetingCard}>
+            <View style={styles.avatarWrapper}>
+              <Image
+                source={SENIOR_AVATAR}
+                style={styles.avatarImage}
+                resizeMode="cover"
+              />
+            </View>
+
+            <View style={styles.greetingTextContainer}>
+              <Text style={styles.helloText}>
+                {selectedLang === 'hi' ? 'नमस्ते' : 'Hello'}, {activeSenior.display_name}
+              </Text>
+              <Text style={styles.feelingQuestion}>
+                {selectedLang === 'hi' ? 'आज आप कैसा महसूस कर रहे हैं?' : 'How are you feeling today?'}
+              </Text>
+            </View>
           </View>
         </View>
 
-        {/* Primary Action Buttons */}
+        {/* Center: Two Big Action Buttons Covering All Leftover Space */}
         <View style={styles.actionsSection}>
-          {/* 1. Green Pill Button: Call Care Coordinator */}
+          {/* 1. Big ORANGE Button: Call Care Coordinator */}
           <TouchableOpacity
             style={styles.callCoordinatorBtn}
             onPress={() => {
@@ -379,36 +325,40 @@ export const SeniorHomeScreen: React.FC<Props> = ({
               onStartCall();
             }}
             activeOpacity={0.88}
+            accessibilityRole="button"
+            accessibilityLabel="Call Care Coordinator"
           >
             <View style={styles.phoneIconCircle}>
-              <Phone size={24} color="#FFFFFF" fill="#FFFFFF" />
+              <Phone size={34} color="#FFFFFF" fill="#FFFFFF" />
             </View>
             <View style={styles.btnLabelWrapper}>
               <Text style={styles.btnTitle}>
                 {selectedLang === 'hi' ? 'केयर कोऑर्डिनेटर को कॉल करें' : 'Call Care Coordinator'}
               </Text>
-              <Text style={styles.btnSubtitle}>
-                {selectedLang === 'hi' ? 'बात करने के लिए टैप करें' : 'Tap to connect'}
+              <Text style={styles.btnSubtitleRed}>
+                {selectedLang === 'hi' ? 'तुरंत बात करने के लिए टैप करें' : 'Tap to connect immediately'}
               </Text>
             </View>
           </TouchableOpacity>
 
-          {/* 2. Real Live Audio Recording Section (Line 165) */}
+          {/* 2. Big GREEN Button: Record Voice Note & Send */}
           {recordingState === 'idle' && (
             <TouchableOpacity
               style={styles.voiceNoteBtn}
               onPress={startRecording}
               activeOpacity={0.88}
+              accessibilityRole="button"
+              accessibilityLabel="Record Voice Note"
             >
               <View style={styles.micIconCircle}>
-                <Mic size={24} color="#FFFFFF" />
+                <Mic size={34} color="#FFFFFF" />
               </View>
               <View style={styles.btnLabelWrapper}>
                 <Text style={styles.btnTitle}>
                   {selectedLang === 'hi' ? 'आवाज़ संदेश रिकॉर्ड करें' : 'Record Voice Note'}
                 </Text>
-                <Text style={styles.btnSubtitlePurple}>
-                  {selectedLang === 'hi' ? 'अपनी बात या हाल साझा करें!' : 'Share how you feel!'}
+                <Text style={styles.btnSubtitleGreen}>
+                  {selectedLang === 'hi' ? 'बोलें और संदेश भेजें' : 'Tap to record & send voice note'}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -478,7 +428,7 @@ export const SeniorHomeScreen: React.FC<Props> = ({
               <View style={styles.reviewHeaderRow}>
                 <View style={styles.reviewHeaderLeft}>
                   <View style={styles.micReviewCircle}>
-                    <Volume2 size={20} color="#6B46C1" />
+                    <Volume2 size={20} color="#059669" />
                   </View>
                   <View>
                     <Text style={styles.reviewTitle}>
@@ -549,7 +499,7 @@ export const SeniorHomeScreen: React.FC<Props> = ({
           {/* Uploading In Progress */}
           {recordingState === 'uploading' && (
             <View style={styles.statusBox}>
-              <ActivityIndicator size="small" color="#9474E6" />
+              <ActivityIndicator size="small" color="#059669" />
               <Text style={styles.statusBoxText}>
                 {selectedLang === 'hi'
                   ? 'आवाज़ संदेश भेजा जा रहा है...'
@@ -578,56 +528,59 @@ export const SeniorHomeScreen: React.FC<Props> = ({
           )}
         </View>
 
-        {/* Language Selector Section */}
-        <View style={styles.langSection}>
-          <View style={styles.langHeader}>
-            <Text style={styles.langLabel}>Language</Text>
-            <ChevronDown size={14} color="#64748B" />
-          </View>
-
-          <View style={styles.langButtonsRow}>
-            {/* Hindi Option */}
-            <TouchableOpacity
-              style={[
-                styles.langPill,
-                selectedLang === 'hi' ? styles.langPillActive : styles.langPillInactive,
-              ]}
-              onPress={() => handleLangChange('hi')}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[
-                  styles.langText,
-                  selectedLang === 'hi' ? styles.langTextActive : styles.langTextInactive,
-                ]}
-              >
-                हिन्दी
+        {/* Bottom Section: Language Bar Just Above the Navigation Bar */}
+        <View style={styles.bottomLangBar}>
+          <View style={styles.langBarCard}>
+            <View style={styles.langLabelGroup}>
+              <Globe size={18} color="#0D6B58" />
+              <Text style={styles.langLabelText}>
+                {selectedLang === 'hi' ? 'भाषा' : 'Language'}
               </Text>
-            </TouchableOpacity>
+            </View>
 
-            {/* English Option */}
-            <TouchableOpacity
-              style={[
-                styles.langPill,
-                selectedLang === 'en' ? styles.langPillActive : styles.langPillInactive,
-              ]}
-              onPress={() => handleLangChange('en')}
-              activeOpacity={0.8}
-            >
-              <Text
+            <View style={styles.langPillsGroup}>
+              {/* Hindi Option */}
+              <TouchableOpacity
                 style={[
-                  styles.langText,
-                  selectedLang === 'en' ? styles.langTextActive : styles.langTextInactive,
+                  styles.langPill,
+                  selectedLang === 'hi' ? styles.langPillActive : styles.langPillInactive,
                 ]}
+                onPress={() => handleLangChange('hi')}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Switch language to Hindi"
               >
-                English
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    styles.langPillText,
+                    selectedLang === 'hi' ? styles.langPillTextActive : styles.langPillTextInactive,
+                  ]}
+                >
+                  हिन्दी
+                </Text>
+              </TouchableOpacity>
 
-            {/* Decorative Settings Cog */}
-            <TouchableOpacity style={styles.settingsCogBtn} activeOpacity={0.8}>
-              <Settings size={20} color="#64748B" />
-            </TouchableOpacity>
+              {/* English Option */}
+              <TouchableOpacity
+                style={[
+                  styles.langPill,
+                  selectedLang === 'en' ? styles.langPillActive : styles.langPillInactive,
+                ]}
+                onPress={() => handleLangChange('en')}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Switch language to English"
+              >
+                <Text
+                  style={[
+                    styles.langPillText,
+                    selectedLang === 'en' ? styles.langPillTextActive : styles.langPillTextInactive,
+                  ]}
+                >
+                  English
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -640,12 +593,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FD',
   },
-  decorTR: {
-    position: 'absolute',
-    top: -15,
-    right: -15,
-    zIndex: 1,
-  },
   decorBL: {
     position: 'absolute',
     bottom: -15,
@@ -653,58 +600,56 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 40,
+    paddingTop: 14,
+    paddingBottom: 10,
     zIndex: 2,
+  },
+  topSection: {
+    marginBottom: 6,
   },
   brandHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 20,
+    marginBottom: 14,
   },
-  logoSquare: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#4340CA',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 3,
+  brandLogo: {
+    width: 150,
+    height: 56,
   },
-  brandTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#3B368C',
-    letterSpacing: 2.2,
+  bellBtn: {
+    marginLeft: 'auto',
+    padding: 8,
+    marginRight: 14,
   },
   greetingCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 16,
-    gap: 16,
-    marginBottom: 20,
+    borderRadius: 22,
+    padding: 14,
+    gap: 14,
     shadowColor: '#64748B',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
-    shadowRadius: 12,
+    shadowRadius: 10,
     elevation: 2,
     borderWidth: 1,
     borderColor: '#F1F5F9',
   },
   avatarWrapper: {
-    width: 74,
-    height: 74,
-    borderRadius: 37,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     overflow: 'hidden',
     backgroundColor: '#FEEFD5',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   greetingTextContainer: {
     flex: 1,
@@ -713,35 +658,41 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     color: '#1E293B',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   feelingQuestion: {
     fontSize: 13,
     color: '#64748B',
     fontWeight: '500',
   },
+
+  // Big Action Buttons - Covering leftover space
   actionsSection: {
+    flex: 1,
+    justifyContent: 'space-evenly',
     gap: 14,
-    marginBottom: 20,
+    marginVertical: 10,
   },
   callCoordinatorBtn: {
-    backgroundColor: '#008774',
-    borderRadius: 28,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
+    flex: 1,
+    minHeight: 125,
+    backgroundColor: '#EA580C',
+    borderRadius: 24,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    shadowColor: '#008774',
+    gap: 18,
+    shadowColor: '#EA580C',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
-    elevation: 4,
+    elevation: 5,
   },
   phoneIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
     backgroundColor: 'rgba(255,255,255,0.22)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -751,45 +702,52 @@ const styles = StyleSheet.create({
   },
   btnTitle: {
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: 21,
     fontWeight: '800',
     letterSpacing: 0.2,
+    lineHeight: 27,
   },
-  btnSubtitle: {
-    color: '#CCFBF1',
-    fontSize: 12,
-    marginTop: 2,
+  btnSubtitleRed: {
+    color: '#FFEDD5',
+    fontSize: 14,
+    marginTop: 4,
+    fontWeight: '600',
   },
   voiceNoteBtn: {
-    backgroundColor: '#9474E6',
-    borderRadius: 28,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
+    flex: 1,
+    minHeight: 125,
+    backgroundColor: '#059669',
+    borderRadius: 24,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    shadowColor: '#906FE2',
+    gap: 18,
+    shadowColor: '#059669',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
-    elevation: 4,
+    elevation: 5,
   },
   micIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
     backgroundColor: 'rgba(255,255,255,0.22)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  btnSubtitlePurple: {
-    color: '#F3E8FF',
-    fontSize: 12,
-    marginTop: 2,
+  btnSubtitleGreen: {
+    color: '#D1FAE5',
+    fontSize: 14,
+    marginTop: 4,
+    fontWeight: '600',
   },
 
   // Live Recording Active Styles
   liveRecordCard: {
+    flex: 1,
+    minHeight: 125,
     backgroundColor: '#FAF5FF',
     borderRadius: 24,
     padding: 16,
@@ -800,6 +758,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 3,
+    justifyContent: 'center',
     gap: 12,
   },
   recordTopRow: {
@@ -879,8 +838,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 20,
-    backgroundColor: '#9474E6',
-    shadowColor: '#9474E6',
+    backgroundColor: '#059669',
+    shadowColor: '#059669',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -894,6 +853,8 @@ const styles = StyleSheet.create({
 
   // Review & Preview Card Styles
   reviewCard: {
+    flex: 1,
+    minHeight: 125,
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 16,
@@ -904,7 +865,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 3,
-    gap: 14,
+    justifyContent: 'center',
+    gap: 12,
   },
   reviewHeaderRow: {
     flexDirection: 'row',
@@ -920,7 +882,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#F3E8FF',
+    backgroundColor: '#DCFCE7',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -946,7 +908,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#9474E6',
+    backgroundColor: '#059669',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -962,7 +924,7 @@ const styles = StyleSheet.create({
   },
   trackFill: {
     height: '100%',
-    backgroundColor: '#9474E6',
+    backgroundColor: '#059669',
     borderRadius: 3,
   },
   trackHint: {
@@ -1013,6 +975,8 @@ const styles = StyleSheet.create({
 
   // Uploading Box
   statusBox: {
+    flex: 1,
+    minHeight: 100,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1032,6 +996,8 @@ const styles = StyleSheet.create({
 
   // Success Box
   successBox: {
+    flex: 1,
+    minHeight: 100,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -1063,61 +1029,68 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Language Section
-  langSection: {
-    marginTop: 4,
+  // Language Section - Bottom Just Above Navigation Bar
+  bottomLangBar: {
+    paddingTop: 8,
+    paddingBottom: 2,
   },
-  langHeader: {
+  langBarCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginBottom: 10,
-    paddingHorizontal: 4,
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  langLabel: {
+  langLabelGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingLeft: 4,
+  },
+  langLabelText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#64748B',
+    fontWeight: '700',
+    color: '#0D6B58',
   },
-  langButtonsRow: {
+  langPillsGroup: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   langPill: {
-    flex: 1,
-    height: 44,
-    borderRadius: 22,
+    paddingVertical: 7,
+    paddingHorizontal: 18,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
   },
   langPillActive: {
-    backgroundColor: '#F0FAF7',
-    borderColor: 'rgba(0, 135, 116, 0.7)',
+    backgroundColor: '#0D6B58',
+    shadowColor: '#0D6B58',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   langPillInactive: {
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    borderColor: '#E2E8F0',
+    backgroundColor: '#F1F5F9',
   },
-  langText: {
-    fontSize: 14,
+  langPillText: {
+    fontSize: 13,
     fontWeight: '700',
   },
-  langTextActive: {
-    color: '#008774',
+  langPillTextActive: {
+    color: '#FFFFFF',
   },
-  langTextInactive: {
-    color: '#334155',
-  },
-  settingsCogBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
+  langPillTextInactive: {
+    color: '#475569',
   },
 });
