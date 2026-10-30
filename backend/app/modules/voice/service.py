@@ -11,7 +11,6 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.exceptions import AppError, Forbidden, Unauthorized
-from app.modules.auth import service as auth_service
 from app.modules.auth.models import User
 from app.modules.seniors.models import Senior
 from app.modules.voice import repository as repo
@@ -31,9 +30,19 @@ for _p in (_backend_dir, _ml_dir):
         sys.path.insert(0, str(_p))
 
 try:
-    from ml.src.nlp.voice_notes_processing import VoiceNoteProcessingResult, VoiceNotesProcessor
+    from ml.src.nlp.call_processing import load_open_talking_points_from_context_repo
+    from ml.src.nlp.voice_notes_processing import (
+        VoiceNoteProcessingResult,
+        VoiceNotesProcessor,
+        save_voice_note_result_to_db,
+    )
 except ImportError:
-    from src.nlp.voice_notes_processing import VoiceNoteProcessingResult, VoiceNotesProcessor
+    from src.nlp.call_processing import load_open_talking_points_from_context_repo
+    from src.nlp.voice_notes_processing import (
+        VoiceNoteProcessingResult,
+        VoiceNotesProcessor,
+        save_voice_note_result_to_db,
+    )
 
 log = logging.getLogger(__name__)
 
@@ -42,6 +51,7 @@ def authenticate(db: Session, token: str) -> tuple[User, Senior]:
     """The access token must belong to an active senior user that is linked to a senior record."""
     if not token:
         raise Unauthorized("Missing token")
+    from app.modules.auth import service as auth_service
     user = auth_service.get_user_from_access_token(db, token)
     if user.role != "senior":
         raise Forbidden("Only a senior can use the voice agent")
@@ -89,8 +99,14 @@ class VoiceNoteService:
             model=model,
         )
 
-    def process_voice_note(self, request: VoiceNoteProcessRequest) -> VoiceNoteProcessResponse:
-        """Processes audio transcript, computes risk delta, and persists talking points."""
+    def process_voice_note(
+        self,
+        request: VoiceNoteProcessRequest,
+        db: Session | None = None,
+        source_id: str | None = None,
+        trigger_risk_calc: bool = True,
+    ) -> VoiceNoteProcessResponse:
+        """Processes audio transcript, computes risk delta, writes to context_repo, and triggers risk calculation."""
         log.info("Processing voice note for senior_id=%s (len=%d chars)", request.senior_id, len(request.transcript))
 
         if request.provider or request.model:
@@ -106,6 +122,22 @@ class VoiceNoteService:
             transcript=request.transcript,
             timestamp=request.timestamp,
         )
+
+        if db is not None:
+            try:
+                save_voice_note_result_to_db(
+                    db=db,
+                    result=result,
+                    source_id=source_id,
+                    trigger_risk_calc=trigger_risk_calc,
+                    commit=True,
+                )
+            except Exception:
+                log.exception("Failed to persist voice note result to context_repo for senior %s", request.senior_id)
+                try:
+                    db.rollback()
+                except Exception:
+                    pass
 
         events_schema = [
             VoiceEventItem(
@@ -153,10 +185,34 @@ class VoiceNoteService:
             raw_transcript=result.raw_transcript,
         )
 
-    def get_active_talking_points(self, senior_id: str) -> List[TalkingPointItem]:
-        """Fetches active talking points for check-in bot or coordinator triage."""
-        all_points = self._talking_points_store.get(senior_id, [])
-        return [tp for tp in all_points if tp.status == "OPEN"]
+    def get_active_talking_points(self, senior_id: str, db: Session | None = None) -> List[TalkingPointItem]:
+        """Fetches active talking points from context_repo (and in-memory store) for check-in bot or coordinator triage."""
+        out: List[TalkingPointItem] = []
+        seen_topics: set[str] = set()
+        if db is not None:
+            try:
+                for tp in load_open_talking_points_from_context_repo(db, senior_id):
+                    topic = str(tp.get("topic", ""))
+                    if topic and topic not in seen_topics:
+                        out.append(
+                            TalkingPointItem(
+                                topic=topic,
+                                domain=str(tp.get("domain", "CLINICAL_FOLLOWUP")),
+                                status=str(tp.get("status", "OPEN")),
+                                priority=int(tp.get("priority", 5)),
+                                target_signal_to_verify=str(tp.get("target_signal_to_verify", "")),
+                                suggested_bot_question_hinglish=str(tp.get("suggested_bot_question_hinglish", "")),
+                                suggested_bot_question_english=str(tp.get("suggested_bot_question_english", "")),
+                            )
+                        )
+                        seen_topics.add(topic)
+            except Exception:
+                log.warning("Failed to load talking points from context_repo for %s", senior_id, exc_info=True)
+        for tp in self._talking_points_store.get(senior_id, []):
+            if tp.status == "OPEN" and tp.topic not in seen_topics:
+                out.append(tp)
+                seen_topics.add(tp.topic)
+        return out
 
 
 __all__ = ["authenticate", "new_session", "safe_rescore", "AppError", "VoiceNoteService"]

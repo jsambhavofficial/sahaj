@@ -228,7 +228,13 @@ class CallService:
                 call_id=str(call.id),
                 call_duration_seconds=call.duration_sec,
             )
-            res = CallProcessingService().process_call(req)
+            res = CallProcessingService().process_call(
+                req,
+                db=self.db,
+                source_type="coordinator_call",
+                trigger_risk_calc=False,
+                commit=False,
+            )
             if res.requires_clinical_escalation:
                 call.urgency_flag = True
             return res.model_dump()

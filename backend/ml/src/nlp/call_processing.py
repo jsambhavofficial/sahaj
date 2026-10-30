@@ -1,14 +1,23 @@
 """Call transcript NLP processor for SamarthCare AI.
 
-Pipeline: diarized turns -> deterministic cleaning (pairing, third-party shield, chit-chat drop) -> LLM (switchable provider) with active talking points -> guarded parsing
-(evidence grounding, topic validation, saturation cap) -> structured result.
+Pipeline: diarized turns -> deterministic cleaning (pairing, third-party shield, chit-chat drop) -> LLM (switchable provider) with active talking points from `context_repo` -> guarded parsing
+(evidence grounding, topic validation, saturation cap) -> structured result written to `context_repo` + risk score recalculation.
 """
 
-from dataclasses import dataclass, asdict, field
-from datetime import datetime
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timedelta, timezone
 import logging
 import re
 from typing import Any, Dict, List, Optional
+
+try:
+    from sqlalchemy import select
+    from sqlalchemy.orm import Session
+except ImportError:
+    select = None  # type: ignore
+    Session = Any  # type: ignore
 
 from .call_cleaner import SIGNAL_RE, CleanedCall, DeterministicCallCleaner
 from .llm_client import BaseLLMProvider, MockFallbackProvider, get_llm_provider
@@ -18,6 +27,29 @@ logger = logging.getLogger("call_nlp")
 
 VALID_TRANSITIONS = {"RESOLVED", "PERSISTENT", "ESCALATED"}
 RESOLVED_MODERATOR = -6.0
+
+
+def _parse_iso_timestamp(ts: Optional[str | datetime]) -> datetime:
+    if isinstance(ts, datetime):
+        return ts if ts.tzinfo else ts.replace(tzinfo=timezone.utc)
+    if isinstance(ts, str) and ts.strip():
+        try:
+            parsed = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+        except ValueError:
+            pass
+    return datetime.now(timezone.utc)
+
+
+def _domain_to_memory_kind(domain: str) -> str:
+    d = (domain or "").upper()
+    if "MEDICATION" in d:
+        return "medication_issue"
+    if "MOOD" in d or "PSYCH" in d:
+        return "mood"
+    if "ASSISTANCE" in d or "SERVICE" in d:
+        return "topic"
+    return "symptom"
 
 
 @dataclass
@@ -84,8 +116,7 @@ class CallProcessingResult:
     used_fallback: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
-        d = asdict(self)
-        return d
+        return asdict(self)
 
 
 def _norm(s: str) -> str:
@@ -129,8 +160,8 @@ class CallProcessor:
         timestamp: Optional[str] = None,
         call_duration_seconds: Optional[int] = None,
     ) -> CallProcessingResult:
-        ts = timestamp or datetime.utcnow().isoformat()
-        cid = call_id or f"CALL_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+        ts = timestamp or datetime.now(timezone.utc).isoformat()
+        cid = call_id or f"CALL_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
         points = active_talking_points or []
 
         cleaned = DeterministicCallCleaner.clean(turns)
@@ -152,6 +183,53 @@ class CallProcessor:
                 used_fallback = True
 
         return self._build_result(cid, senior_id, ts, call_duration_seconds, cleaned, points, data, used_fallback)
+
+    def process_and_save(
+        self,
+        db: Session,
+        senior_id: str,
+        turns: List[Dict[str, str]],
+        active_talking_points: Optional[List[Dict[str, Any]]] = None,
+        call_id: Optional[str] = None,
+        timestamp: Optional[str | datetime] = None,
+        call_duration_seconds: Optional[int] = None,
+        source_type: str = "checkin_call",
+        trigger_risk_calc: bool = True,
+        commit: bool = True,
+    ) -> CallProcessingResult:
+        """
+        Processes a check-in or coordinator call, reading open talking points from `context_repo`
+        in the DB, reconciling state transitions, writing the call's NLP output into `context_repo`,
+        and triggering the risk calculation model.
+        """
+        ts_dt = _parse_iso_timestamp(timestamp)
+        db_points = load_open_talking_points_from_context_repo(db, senior_id)
+        if active_talking_points:
+            seen_topics = {p.get("topic") for p in db_points}
+            for p in active_talking_points:
+                if p.get("topic") not in seen_topics:
+                    db_points.append(p)
+                    seen_topics.add(p.get("topic"))
+
+        result = self.process(
+            senior_id=senior_id,
+            turns=turns,
+            active_talking_points=db_points,
+            call_id=call_id,
+            timestamp=ts_dt.isoformat(),
+            call_duration_seconds=call_duration_seconds,
+        )
+        raw_transcript = "\n".join(f"{t.get('speaker', 'Speaker')}: {t.get('text', '')}" for t in turns)
+        save_call_result_to_db(
+            db=db,
+            result=result,
+            raw_transcript=raw_transcript,
+            timestamp_dt=ts_dt,
+            source_type=source_type,
+            trigger_risk_calc=trigger_risk_calc,
+            commit=commit,
+        )
+        return result
 
     # ----------------------------------------------------------------- prompts
     @staticmethod
@@ -177,12 +255,21 @@ class CallProcessor:
         text = cleaned.self_text.lower()
         for p in points:
             topic = str(p.get("topic", "")).lower()
-            if "dizz" in topic or "chakkar" in topic:
-                if re.search(r"(chakkar|dizzy)\s+\w*\s*nahi|nahi\s+\w*\s*(chakkar|dizzy)|chakkar\s+nahi", text):
+            if "dizz" in topic or "chakkar" in topic or "vertigo" in topic:
+                if re.search(
+                    r"(chakkar|dizzy)\s+[\w\s]{0,20}?(nahi|theek|thik|aaram|better|fine)|"
+                    r"(nahi|theek|thik|aaram)\s+[\w\s]{0,20}?(chakkar|dizzy)",
+                    text,
+                ):
                     transitions.append({
                         "topic": p["topic"], "new_status": "RESOLVED",
-                        "evidence_text": cleaned.self_text[:120], "confidence": 0.6,
+                        "evidence_text": cleaned.self_text[:120], "confidence": 0.85,
                     })
+            elif re.search(r"\b(theek hai|thik hai|aaram mil|resolved|better now)\b", text):
+                transitions.append({
+                    "topic": p["topic"], "new_status": "RESOLVED",
+                    "evidence_text": cleaned.self_text[:120], "confidence": 0.75,
+                })
         # The mock extractor emits placeholder evidence; replace it with a real quote from the senior
         # so offline results survive the grounding check.
         clauses = [c.strip() for c in re.findall(r"[^,;.?!]+[,;.?!]*", cleaned.self_text) if c.strip()]
@@ -313,3 +400,171 @@ class CallProcessor:
             pairs_dropped=cleaned.dropped_pairs,
             used_fallback=used_fallback,
         )
+
+
+def load_open_talking_points_from_context_repo(db: Session, senior_id: str) -> List[Dict[str, Any]]:
+    """
+    Read all active (`status == "OPEN"`) talking points for `senior_id` from `context_repo`
+    ordered by priority descending, deduped by `topic`.
+    """
+    from app.modules.voice.models import ContextRepo
+
+    try:
+        ContextRepo.__table__.create(bind=db.get_bind(), checkfirst=True)
+    except Exception:
+        pass
+
+    rows = list(
+        db.scalars(
+            select(ContextRepo)
+            .where(ContextRepo.senior_id == senior_id)
+            .order_by(ContextRepo.timestamp.desc())
+            .limit(50)
+        )
+    )
+
+    resolved_topics: set[str] = set()
+    open_by_topic: Dict[str, Dict[str, Any]] = {}
+
+    # Walk newest to oldest so state_transitions in newer rows override older OPEN points
+    for row in rows:
+        for st in (row.state_transitions or []):
+            if isinstance(st, dict) and str(st.get("new_status", "")).upper() == "RESOLVED":
+                resolved_topics.add(str(st.get("topic", "")))
+        for tp in (row.talking_points or []):
+            if not isinstance(tp, dict):
+                continue
+            topic = str(tp.get("topic", "")).strip()
+            if not topic or topic in resolved_topics:
+                continue
+            status = str(tp.get("status", "OPEN")).upper()
+            if status == "RESOLVED":
+                resolved_topics.add(topic)
+                continue
+            if status == "OPEN" and topic not in open_by_topic:
+                open_by_topic[topic] = dict(tp)
+
+    points = list(open_by_topic.values())
+    points.sort(key=lambda p: (-int(p.get("priority", 5)), str(p.get("topic", ""))))
+    return points
+
+
+def save_call_result_to_db(
+    db: Session,
+    result: CallProcessingResult,
+    raw_transcript: str = "",
+    timestamp_dt: Optional[datetime] = None,
+    source_type: str = "checkin_call",
+    trigger_risk_calc: bool = True,
+    commit: bool = True,
+) -> None:
+    """
+    Reconcile resolved/escalated talking points in `context_repo`, write the new call row
+    into `context_repo` (with `(senior_id, timestamp)` PK), and trigger risk calculation.
+    """
+    from app.core.config import today as get_today
+    from app.modules.seniors.models import Senior
+    from app.modules.voice import repository as voice_repo
+    from app.modules.voice.models import ContextRepo
+
+    try:
+        ContextRepo.__table__.create(bind=db.get_bind(), checkfirst=True)
+    except Exception as exc:
+        logger.debug("ContextRepo table creation check skipped: %s", exc)
+
+    ts = timestamp_dt or _parse_iso_timestamp(result.timestamp)
+    while db.get(ContextRepo, (result.senior_id, ts)) is not None:
+        ts = ts + timedelta(microseconds=1)
+
+    # 1. Reconcile state transitions in existing `context_repo` rows
+    if result.state_transitions:
+        transitions_by_topic = {t.topic: t.new_status.upper() for t in result.state_transitions}
+        prior_rows = list(
+            db.scalars(
+                select(ContextRepo)
+                .where(ContextRepo.senior_id == result.senior_id)
+                .order_by(ContextRepo.timestamp.desc())
+                .limit(50)
+            )
+        )
+        for prow in prior_rows:
+            updated_tps = []
+            changed = False
+            for tp in (prow.talking_points or []):
+                if isinstance(tp, dict):
+                    tp_copy = dict(tp)
+                    t_name = str(tp_copy.get("topic", ""))
+                    if t_name in transitions_by_topic and str(tp_copy.get("status", "OPEN")).upper() == "OPEN":
+                        new_st = transitions_by_topic[t_name]
+                        if new_st == "RESOLVED":
+                            tp_copy["status"] = "RESOLVED"
+                            changed = True
+                        elif new_st == "ESCALATED":
+                            tp_copy["priority"] = 10
+                            changed = True
+                    updated_tps.append(tp_copy)
+                else:
+                    updated_tps.append(tp)
+            if changed:
+                prow.talking_points = updated_tps
+
+    # 2. Insert new `ContextRepo` row for this call
+    row = ContextRepo(
+        senior_id=result.senior_id,
+        timestamp=ts,
+        source_type=source_type,
+        source_id=result.call_id,
+        raw_transcript=raw_transcript or None,
+        summary=result.summary,
+        dominant_sentiment=result.dominant_sentiment,
+        extracted_signals=[asdict(e) for e in result.new_events],
+        talking_points=[asdict(tp) for tp in result.new_talking_points],
+        state_transitions=[asdict(st) for st in result.state_transitions],
+        risk_score_contribution=float(result.total_call_risk_delta),
+        requires_clinical_escalation=bool(result.requires_clinical_escalation),
+        requires_operations_action=bool(result.requires_operations_action),
+    )
+    db.add(row)
+
+    senior_exists = db.get(Senior, result.senior_id) is not None
+    if senior_exists:
+        for tp in result.new_talking_points:
+            if tp.status.upper() != "OPEN":
+                continue
+            kind = _domain_to_memory_kind(tp.domain)
+            content = f"{tp.topic}: {tp.target_signal_to_verify}" if tp.target_signal_to_verify else tp.topic
+            existing_mem = voice_repo.find_memory_item(db, result.senior_id, kind, content)
+            if existing_mem is not None:
+                existing_mem.last_seen_at = ts
+            else:
+                voice_repo.add_memory_item(
+                    db,
+                    senior_id=result.senior_id,
+                    kind=kind,
+                    content=content,
+                    status="open",
+                    first_seen_at=ts,
+                    last_seen_at=ts,
+                )
+
+    if commit:
+        db.commit()
+    else:
+        db.flush()
+
+    if trigger_risk_calc and senior_exists:
+        try:
+            from app.modules.risk.service import rescore_and_rerank
+
+            rescore_and_rerank(
+                db,
+                result.senior_id,
+                get_today(),
+                reason="new_alert" if result.requires_clinical_escalation else "post_ai_call",
+            )
+        except Exception:
+            logger.warning("Risk calculation after call failed for %s", result.senior_id, exc_info=True)
+            try:
+                db.rollback()
+            except Exception:
+                pass

@@ -33,15 +33,17 @@ def senior_cues(senior_id: str, date_from: date | None = Query(None, alias="from
     summary="Process a diarized coordinator-senior or AI-agent call transcript",
     description=(
         "Cleans and pairs the dialogue, extracts new Risk / Attention events from the senior's own words, "
-        "reconciles open talking points (RESOLVED / PERSISTENT / ESCALATED) and returns a bounded risk delta."
+        "reconciles open talking points (RESOLVED / PERSISTENT / ESCALATED) in context_repo, "
+        "triggers risk calculation, and returns a bounded risk delta."
     ),
 )
 def process_call(
     request: CallProcessRequest,
+    db: Session = Depends(get_db),
     service: CallProcessingService = Depends(get_call_service),
 ) -> CallProcessResponse:
     try:
-        return service.process_call(request)
+        return service.process_call(request, db=db)
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

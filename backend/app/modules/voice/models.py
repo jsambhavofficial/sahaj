@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, ForeignKey, Index, Integer, Numeric, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, Float, ForeignKey, Index, Integer, Numeric, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import TZ, Base, JSONType, one_of, uuid_pk
@@ -88,3 +88,33 @@ class SeniorMemoryItem(Base):
     last_seen_at: Mapped[datetime] = mapped_column(TZ)
     follow_up_after: Mapped[date | None] = mapped_column(Date)
     resolved_at: Mapped[datetime | None] = mapped_column(TZ)
+
+
+class ContextRepo(Base):
+    """
+    Unified NLP Context Repository (`context_repo`).
+    Primary Key: (senior_id, timestamp).
+    Every NLP processor (VoiceNotesProcessor, CallProcessor) writes its extracted signals,
+    risk score contribution, summary, and talking points here.
+    The check-in bot generates its dynamic conversation script from this table, and the
+    MultimodalRiskCalculator reads extracted signals & risk score contributions from it.
+    """
+
+    __tablename__ = "context_repo"
+    __table_args__ = (
+        Index("ix_context_repo_senior_time", "senior_id", "timestamp"),
+    )
+
+    senior_id: Mapped[str] = mapped_column(ForeignKey("seniors.senior_id"), primary_key=True)
+    timestamp: Mapped[datetime] = mapped_column(TZ, primary_key=True)
+    source_type: Mapped[str] = mapped_column(Text, default="voice_note")  # voice_note, checkin_call, coordinator_call
+    source_id: Mapped[str | None] = mapped_column(Text)
+    raw_transcript: Mapped[str | None] = mapped_column(Text)
+    summary: Mapped[str | None] = mapped_column(Text)
+    dominant_sentiment: Mapped[str | None] = mapped_column(Text, default="NEUTRAL")
+    extracted_signals: Mapped[list] = mapped_column(JSONType, default=list)
+    talking_points: Mapped[list] = mapped_column(JSONType, default=list)
+    state_transitions: Mapped[list] = mapped_column(JSONType, default=list)
+    risk_score_contribution: Mapped[float] = mapped_column(Float, default=0.0)
+    requires_clinical_escalation: Mapped[bool] = mapped_column(Boolean, default=False)
+    requires_operations_action: Mapped[bool] = mapped_column(Boolean, default=False)

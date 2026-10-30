@@ -25,13 +25,16 @@ def _factor_text(factor) -> str | None:
 def build_context(db: Session, senior: Senior, language: str, day: date, *, full_name: str | None = None) -> CallContext:
     profile = repo.get_profile(db, senior.senior_id)
     items = repo.open_memory_items(db, senior.senior_id)
+    talking_points = repo.open_context_talking_points(db, senior.senior_id)
     factors = [t for t in (_factor_text(f) for f in repo.latest_risk_factors(db, senior.senior_id, day)) if t][:3]
+    last_sum = repo.last_context_summary(db, senior.senior_id) or repo.last_summary(db, senior.senior_id)
     ctx = CallContext(
         language=language,
         age=senior.age,
         living_arrangement=senior.living_arrangement,
-        last_call_summary=repo.last_summary(db, senior.senior_id),
+        last_call_summary=last_sum,
         open_memory_items=[{"kind": i.kind, "content": i.content} for i in items],
+        talking_points=talking_points,
         risk_factors_today=factors,
         missed_medicines_today=repo.missed_medicine_names(db, senior.senior_id, day),
         recent_vitals=[{"type": v.measurement_type, "value": float(v.value), "unit": v.unit,
@@ -52,6 +55,16 @@ def _scrub(ctx: CallContext, full_name: str | None) -> CallContext:
     ctx.last_call_summary = clean(ctx.last_call_summary)
     ctx.background = clean(ctx.background)
     ctx.open_memory_items = [{**i, "content": clean(i["content"])} for i in ctx.open_memory_items]
+    ctx.talking_points = [
+        {
+            **tp,
+            "topic": clean(tp.get("topic")),
+            "target_signal_to_verify": clean(tp.get("target_signal_to_verify")),
+            "suggested_bot_question_hinglish": clean(tp.get("suggested_bot_question_hinglish")),
+            "suggested_bot_question_english": clean(tp.get("suggested_bot_question_english")),
+        }
+        for tp in ctx.talking_points
+    ]
     ctx.risk_factors_today = [clean(f) for f in ctx.risk_factors_today]
     ctx.hobbies = [clean(h) for h in ctx.hobbies]
     return ctx
@@ -63,7 +76,18 @@ def render_context(ctx: CallContext) -> str:
     if ctx.age:
         lines.append(f"Age: {ctx.age}. Lives: {(ctx.living_arrangement or 'unknown').replace('_', ' ')}.")
     if ctx.last_call_summary:
-        lines.append(f"Last call summary: {ctx.last_call_summary}")
+        lines.append(f"Last summary from context_repo: {ctx.last_call_summary}")
+    for tp in ctx.talking_points:
+        q = (
+            tp.get("suggested_bot_question_english")
+            if ctx.language == "english"
+            else tp.get("suggested_bot_question_hinglish")
+        ) or tp.get("suggested_bot_question_hinglish") or tp.get("suggested_bot_question_english") or ""
+        lines.append(
+            f"Context Repo Talking Point ({tp.get('domain', 'CLINICAL_FOLLOWUP')} - {tp.get('topic', '')}): "
+            f"{tp.get('target_signal_to_verify', '')}"
+            + (f" | Suggested question: {q}" if q else "")
+        )
     for item in ctx.open_memory_items:
         lines.append(f"Open item ({item['kind']}): {item['content']}")
     if ctx.risk_factors_today:

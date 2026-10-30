@@ -40,6 +40,7 @@ class CallContext:
     living_arrangement: str | None = None
     last_call_summary: str | None = None
     open_memory_items: list[dict] = field(default_factory=list)
+    talking_points: list[dict] = field(default_factory=list)
     risk_factors_today: list[str] = field(default_factory=list)
     missed_medicines_today: list[str] = field(default_factory=list)
     recent_vitals: list[dict] = field(default_factory=list)
@@ -51,7 +52,7 @@ class CallContext:
 
     @property
     def has_open_symptom(self) -> bool:
-        return any(i.get("kind") in ("symptom", "mood") for i in self.open_memory_items)
+        return bool(self.talking_points) or any(i.get("kind") in ("symptom", "mood") for i in self.open_memory_items)
 
 
 @dataclass
