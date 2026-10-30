@@ -19,6 +19,7 @@ from app.modules.medications.models import MedicationEvent, MedicationSchedule
 from app.modules.messages import repository as message_repo
 from app.modules.messages import service as message_service
 from app.modules.seniors.models import Senior, SeniorContact
+from app.modules.vitals import service as vitals_service
 from app.modules.vitals.models import Vital
 
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -197,6 +198,7 @@ def add_vital(db: Session, user: User, body: VitalIn) -> VitalOut:
                   context="self_reported", source="senior_app", quality_status="valid")
     db.add(vital)
     db.commit()
+    vitals_service.safe_rescore(db, senior.senior_id, measured_at.astimezone(IST).date())
     return VitalOut(measurement_id=vital.measurement_id, measured_at=_utc(vital.measured_at),
                     measurement_type=vital.measurement_type, value=float(vital.value), unit=unit,
                     source=vital.source, quality_status=vital.quality_status)
@@ -207,6 +209,5 @@ def report(db: Session, user: User, text: str, language: str | None) -> ReportOu
     checkin_id, urgent = message_service.record_checkin(
         db, senior, text, channel="app_checkin", language=language or senior.preferred_language)
     db.commit()
-    if urgent:
-        message_service.safe_rescore(db, senior.senior_id)
+    message_service.safe_rescore(db, senior.senior_id, reason="new_alert" if urgent else "report")
     return ReportOut(checkin_id=checkin_id)  # never any interpretation of what the senior wrote

@@ -7,10 +7,11 @@ from app.core.database import get_db
 from app.core.deps import require_role
 from app.modules.auth.models import User
 from app.modules.me import service
-from app.modules.me.schemas import ConfirmIn, ConfirmOut, HomeOut, ReportIn, ReportOut, VitalIn, VitalOut
+from app.modules.me.schemas import ConfirmIn, ConfirmOut, HomeOut, MeasurementType, ReportIn, ReportOut, VitalIn, VitalOut
 from app.modules.messages import service as message_service
 from app.modules.messages.router import SEND_BODY_DOC, send_from_request
 from app.modules.messages.schemas import MessageList, MessageOut
+from app.modules.vitals import service as vitals_service
 
 router = APIRouter(prefix="/me", tags=["senior app"])
 senior_only = require_role("senior")
@@ -27,6 +28,16 @@ def confirm_medication(medication_id: str, body: ConfirmIn, db: Session = Depend
                        user: User = Depends(senior_only)):
     """Marks a dose as taken. Safe to repeat for the same `scheduled_at`."""
     return service.confirm_medication(db, user, medication_id, body.scheduled_at)
+
+
+@router.get("/vitals", response_model=list[VitalOut], summary="Own vitals readings, oldest first")
+def get_my_vitals(type: MeasurementType | None = None,
+                  date_from: date | None = Query(None, alias="from"),
+                  date_to: date | None = Query(None, alias="to"),
+                  limit: int = Query(200, ge=1, le=2000),
+                  db: Session = Depends(get_db), user: User = Depends(senior_only)):
+    senior = service.own_senior(db, user)
+    return vitals_service.vitals(db, user, senior.senior_id, type, date_from, date_to, limit)
 
 
 @router.post("/vitals", response_model=VitalOut, status_code=201)
