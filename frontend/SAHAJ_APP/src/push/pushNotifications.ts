@@ -24,7 +24,13 @@ export async function registerForPush(): Promise<void> {
   try {
     if (Platform.OS === 'web') return;
     // Remote push is unavailable in Expo Go (Android, SDK 53+): skip quietly.
-    if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) return;
+    if (
+      Constants.executionEnvironment === ExecutionEnvironment.StoreClient ||
+      Constants.appOwnership === 'expo' ||
+      Constants.expoGoConfig != null
+    ) {
+      return;
+    }
 
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
