@@ -60,7 +60,8 @@ interface AppContextType {
 
   // Vitals
   vitals: VitalsState;
-  updateVitals: (newVitals: Partial<VitalsState>) => Promise<void>;
+  /** Saves the readings and refreshes the risk score; resolves true when they were saved. */
+  updateVitals: (newVitals: Partial<VitalsState>) => Promise<boolean>;
 
   // Call & alert state
   activeCall: { active: boolean; recipient: string; message: string } | null;
@@ -86,6 +87,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [pendingRole, setPendingRole] = useState<UserRole | null>(null);
   const [language, setLanguage] = useState<Language>('hi');
   const [coordinatorPhone, setCoordinatorPhone] = useState<string | null>(null);
+  const [serverDate, setServerDate] = useState<string | null>(null);
   const [activeScreen, setActiveScreen] = useState<string>('welcome');
 
   const [dataStatus, setDataStatus] = useState<DataStatus>('idle');
@@ -190,6 +192,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
           clearDetail();
           setMedications(home.medications);
           setCoordinatorPhone(home.coordinatorPhone);
+          setServerDate(home.date);
           setLanguage(home.language === 'english' ? 'en' : 'hi');
         }
         setDataStatus((s) => (s === 'error' ? s : 'ready'));
@@ -363,14 +366,16 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateVitals = async (changed: Partial<VitalsState>) => {
+  const updateVitals = async (changed: Partial<VitalsState>): Promise<boolean> => {
     const before = vitals;
     setVitals((prev) => ({ ...prev, ...changed }));
     try {
-      await live.postVitals(changed);
+      await live.postVitals(changed, serverDate ?? new Date().toISOString().slice(0, 10));
+      return true;
     } catch (e) {
       setVitals(before);
       Alert.alert('Could not save', messageOf(e));
+      return false;
     }
   };
 

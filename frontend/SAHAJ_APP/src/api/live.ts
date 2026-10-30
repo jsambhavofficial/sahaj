@@ -96,11 +96,13 @@ export interface HomeResult {
   medications: MedicationItem[];
   /** The assigned coordinator's dialable number, or null if none is on file. */
   coordinatorPhone: string | null;
+  /** The server's 'today' (YYYY-MM-DD); readings are stamped with it so they count towards today's score. */
+  date: string;
 }
 
 export async function fetchHome(): Promise<HomeResult> {
-  const h = await request<{ greeting_name: string; language: string; medications_today: HomeDoseDto[]; coordinator?: { phone: string | null } | null }>('/me/home');
-  return { greeting: h.greeting_name, language: h.language, medications: mapHomeDoses(h.medications_today), coordinatorPhone: h.coordinator?.phone ?? null };
+  const h = await request<{ greeting_name: string; language: string; medications_today: HomeDoseDto[]; date: string; coordinator?: { phone: string | null } | null }>('/me/home');
+  return { greeting: h.greeting_name, language: h.language, medications: mapHomeDoses(h.medications_today), coordinatorPhone: h.coordinator?.phone ?? null, date: h.date };
 }
 
 export function confirmDose(doseIdValue: string): Promise<{ status: string; actual_at: string }> {
@@ -108,10 +110,21 @@ export function confirmDose(doseIdValue: string): Promise<{ status: string; actu
   return request(`/me/medications/${encodeURIComponent(medicationId)}/confirm`, { method: 'POST', body: { scheduled_at: scheduledAt } });
 }
 
-export async function postVitals(changed: Partial<VitalsState>): Promise<void> {
-  for (const [field, value] of Object.entries(changed) as [keyof VitalsState, number][]) {
-    if (!value || value === ZERO_VITALS[field]) continue;
-    await request('/me/vitals', { method: 'POST', body: { measurement_type: VITAL_TYPE[field], value } });
+/** Local clock time in India (the server's scoring day is IST), e.g. 14:05:09. */
+const istClock = () => new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(11, 19);
+
+/**
+ * Saves readings to POST /me/vitals. They are stamped with the server's `day` so they fall inside the day
+ * being scored (the demo date is not the phone's date). Only the last request asks the backend to re-score.
+ */
+export async function postVitals(changed: Partial<VitalsState>, day: string): Promise<void> {
+  const readings = (Object.entries(changed) as [keyof VitalsState, number][]).filter(([f, v]) => v && v !== ZERO_VITALS[f]);
+  for (const [i, [field, value]] of readings.entries()) {
+    await request('/me/vitals', {
+      method: 'POST',
+      query: { rescore: i === readings.length - 1 ? 'true' : 'false' },
+      body: { measurement_type: VITAL_TYPE[field], value, measured_at: `${day}T${istClock()}+05:30` },
+    });
   }
 }
 

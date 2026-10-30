@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   MoreVertical,
   Phone,
+  AlertTriangle,
   ShieldAlert,
   Home,
   Activity,
@@ -40,6 +41,8 @@ export const SeniorOverviewScreen: React.FC<Props> = ({
   const baseline = seniorProfile?.baseline;
   const dash = (v: number | null | undefined, digits = 0) => (v === null || v === undefined ? '—' : v.toFixed(digits));
   const GAUGE_LENGTH = 94.25; // circumference of the r=15 ring
+  const reasons = currentSenior.reasons ?? [];
+  const handleCallNow = () => startCall(currentSenior.display_name, currentSenior.senior_id);
   const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'medications'>('overview');
 
   const handleTabPress = (tab: 'overview' | 'trends' | 'medications') => {
@@ -244,6 +247,52 @@ export const SeniorOverviewScreen: React.FC<Props> = ({
                 </View>
               ) : null}
             </View>
+          </View>
+        </View>
+
+        {/* Why this senior is on the list: the system's own reasons */}
+        <View style={styles.card}>
+          <Text style={styles.sectionHeading}>Why this alert?</Text>
+
+          <View style={styles.reasonList}>
+            {reasons.length === 0 ? (
+              <Text style={styles.reasonSub}>Nothing unusual in the recent data.</Text>
+            ) : (
+              reasons.map((reason, i) => (
+                <View key={i} style={styles.reasonRow}>
+                  <View style={styles.reasonIconCircle}>
+                    <AlertTriangle size={14} color="#EF4444" />
+                  </View>
+                  <View style={styles.reasonTextWrapper}>
+                    <Text style={styles.reasonMain}>{reason}</Text>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+        </View>
+
+        {/* Recommended action: the suggestion the system made for this senior */}
+        <View style={styles.card}>
+          <Text style={styles.sectionHeading}>Recommended Action</Text>
+          <Text style={[styles.reasonMain, { marginBottom: 8 }]}>
+            {currentSenior.suggested_action ?? 'Keep up routine monitoring.'}
+          </Text>
+
+          <View style={styles.actionItemsList}>
+            <TouchableOpacity
+              style={[styles.actionRow, { borderBottomWidth: 0 }]}
+              onPress={handleCallNow}
+              activeOpacity={0.7}
+            >
+              <View style={styles.actionRowLeft}>
+                <View style={[styles.actionIconCircle, { backgroundColor: '#FEE2E2' }]}>
+                  <Phone size={14} color="#EF4444" />
+                </View>
+                <Text style={styles.actionTitle}>Call senior now</Text>
+              </View>
+              <ChevronRight size={16} color="#94A3B8" />
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -513,6 +562,71 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#16A34A',
+  },
+  sectionHeading: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 12,
+  },
+  reasonList: {
+    gap: 12,
+  },
+  reasonRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  reasonIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FEF2F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  reasonTextWrapper: {
+    flex: 1,
+  },
+  reasonMain: {
+    fontSize: 13,
+    color: '#334155',
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+  reasonSub: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  actionItemsList: {
+    gap: 0,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  actionRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  actionIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#334155',
   },
 });
 

@@ -180,7 +180,7 @@ def confirm_medication(db: Session, user: User, medication_id: str, scheduled_at
 
 
 # ---- vitals and reports ------------------------------------------------------------------------
-def add_vital(db: Session, user: User, body: VitalIn) -> VitalOut:
+def add_vital(db: Session, user: User, body: VitalIn, rescore: bool = True) -> VitalOut:
     senior = own_senior(db, user)
     units, ranges = VITAL_RULES[body.measurement_type]
     unit = body.unit or units[0]
@@ -198,7 +198,8 @@ def add_vital(db: Session, user: User, body: VitalIn) -> VitalOut:
                   context="self_reported", source="senior_app", quality_status="valid")
     db.add(vital)
     db.commit()
-    vitals_service.safe_rescore(db, senior.senior_id, measured_at.astimezone(IST).date())
+    if rescore:
+        message_service.safe_rescore(db, senior.senior_id, reason="manual_refresh")
     return VitalOut(measurement_id=vital.measurement_id, measured_at=_utc(vital.measured_at),
                     measurement_type=vital.measurement_type, value=float(vital.value), unit=unit,
                     source=vital.source, quality_status=vital.quality_status)

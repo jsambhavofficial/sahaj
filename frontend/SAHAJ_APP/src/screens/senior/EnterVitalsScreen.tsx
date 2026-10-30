@@ -27,7 +27,10 @@ interface Props {
 }
 
 export const EnterVitalsScreen: React.FC<Props> = ({ onBack }) => {
-  const { vitals, updateVitals } = useAppState();
+  const { vitals: saved, updateVitals } = useAppState();
+  // Edits stay on this screen until Submit, which saves only what changed in one go.
+  const [edits, setEdits] = useState<Partial<typeof saved>>({});
+  const vitals = { ...saved, ...edits };
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [activeMetric, setActiveMetric] = useState<string>('bp');
@@ -56,26 +59,34 @@ export const EnterVitalsScreen: React.FC<Props> = ({ onBack }) => {
     if (activeMetric === 'bp') {
       const sys = parseInt(tempValue1) || vitals.bpSystolic;
       const dia = parseInt(tempValue2) || vitals.bpDiastolic;
-      await updateVitals({ bpSystolic: sys, bpDiastolic: dia });
+      setEdits((e) => ({ ...e, bpSystolic: sys, bpDiastolic: dia }));
     } else if (activeMetric === 'sugar') {
       const sugar = parseInt(tempValue1) || vitals.sugar;
-      await updateVitals({ sugar });
+      setEdits((e) => ({ ...e, sugar }));
     } else if (activeMetric === 'spo2') {
       const spo2 = parseInt(tempValue1) || vitals.spo2;
-      await updateVitals({ spo2 });
+      setEdits((e) => ({ ...e, spo2 }));
     } else if (activeMetric === 'pulse') {
       const pulse = parseInt(tempValue1) || vitals.pulse;
-      await updateVitals({ pulse });
+      setEdits((e) => ({ ...e, pulse }));
     } else if (activeMetric === 'weight') {
       const weight = parseInt(tempValue1) || vitals.weight;
-      await updateVitals({ weight });
+      setEdits((e) => ({ ...e, weight }));
     }
+    setSubmitted(false);
     setEditModalVisible(false);
   };
 
   const handleSubmitAll = async () => {
+    const changed = (Object.keys(vitals) as (keyof typeof vitals)[]).filter((k) => vitals[k] !== saved[k]);
+    if (changed.length === 0) {
+      Alert.alert('Nothing new', 'Please add or change a reading before submitting.');
+      return;
+    }
+    const ok = await updateVitals(Object.fromEntries(changed.map((k) => [k, vitals[k]])));
+    if (!ok) return;
+    setEdits({});
     setSubmitted(true);
-    await updateVitals(vitals);
     Alert.alert(
       'Vitals Recorded',
       'Your latest readings have been saved and shared with your Care Coordinator.'
