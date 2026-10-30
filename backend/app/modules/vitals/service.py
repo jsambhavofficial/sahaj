@@ -11,8 +11,9 @@ from app.modules.auth.audit import audit
 from app.modules.auth.models import User
 from app.modules.seniors.service import audit_read, date_bounds
 from app.modules.vitals import repository
-from app.modules.vitals.models import Vital
+from app.modules.vitals.models import Vital, VitalForecast
 from app.modules.vitals.schemas import VitalIn
+from ml.models.vitals.forecast_db import forecast_cohort, forecast_senior
 
 logger = logging.getLogger(__name__)
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -92,6 +93,41 @@ def add_vital(db: Session, user: User, senior_id: str, body: VitalIn) -> Vital:
     db.commit()
     safe_rescore(db, senior_id, measured_at.astimezone(IST).date())
     return vital
+
+
+def run_senior_forecast(db: Session, user: User, senior_id: str, on_date: date | None = None) -> VitalForecast:
+    """Run forecast model for 1 individual from DB and write result into `vital_forecasts`."""
+    scope.require_senior_access(db, user, senior_id)
+    target_date = on_date or today()
+    forecast_senior(db=db, senior_id=senior_id, on_date=target_date, commit=True)
+    audit(db, user, "vitals.forecast_senior", senior_id, {"date": target_date.isoformat()})
+    db.commit()
+    row = repository.get_forecast(db, senior_id, target_date)
+    if row is None:
+        raise AppError("Could not compute forecast for senior", code="not_found", status_code=404)
+    return row
+
+
+def get_senior_forecasts(db: Session, user: User, senior_id: str, date_from: date | None,
+                         date_to: date | None, limit: int = 90) -> list[VitalForecast]:
+    scope.require_senior_access(db, user, senior_id)
+    date_bounds(date_from, date_to)
+    rows = repository.list_forecasts(db, senior_id, date_from, date_to, limit)
+    audit_read(db, user, "view_vital_forecasts", senior_id)
+    return rows
+
+
+def run_cohort_forecast(db: Session, user: User, on_date: date | None = None,
+                        senior_ids: list[str] | None = None) -> dict:
+    """Run forecast model for full cohort from DB and write results into `vital_forecasts`."""
+    target_date = on_date or today()
+    summary = forecast_cohort(db=db, on_date=target_date, senior_ids=senior_ids, commit=True)
+    audit(db, user, "vitals.forecast_cohort", None, {
+        "date": target_date.isoformat(),
+        "total_seniors": summary["total_seniors_processed"],
+    })
+    db.commit()
+    return summary
 
 
 def activity(db: Session, user: User, senior_id: str, date_from: date | None,

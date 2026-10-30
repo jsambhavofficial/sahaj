@@ -3,7 +3,7 @@ from datetime import date, datetime
 from sqlalchemy import Boolean, Date, Float, ForeignKey, Index, Integer, Numeric, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import TZ, Base, one_of
+from app.db.base import JSONType, TZ, Base, created_at_col, one_of
 
 
 class Vital(Base):
@@ -23,6 +23,32 @@ class Vital(Base):
     context: Mapped[str | None] = mapped_column(Text)
     source: Mapped[str] = mapped_column(Text)
     quality_status: Mapped[str] = mapped_column(Text, default="valid")
+
+
+class VitalForecast(Base):
+    """Daily forecasted vitals, slopes, and R_vitals score per senior."""
+
+    __tablename__ = "vital_forecasts"
+    __table_args__ = (
+        Index("ix_vital_forecasts_date", "date"),
+    )
+
+    senior_id: Mapped[str] = mapped_column(ForeignKey("seniors.senior_id"), primary_key=True)
+    date: Mapped[date] = mapped_column(Date, primary_key=True)
+    bp_systolic_forecast: Mapped[float | None] = mapped_column(Float)
+    bp_diastolic_forecast: Mapped[float | None] = mapped_column(Float)
+    pulse_forecast: Mapped[float | None] = mapped_column(Float)
+    spo2_forecast: Mapped[float | None] = mapped_column(Float)
+    weight_forecast: Mapped[float | None] = mapped_column(Float)
+    blood_glucose_forecast: Mapped[float | None] = mapped_column(Float)
+    bp_systolic_slope_3d: Mapped[float | None] = mapped_column(Float)
+    spo2_slope_3d: Mapped[float | None] = mapped_column(Float)
+    weight_slope_7d: Mapped[float | None] = mapped_column(Float)
+    r_vitals_score: Mapped[float | None] = mapped_column(Float)
+    contributions: Mapped[dict] = mapped_column(JSONType, default=dict)
+    forecasts_detail: Mapped[dict] = mapped_column(JSONType, default=dict)
+    model_version: Mapped[str] = mapped_column(Text, default="vitals_v1")
+    computed_at: Mapped[datetime] = created_at_col()
 
 
 class DailyActivity(Base):

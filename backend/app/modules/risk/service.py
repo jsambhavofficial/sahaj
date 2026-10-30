@@ -15,7 +15,7 @@ from app.modules.alerts.service import AlertChange
 from app.modules.risk import repository as repo
 from app.modules.risk.models import DailyRiskScore
 from app.modules.risk.schemas import RiskCalculationRequest, RiskCalculationResponse
-from app.modules.risk.scorer import HeuristicScorer, RiskScorer, ScoreResult
+from app.modules.risk.scorer import HeuristicScorer, MultimodalScorer, RiskScorer, ScoreResult
 from app.modules.seniors.models import Senior
 
 # Ensure backend and backend/ml are on sys.path
@@ -26,13 +26,26 @@ for _p in (_backend_dir, _ml_dir):
         sys.path.insert(0, str(_p))
 
 try:
-    from ml.src.risk_engine.risk_score_calculation import MultimodalRiskCalculator, RiskCalculationResult
+    from ml.src.risk_engine.risk_score_calculation import (
+        MultimodalRiskCalculator,
+        RiskCalculationResult,
+        calculate_cohort_risk,
+        calculate_senior_risk,
+    )
 except ImportError:
-    from src.risk_engine.risk_score_calculation import MultimodalRiskCalculator, RiskCalculationResult
+    from src.risk_engine.risk_score_calculation import (
+        MultimodalRiskCalculator,
+        RiskCalculationResult,
+        calculate_cohort_risk,
+        calculate_senior_risk,
+    )
 
 logger = logging.getLogger("risk_service")
 
-SCORERS: dict[str, type] = {"heuristic": HeuristicScorer}
+SCORERS: dict[str, type] = {
+    "multimodal": MultimodalScorer,
+    "heuristic": HeuristicScorer,
+}
 BATCH_SIZE = 50
 
 
@@ -92,8 +105,10 @@ def rescore_and_rerank(db: Session, senior_id: str, on_date: date, reason: str =
     if senior is None:
         raise NotFound("Senior not found")
     score_and_alert(db, [senior_id], on_date)
+    valid_reasons = {"morning_build", "post_ai_call", "new_alert", "manual_refresh"}
+    list_reason = reason if reason in valid_reasons else "new_alert"
     lists = coordinator_service.build_priority_lists(
-        db, on_date, reason=reason, coordinator_ids=[senior.coordinator_id],
+        db, on_date, reason=list_reason, coordinator_ids=[senior.coordinator_id],
         ai_done_seniors={senior_id} if reason == "post_ai_call" else None)
     return lists[0] if lists else None
 
@@ -109,3 +124,21 @@ class RiskScoringService:
         input_data = request.model_dump()
         result: RiskCalculationResult = self.calculator.calculate(input_data)
         return RiskCalculationResponse(**result.to_dict())
+
+    def calculate_senior_from_db(self, db: Session, senior_id: str, on_date: date) -> RiskCalculationResponse:
+        """Run forecast model + MultimodalRiskCalculator for 1 individual from DB and write to DB."""
+        if db.get(Senior, senior_id) is None:
+            raise NotFound("Senior not found")
+        res = calculate_senior_risk(db=db, senior_id=senior_id, on_date=on_date, commit=False)
+        rescore_and_rerank(db, senior_id, on_date, reason="manual_rescore")
+        return RiskCalculationResponse(**res.to_dict())
+
+    def calculate_cohort_from_db(self, db: Session, on_date: date,
+                                 senior_ids: list[str] | None = None) -> dict:
+        """Run forecast model + MultimodalRiskCalculator for full cohort from DB and write to DB."""
+        summary = calculate_cohort_risk(db=db, on_date=on_date, senior_ids=senior_ids, commit=True)
+        return {
+            "date": summary["date"],
+            "seniors_scored": summary["seniors_scored"],
+            "levels": summary["levels"],
+        }
