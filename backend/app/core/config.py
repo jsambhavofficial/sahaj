@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     demo_today: date | None = None
 
     # Which RiskScorer implementation to use (see app/modules/risk/service.get_scorer).
-    risk_scorer: str = "heuristic"
+    risk_scorer: str = "multimodal"
 
     # Public URL of this service, used for provider webhooks.
     public_base_url: str = ""

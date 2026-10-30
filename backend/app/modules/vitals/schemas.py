@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -25,6 +25,26 @@ class VitalOut(BaseModel):
     context: str | None = None
     source: str
     quality_status: str
+
+
+class VitalForecastOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    senior_id: str
+    date: date
+    bp_systolic_forecast: float | None = None
+    bp_diastolic_forecast: float | None = None
+    pulse_forecast: float | None = None
+    spo2_forecast: float | None = None
+    weight_forecast: float | None = None
+    blood_glucose_forecast: float | None = None
+    bp_systolic_slope_3d: float | None = None
+    spo2_slope_3d: float | None = None
+    weight_slope_7d: float | None = None
+    r_vitals_score: float | None = None
+    contributions: dict[str, float] = Field(default_factory=dict)
+    forecasts_detail: dict[str, Any] = Field(default_factory=dict)
+    model_version: str = "vitals_v1"
+    computed_at: datetime | None = None
 
 
 class ActivityOut(BaseModel):

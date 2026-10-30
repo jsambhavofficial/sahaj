@@ -403,3 +403,77 @@ class HeuristicScorer:
                             "Call promptly: both the sensor and their own words point the same way; "
                             "arrange a visit.")]
         return []
+
+
+
+class MultimodalScorer:
+    """
+    Production Multimodal Risk Scorer (`scoring_version = "multimodal-3.0.0"`).
+    1. Calls the Vitals Forecast Model first (`forecast_senior` for 1 individual, `forecast_cohort` for cohort)
+       and writes forecasted vitals & slopes to `vital_forecasts`.
+    2. Gathers all DB signals (vitals forecasts, slopes, NLP cues, voice notes, check-in calls,
+       medication adherence, daily activity, accelerometer falls, and open talking points/issues).
+    3. Runs `MultimodalRiskCalculator.calculate` and returns `ScoreResult` for `daily_risk_scores`.
+    """
+
+    version = "multimodal-3.0.0"
+
+    def score(self, db: Session, senior_id: str, on_date: date) -> ScoreResult:
+        from ml.models.vitals.forecast_db import forecast_senior
+        from ml.src.risk_engine.risk_score_calculation import (
+            MultimodalRiskCalculator,
+            build_multimodal_inputs_from_db,
+        )
+
+        fc_res = forecast_senior(db=db, senior_id=senior_id, on_date=on_date, commit=False)
+        inputs_map, base_conf_map = build_multimodal_inputs_from_db(
+            db=db,
+            senior_ids=[senior_id],
+            on_date=on_date,
+            forecasts_by_senior={senior_id: fc_res},
+        )
+        input_data = inputs_map.get(senior_id, {"senior_id": senior_id, "date": on_date.isoformat()})
+        res = MultimodalRiskCalculator.calculate(input_data)
+        return ScoreResult(
+            risk_score=res.final_risk_score,
+            risk_level=res.risk_level,
+            confidence_level=res.confidence_level,
+            baseline_confidence=base_conf_map.get(senior_id, "NONE"),
+            top_factors=res.to_db_top_factors(),
+            recommended_action=res.recommended_clinical_action,
+            data_quality_flags=res.data_quality_flags,
+            scoring_version=self.version,
+        )
+
+    def score_many(self, db: Session, senior_ids: list[str], on_date: date) -> dict[str, ScoreResult]:
+        if not senior_ids:
+            return {}
+        from ml.models.vitals.forecast_db import forecast_cohort
+        from ml.src.risk_engine.risk_score_calculation import (
+            MultimodalRiskCalculator,
+            build_multimodal_inputs_from_db,
+        )
+
+        cohort_fc = forecast_cohort(db=db, on_date=on_date, senior_ids=senior_ids, commit=False)
+        forecasts_by_senior = cohort_fc.get("results", {})
+        inputs_map, base_conf_map = build_multimodal_inputs_from_db(
+            db=db,
+            senior_ids=senior_ids,
+            on_date=on_date,
+            forecasts_by_senior=forecasts_by_senior,
+        )
+        out: dict[str, ScoreResult] = {}
+        for sid in senior_ids:
+            input_data = inputs_map.get(sid, {"senior_id": sid, "date": on_date.isoformat()})
+            res = MultimodalRiskCalculator.calculate(input_data)
+            out[sid] = ScoreResult(
+                risk_score=res.risk_score if hasattr(res, "risk_score") else res.final_risk_score,
+                risk_level=res.risk_level,
+                confidence_level=res.confidence_level,
+                baseline_confidence=base_conf_map.get(sid, "NONE"),
+                top_factors=res.to_db_top_factors(),
+                recommended_action=res.recommended_clinical_action,
+                data_quality_flags=res.data_quality_flags,
+                scoring_version=self.version,
+            )
+        return out
